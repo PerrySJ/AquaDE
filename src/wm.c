@@ -210,6 +210,7 @@ struct shell_conf {
 	bool throw_closed;          /* a closed window screwed up and thrown away */
 	bool shark;                 /* and, thrown, eaten by a shark */
 	bool tank_life;             /* bubbles going up in the tank */
+	bool tank_fish;             /* fish going across it, and a crab */
 	bool corner_hover;          /* a corner turns up when the hand rests on it */
 	double scale;               /* points to pixels; 0: the screen's own */
 	double motion;              /* how long things take, against normal */
@@ -1244,6 +1245,7 @@ struct desk_server {
 	struct wl_event_source *bub_timer;
 	struct wlr_scene_tree *bub_tree;
 	struct wlr_scene_buffer *bub[DESK_BUBBLE_SOURCES];
+	struct wlr_scene_buffer *life[DESK_LIFE_CHANNELS];   /* the fish and the crab, the same way */
 	bool dark, idle_held;
 	uint32_t wake_key, wake_button;
 	struct wlr_idle_notifier_v1 *idle_notifier;
@@ -10011,6 +10013,8 @@ static void terminal_open(void)
  *                                         swims in for it (yes), or thrown
  *   tank_life = yes | no                  bubbles going up from the stones
  *                                         and the plants (yes), or still water
+ *   tank_fish = yes | no                  fish going across the tank now and
+ *                                         then, and a crab over the sand (yes)
  *   corner_on_hover = yes | no            a corner turns up when the hand
  *                                         rests on its fold (yes), or only
  *                                         when it is clicked
@@ -10132,6 +10136,7 @@ static void shell_conf_defaults(struct shell_conf *c)
 	c->throw_closed = true;
 	c->shark = true;
 	c->tank_life = true;
+	c->tank_fish = true;
 	c->corner_hover = true;
 	c->scale = 0.0;
 	c->motion = 1.0;
@@ -10444,6 +10449,8 @@ static void shell_conf_read_file(struct shell_conf *c, const char *path)
 			c->shark = b;
 		} else if (!strcmp(key, "tank_life")) {
 			c->tank_life = b;
+		} else if (!strcmp(key, "tank_fish")) {
+			c->tank_fish = b;
 		} else if (!strcmp(key, "corner_on_hover")) {
 			c->corner_hover = b;
 		} else if (!strcmp(key, "drawer_closes")) {
@@ -16203,13 +16210,36 @@ static bool desk_in_view(struct desk_server *server)
 }
 
 #define BUB_MS 66
+#define LIFE_MS 40     /* while a fish or the crab is out: they go further between frames */
+
+/* one sprite of what is in the tank: drawn into its box, or put away */
+static bool tank_sprite(struct desk_server *server, struct wlr_scene_buffer **node, bool out,
+	const double box[4], void (*draw)(cairo_t *, int, int, int, double), int i, double now)
+{
+	if (!out) {
+		if (*node) {
+			wlr_scene_node_set_enabled(&(*node)->node, false);
+		}
+		return false;
+	}
+	double k = motion_res();
+	struct desk_buf *buf = buf_create((int)ceil(box[2] * k), (int)ceil(box[3] * k));
+	cairo_scale(buf->cr, k, k);
+	cairo_translate(buf->cr, -box[0], -box[1]);
+	draw(buf->cr, server->desk_w, server->desk_h, i, now);
+	scene_put(node, server->bub_tree, buf, (int)box[0], (int)box[1], NULL);
+	wlr_scene_buffer_set_dest_size(*node, (int)box[2], (int)box[3]);
+	wlr_scene_node_set_enabled(&(*node)->node, true);
+	return true;
+}
 
 static int bubbles_cb(void *data)
 {
 	struct desk_server *server = data;
 	/* and only while somebody is there: two minutes untouched and the
 	 * water goes still, until the next touch */
-	bool on = server->conf.tank_life && desk_gfx_level() != DESK_GFX_2D
+	bool on = (server->conf.tank_life || server->conf.tank_fish)
+		&& desk_gfx_level() != DESK_GFX_2D
 		&& desk_in_view(server) && real_sec() - server->idle_at < 120.0;
 	if (!server->bub_tree) {
 		server->bub_tree = wlr_scene_tree_create(server->layer_desk);
@@ -16222,27 +16252,23 @@ static int bubbles_cb(void *data)
 	}
 	wlr_scene_node_raise_to_top(&server->bub_tree->node);
 	double now = monotonic_sec();
-	double k = motion_res();
 	for (int i = 0; i < DESK_BUBBLE_SOURCES; i++) {
 		double box[4];
 		/* nothing going up from it just now (a plant, mostly): nothing
 		 * drawn, nothing to send */
-		if (!desk_bubbles_live(i, now) || !desk_bubble_box(server->desk_w, server->desk_h, i, box)) {
-			if (server->bub[i]) {
-				wlr_scene_node_set_enabled(&server->bub[i]->node, false);
-			}
-			continue;
-		}
-		struct desk_buf *buf = buf_create((int)ceil(box[2] * k), (int)ceil(box[3] * k));
-		cairo_scale(buf->cr, k, k);
-		cairo_translate(buf->cr, -box[0], -box[1]);
-		desk_draw_bubbles(buf->cr, server->desk_w, server->desk_h, i, now);
-		scene_put(&server->bub[i], server->bub_tree, buf, (int)box[0], (int)box[1], NULL);
-		wlr_scene_buffer_set_dest_size(server->bub[i], (int)box[2], (int)box[3]);
-		wlr_scene_node_set_enabled(&server->bub[i]->node, true);
+		bool out = server->conf.tank_life && desk_bubbles_live(i, now)
+			&& desk_bubble_box(server->desk_w, server->desk_h, i, box);
+		tank_sprite(server, &server->bub[i], out, box, desk_draw_bubbles, i, now);
+	}
+	bool any = false;
+	for (int i = 0; i < DESK_LIFE_CHANNELS; i++) {
+		double box[4];
+		bool out = server->conf.tank_fish
+			&& desk_life_box(server->desk_w, server->desk_h, i, now, box);
+		any |= tank_sprite(server, &server->life[i], out, box, desk_draw_life, i, now);
 	}
 	/* (a new picture in the scene asks for its own frame) */
-	wl_event_source_timer_update(server->bub_timer, BUB_MS);
+	wl_event_source_timer_update(server->bub_timer, any ? LIFE_MS : BUB_MS);
 	return 0;
 }
 
@@ -23213,7 +23239,7 @@ int main(int argc, char **argv)
 	static char named[32];
 	if (getenv("WAYLAND_DISPLAY") || getenv("DISPLAY")) {
 		for (int i = 0; i < 32 && !socket; i++) {
-			snprintf(named, sizeof named, "desk-%d", i);
+			snprintf(named, sizeof named, "aquade-%d", i);
 			if (wl_display_add_socket(server.wl_display, named) == 0) {
 				socket = named;
 			}

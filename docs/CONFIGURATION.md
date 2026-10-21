@@ -42,6 +42,7 @@ One `key = value` per line; `#` starts a comment.
 | `paper.<program>` | `yes`, `no` | | One program the other way. `<program>` is its desktop file id, app id or X class. |
 | `throw_closed_windows` | `yes`, `no` | `yes` | Crumple a closed window and throw it away. |
 | `tank_life` | `yes`, `no` | `yes` | Bubbles rise from the stones and the plants on the desk. |
+| `tank_fish` | `yes`, `no` | `yes` | Now and then a fish (a clownfish, a blue tang, a school of neon tetras, a grouper) swims across under the windows, and a crab -- one in three is Ferris -- walks over the sand. |
 | `shark_eats_closed_windows` | `yes`, `no` | `yes` | A shark (or a pufferfish, for a small window) swims in and eats the crumpled window instead of it being thrown. |
 | `corner_on_hover` | `yes`, `no` | `yes` | Turn a corner up when the pointer rests on it (otherwise only on a click). |
 

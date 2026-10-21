@@ -50,9 +50,15 @@ fyzugx for making DEsk and releasing it under the MIT licence.
 - **It sounds like it's under water.** Sounds are muffled, the drawer
   grinds over gravel, letters and the chest let out bubbles, and the shark
   chomps.
+- **Fish and crabs.** Now and then a clownfish, a blue tang, a school of
+  neon tetras or a slow grouper swims across the tank, and a crab walks over
+  the sand, stopping to wave its claws. One crab in three is Ferris, Rust's
+  crab, drawn our own way. They swim under the windows, so they never get in
+  the way, and you can turn them off in Shell Settings.
 - **Bubbles** rise from the stones and plants. They're animated over the
-  traced tank, cost about 5% of one CPU core, and pause when you aren't
-  using the computer. You can turn them off in Shell Settings.
+  traced tank and pause when you aren't using the computer (with the fish,
+  about 5-10% of one CPU core while they're moving). You can turn them off
+  in Shell Settings.
 - **Light.** The tank (sand with caustics, light shafts through deep water,
   stones, rosette plants, ribbon grass) is ray-traced on the GPU (GLES 3),
   with a CPU fallback, and cached for each screen size.
@@ -70,10 +76,10 @@ fyzugx for making DEsk and releasing it under the MIT licence.
 | **The treasure chest, open** | **The lock screen** |
 | ![The treasure chest open, with notifications inside](docs/screenshots/aquade-post.jpg) | ![The watertight door, with its porthole, name plate and password slot](docs/screenshots/aquade-lock.jpg) |
 
+![Who lives in the tank: a clownfish, a blue tang, neon tetras, a grouper, a shore crab and Ferris](docs/screenshots/aquade-life.jpg)
+
 ## Still to come
 
-- Fish swimming across the tank and crabs walking on the sand, including
-  our own crab drawn in the style of Ferris, Rust's crab.
 - An aquarium version of the Control Panel.
 - Updating the documentation in `docs/`, which still describes DEsk's desk
   in places.
@@ -166,7 +172,7 @@ from a terminal. Either one redraws everything without closing your windows.
 ## Settings and documentation
 
 Shell Settings (`aquade-settings`, or the screwdriver in the drawer) holds
-AquaDE's own settings, including the shark and the bubbles, and opens the
+AquaDE's own settings, including the shark, the bubbles and the fish, and opens the
 usual programs for networks, sound, displays and so on. Settings are kept in
 `~/.config/aquade/shell.conf`.
 

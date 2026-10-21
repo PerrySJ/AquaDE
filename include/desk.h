@@ -764,7 +764,20 @@ void desk_draw_bubbles(cairo_t *cr, int w, int h, int i, double now);
 /* how many from source i are in the water at now: none, and there is
  * nothing to draw */
 int desk_bubbles_live(int i, double now);
-enum { DESK_FISH_SHARK, DESK_FISH_GROUPER, DESK_FISH_PUFFER };
+/* What lives in the tank: fish going across now and then (channels 0 to
+ * 2) and a crab walking over the sand (the last), each on a schedule
+ * worked out from the moment alone (seconds, any clock). desk_life_box is
+ * false when nothing is out on channel i at now; otherwise the box (x, y,
+ * w, h) on a w x h screen it is in. desk_draw_life draws it there, in the
+ * screen's coordinates. desk_draw_life_sample puts one of each down, for
+ * the preview. */
+#define DESK_LIFE_CHANNELS 4
+bool desk_life_box(int w, int h, int i, double now, double box[4]);
+void desk_draw_life(cairo_t *cr, int w, int h, int i, double now);
+void desk_draw_life_sample(cairo_t *cr, int w, int h, double t);
+enum { DESK_FISH_SHARK, DESK_FISH_GROUPER, DESK_FISH_PUFFER,
+	/* and the ones that only live in the tank (desk_draw_life) */
+	DESK_FISH_CLOWN, DESK_FISH_TANG, DESK_FISH_TETRA };
 #define DESK_SWIM_PTS 160
 struct desk_swim {
 	int kind;
@@ -773,6 +786,7 @@ struct desk_swim {
 	double px[DESK_SWIM_PTS], py[DESK_SWIM_PTS], s[DESK_SWIM_PTS];   /* the loop */
 	double s0, s1;                    /* where along it the nose goes, from and to */
 	double dur, bite;                 /* seconds */
+	double beat;                      /* how fast its tail goes, against a hunter's */
 	unsigned seed;
 };
 void desk_swim_init(struct desk_swim *w, int kind, double bx, double by, double ball_r,

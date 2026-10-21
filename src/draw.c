@@ -10978,6 +10978,7 @@ void desk_swim_init(struct desk_swim *w, int kind, double bx, double by, double 
 	memset(w, 0, sizeof *w);
 	w->kind = kind;
 	w->seed = seed;
+	w->beat = 1.0;
 	w->bx = bx;
 	w->by = by;
 	w->len = kind == DESK_FISH_PUFFER ? clampf(ball_r * 2.4, 80.0, 150.0)
@@ -11059,12 +11060,18 @@ static double swim_width(int kind, double u, double puff)
 		double e = (u - 0.42) / 0.50;
 		return 0.24 * (1.0 + 0.55 * puff) * sqrt(fmax(0.0, 1.0 - e * e)) + 0.02;
 	}
+	case DESK_FISH_CLOWN:
 	case DESK_FISH_GROUPER:
-		return 0.13 * (u < 0.15 ? 0.80 * sin(u / 0.15 * M_PI * 0.5)
+		return (kind == DESK_FISH_CLOWN ? 0.15 : 0.13) * (u < 0.15 ? 0.80 * sin(u / 0.15 * M_PI * 0.5)
 			: u < 0.40 ? 0.80 + 0.20 * smoothstepf(0.15, 0.40, u)
 			: 1.0 - 0.62 * smoothstepf(0.40, 0.92, u));
+	case DESK_FISH_TANG:
+		/* flat sideways, so narrow from above, and blunt at the nose */
+		return 0.11 * (u < 0.14 ? 0.85 * sin(u / 0.14 * M_PI * 0.5)
+			: u < 0.34 ? 0.85 + 0.15 * smoothstepf(0.14, 0.34, u)
+			: 1.0 - 0.72 * smoothstepf(0.34, 0.90, u));
 	default:
-		return 0.085 * (u < 0.12 ? 0.70 * sin(u / 0.12 * M_PI * 0.5)
+		return (kind == DESK_FISH_TETRA ? 0.10 : 0.085) * (u < 0.12 ? 0.70 * sin(u / 0.12 * M_PI * 0.5)
 			: u < 0.30 ? 0.70 + 0.30 * smoothstepf(0.12, 0.30, u)
 			: 1.0 - 0.88 * smoothstepf(0.30, 0.94, u));
 	}
@@ -11081,8 +11088,11 @@ static void swim_pose(const struct desk_swim *w, double t, struct swim_pose *p)
 {
 	double L = w->len;
 	double sh = w->s0 + (w->s1 - w->s0) * clampf(t / w->dur, 0.0, 1.0);
-	double hz = w->kind == DESK_FISH_PUFFER ? 6.0 : w->kind == DESK_FISH_GROUPER ? 2.6 : 3.4;
-	double amp = w->kind == DESK_FISH_PUFFER ? 0.020 : 0.050;
+	double hz = w->kind == DESK_FISH_PUFFER ? 6.0 : w->kind == DESK_FISH_GROUPER ? 2.6
+		: w->kind == DESK_FISH_TETRA ? 5.0 : w->kind == DESK_FISH_TANG ? 2.4
+		: w->kind == DESK_FISH_CLOWN ? 3.2 : 3.4;
+	hz *= w->beat;
+	double amp = w->kind == DESK_FISH_PUFFER ? 0.020 : w->kind == DESK_FISH_CLOWN ? 0.035 : 0.050;
 	double ph = t * hz * 2.0 * M_PI + (w->seed & 7);
 	p->puff = w->kind == DESK_FISH_PUFFER ? smoothstepf(w->bite, w->bite + 0.18, t) : 0.0;
 	for (int i = 0; i < SWIM_SPINE; i++) {
@@ -11200,6 +11210,25 @@ static void swim_fins_path(cairo_t *cr, const struct desk_swim *w, const struct 
 		}
 		swim_tail(cr, p, L, 0.12, 0.085, true);
 		break;
+	case DESK_FISH_CLOWN:
+		for (int s = -1; s <= 1; s += 2) {
+			swim_fin(cr, p, L, s, 0.24, 0.36, 0.10, 0.03);
+			swim_fin(cr, p, L, s, 0.50, 0.58, 0.05, 0.04);
+		}
+		swim_tail(cr, p, L, 0.14, 0.09, true);
+		break;
+	case DESK_FISH_TANG:
+		for (int s = -1; s <= 1; s += 2) {
+			swim_fin(cr, p, L, s, 0.25, 0.36, 0.08, 0.06);
+		}
+		swim_tail(cr, p, L, 0.20, 0.12, true);
+		break;
+	case DESK_FISH_TETRA:
+		for (int s = -1; s <= 1; s += 2) {
+			swim_fin(cr, p, L, s, 0.22, 0.30, 0.06, 0.05);
+		}
+		swim_tail(cr, p, L, 0.15, 0.07, true);
+		break;
 	default:
 		for (int s = -1; s <= 1; s += 2) {
 			swim_fin(cr, p, L, s, 0.25, 0.37, 0.12, 0.12);
@@ -11282,6 +11311,21 @@ void desk_draw_swim(cairo_t *cr, const struct desk_swim *w, double t)
 		flank = v3(0.44, 0.38, 0.25);
 		fin = v3(0.34, 0.28, 0.18);
 		break;
+	case DESK_FISH_CLOWN:
+		back = v3(0.84, 0.34, 0.05);
+		flank = v3(0.98, 0.52, 0.12);
+		fin = v3(0.95, 0.48, 0.10);
+		break;
+	case DESK_FISH_TANG:
+		back = v3(0.06, 0.16, 0.48);
+		flank = v3(0.16, 0.38, 0.82);
+		fin = v3(0.10, 0.22, 0.52);
+		break;
+	case DESK_FISH_TETRA:
+		back = v3(0.36, 0.44, 0.42);
+		flank = v3(0.70, 0.77, 0.75);
+		fin = v3(0.80, 0.85, 0.85);
+		break;
 	default:
 		back = v3(0.27, 0.34, 0.39);
 		flank = v3(0.40, 0.47, 0.52);
@@ -11303,8 +11347,15 @@ void desk_draw_swim(cairo_t *cr, const struct desk_swim *w, double t)
 	/* fins, under the body */
 	cairo_new_path(cr);
 	swim_fins_path(cr, w, &p, t);
-	cairo_set_source_rgba(cr, fin.x, fin.y, fin.z, w->kind == DESK_FISH_PUFFER ? 0.75 : 0.95);
+	cairo_set_source_rgba(cr, fin.x, fin.y, fin.z, w->kind == DESK_FISH_PUFFER ? 0.75
+		: w->kind == DESK_FISH_TETRA ? 0.45 : 0.95);
 	cairo_fill(cr);
+	if (w->kind == DESK_FISH_TANG) {
+		/* the yellow tail */
+		swim_tail(cr, &p, L, 0.20, 0.12, true);
+		cairo_set_source_rgb(cr, 0.98, 0.80, 0.14);
+		cairo_fill(cr);
+	}
 	/* the body: the flanks, and its back darker down the middle */
 	swim_body_path(cr, &p, 1.0);
 	cairo_set_source_rgb(cr, flank.x, flank.y, flank.z);
@@ -11326,6 +11377,77 @@ void desk_draw_swim(cairo_t *cr, const struct desk_swim *w, double t)
 			cairo_line_to(cr, p.x[i], p.y[i]);
 		}
 		cairo_stroke(cr);
+	} else if (w->kind == DESK_FISH_CLOWN) {
+		/* three white bands, edged in black */
+		cairo_save(cr);
+		swim_body_path(cr, &p, 1.0);
+		cairo_clip(cr);
+		static const double BAND[3] = { 0.20, 0.47, 0.80 };
+		for (int b = 0; b < 3; b++) {
+			double hw = b == 2 ? 0.03 : 0.045;
+			for (int pass = 0; pass < 2; pass++) {
+				double e = hw + (pass ? 0.0 : 0.012);
+				double x, y;
+				cairo_new_path(cr);
+				for (int k = 0; k <= 8; k++) {
+					swim_edge(&p, BAND[b] - e + 2.0 * e * k / 8.0, 1, 1.3, &x, &y);
+					cairo_line_to(cr, x, y);
+				}
+				for (int k = 8; k >= 0; k--) {
+					swim_edge(&p, BAND[b] - e + 2.0 * e * k / 8.0, -1, 1.3, &x, &y);
+					cairo_line_to(cr, x, y);
+				}
+				cairo_close_path(cr);
+				if (pass) {
+					cairo_set_source_rgb(cr, 0.97, 0.96, 0.93);
+				} else {
+					cairo_set_source_rgb(cr, 0.10, 0.06, 0.04);
+				}
+				cairo_fill(cr);
+			}
+		}
+		cairo_restore(cr);
+	} else if (w->kind == DESK_FISH_TANG) {
+		/* the dark mark down its back */
+		cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+		cairo_set_line_width(cr, L * 0.05);
+		cairo_set_source_rgba(cr, 0.03, 0.05, 0.14, 0.85);
+		int i0 = (int)(0.16 * (SWIM_SPINE - 1)), i1 = (int)(0.72 * (SWIM_SPINE - 1));
+		cairo_move_to(cr, p.x[i0], p.y[i0]);
+		for (int i = i0 + 1; i <= i1; i++) {
+			cairo_line_to(cr, p.x[i], p.y[i]);
+		}
+		cairo_stroke(cr);
+	} else if (w->kind == DESK_FISH_TETRA) {
+		/* the neon line down each side, and red behind it */
+		cairo_save(cr);
+		swim_body_path(cr, &p, 1.0);
+		cairo_clip(cr);
+		double x, y;
+		cairo_new_path(cr);
+		for (int k = 0; k <= 10; k++) {
+			swim_edge(&p, 0.52 + 0.40 * k / 10.0, 1, 1.0, &x, &y);
+			cairo_line_to(cr, x, y);
+		}
+		for (int k = 10; k >= 0; k--) {
+			swim_edge(&p, 0.52 + 0.40 * k / 10.0, -1, 1.0, &x, &y);
+			cairo_line_to(cr, x, y);
+		}
+		cairo_close_path(cr);
+		cairo_set_source_rgba(cr, 0.88, 0.14, 0.16, 0.85);
+		cairo_fill(cr);
+		cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+		cairo_set_line_width(cr, L * 0.045);
+		cairo_set_source_rgb(cr, 0.20, 0.82, 1.0);
+		for (int sd = -1; sd <= 1; sd += 2) {
+			cairo_new_path(cr);
+			for (int k = 0; k <= 10; k++) {
+				swim_edge(&p, 0.10 + 0.46 * k / 10.0, sd, 0.62, &x, &y);
+				cairo_line_to(cr, x, y);
+			}
+			cairo_stroke(cr);
+		}
+		cairo_restore(cr);
 	} else {
 		/* spots */
 		cairo_save(cr);
@@ -11364,7 +11486,9 @@ void desk_draw_swim(cairo_t *cr, const struct desk_swim *w, double t)
 		double x, y;
 		swim_edge(&p, w->kind == DESK_FISH_PUFFER ? 0.16 : 0.08, s, 0.78, &x, &y);
 		cairo_new_sub_path(cr);
-		cairo_arc(cr, x, y, L * (w->kind == DESK_FISH_PUFFER ? 0.035 : 0.011), 0, 2 * M_PI);
+		double er = w->kind == DESK_FISH_PUFFER ? 0.035 : w->kind == DESK_FISH_TETRA ? 0.034
+			: w->kind == DESK_FISH_CLOWN || w->kind == DESK_FISH_TANG ? 0.024 : 0.011;
+		cairo_arc(cr, x, y, L * er, 0, 2 * M_PI);
 		cairo_set_source_rgb(cr, 0.03, 0.03, 0.03);
 		cairo_fill(cr);
 	}
@@ -26641,6 +26765,420 @@ void desk_draw_bubbles(cairo_t *cr, int w, int h, int i, double now)
 	cairo_save(cr);
 	bub_run(cr, i, now, x, y, k);
 	cairo_restore(cr);
+}
+
+/* ================================================================
+ * What lives in the tank
+ *
+ * Now and then a fish goes across -- a clownfish, a blue tang, a little
+ * school of neon tetras, once in a while a grouper taking its time --
+ * on a long slow wave from one side to the other, its shadow on the sand
+ * far below it. And a crab comes in at the side and walks across the
+ * sand, sideways as crabs do, stopping to wave its claws; one in three is
+ * Ferris, who is orange. Like the bubbles, all of it is on a schedule
+ * worked out from the moment, so there is nothing to keep: channels 0 to
+ * 2 take the fish in turn, and the last one the crab.
+ * ================================================================ */
+
+#define LIFE_FISH 3
+#define LIFE_FISH_EVERY 13.0   /* a turn for a fish, seconds; one in LIFE_FISH turns is a channel's */
+#define LIFE_CRAB_EVERY 90.0
+#define LIFE_SCHOOL 7
+
+static double life_h(long n, double salt)
+{
+	return hash21((double)n * 0.6180339 + salt * 3.7, salt * 1.31 + 0.5);
+}
+
+/* a fish's way across: a wave from off one side to off the other, its
+ * nose starting and ending out of sight */
+static void life_path(struct desk_swim *f, int kind, double len, double sw, double y0,
+	double amp, double wl, double ph, double dir, double speed, unsigned seed)
+{
+	memset(f, 0, sizeof *f);
+	f->kind = kind;
+	f->seed = seed;
+	f->len = len;
+	f->beat = 0.7;
+	f->bx = f->by = -1e6;
+	double x0 = -2.3 * len, x1 = sw + 1.3 * len;
+	for (int i = 0; i < DESK_SWIM_PTS; i++) {
+		double x = x0 + (x1 - x0) * i / (DESK_SWIM_PTS - 1);
+		f->px[i] = dir > 0.0 ? x : sw - x;
+		f->py[i] = y0 + amp * sin(2.0 * M_PI * x / wl + ph);
+	}
+	f->s[0] = 0.0;
+	for (int i = 1; i < DESK_SWIM_PTS; i++) {
+		f->s[i] = f->s[i - 1] + hypot(f->px[i] - f->px[i - 1], f->py[i] - f->py[i - 1]);
+	}
+	f->s0 = 1.05 * len;
+	f->s1 = f->s[DESK_SWIM_PTS - 1];
+	f->dur = (f->s1 - f->s0) / speed;
+	f->bite = 1e9;   /* it is only passing */
+}
+
+/* What is out on fish channel c at now: how many fish (none: nothing),
+ * each one's way and how far along it it is. */
+static int life_fish(int w, int h, int c, double now, struct desk_swim *f, double *t)
+{
+	long top = (long)floor(now / LIFE_FISH_EVERY);
+	long n = top - (((top - c) % LIFE_FISH) + LIFE_FISH) % LIFE_FISH;
+	if (life_h(n, 1.0) > 0.36) {
+		return 0;   /* nobody this turn */
+	}
+	double k = h / 900.0, pick = life_h(n, 2.0);
+	int kind = pick < 0.30 ? DESK_FISH_TETRA : pick < 0.60 ? DESK_FISH_CLOWN
+		: pick < 0.88 ? DESK_FISH_TANG : DESK_FISH_GROUPER;
+	double len = kind == DESK_FISH_TETRA ? 34.0 * k : kind == DESK_FISH_CLOWN ? 72.0 * k
+		: kind == DESK_FISH_TANG ? 84.0 * k : 170.0 * k;
+	double speed = (kind == DESK_FISH_TETRA ? 140.0 : kind == DESK_FISH_GROUPER ? 60.0 : 95.0) * k;
+	double dir = life_h(n, 3.0) < 0.5 ? 1.0 : -1.0;
+	double y0 = h * (0.18 + 0.60 * life_h(n, 4.0));
+	double amp = h * 0.05 * (0.5 + life_h(n, 5.0));
+	double wl = w * (0.55 + 0.6 * life_h(n, 6.0));
+	double ph = 6.283 * life_h(n, 7.0);
+	double start = n * LIFE_FISH_EVERY + 4.0 * life_h(n, 8.0);
+	int count = kind == DESK_FISH_TETRA ? LIFE_SCHOOL : 1, live = 0;
+	for (int m = 0; m < count; m++) {
+		double dy = m ? (life_h(n * 7 + m, 9.0) - 0.5) * 0.12 * h : 0.0;
+		double lag = m ? 1.4 * life_h(n * 7 + m, 10.0) : 0.0;
+		double sz = m ? 0.85 + 0.3 * life_h(n * 7 + m, 11.0) : 1.0;
+		life_path(&f[m], kind, len * sz, w, y0 + dy, amp, wl, ph + m * 0.15, dir, speed,
+			(unsigned)(n * 13 + m));
+		t[m] = now - start - lag;
+		if (t[m] >= 0.0 && t[m] <= f[m].dur) {
+			live++;
+		}
+	}
+	return live ? count : 0;
+}
+
+/* The crab: where it is on its way across, whether its legs are going,
+ * and how far its claws are up. It walks in from one side, stops twice
+ * (or once) to wave its claws, and walks out the other. */
+struct life_crab {
+	double x, y, size;
+	double legs;        /* the legs' phase */
+	double wave;        /* 0 walking, up to 1 stopped and waving */
+	double clock;       /* seconds since it stopped, for the claws */
+	bool ferris;
+};
+
+static bool life_crab_at(int w, int h, double now, struct life_crab *c)
+{
+	long n = (long)floor(now / LIFE_CRAB_EVERY);
+	if (life_h(n, 21.0) > 0.50) {
+		return false;
+	}
+	double k = h / 900.0;
+	c->ferris = life_h(n, 22.0) < 0.34;
+	c->size = (c->ferris ? 68.0 : 60.0) * k;
+	double dir = life_h(n, 23.0) < 0.5 ? 1.0 : -1.0;
+	double speed = 46.0 * k;
+	double xs = -c->size * 1.3, xe = w + c->size * 1.3, D = xe - xs;
+	/* where it stops, as shares of the way, and for how long */
+	double p1 = 0.22 + 0.18 * life_h(n, 24.0), p2 = 0.58 + 0.20 * life_h(n, 25.0);
+	double d1 = 2.0 + 2.5 * life_h(n, 26.0);
+	double d2 = life_h(n, 27.0) < 0.5 ? 0.0 : 1.5 + 2.0 * life_h(n, 28.0);
+	double start = n * LIFE_CRAB_EVERY + 6.0 * life_h(n, 29.0);
+	double tau = now - start;
+	double ta = D * p1 / speed, tb = D * (p2 - p1) / speed, tc = D * (1.0 - p2) / speed;
+	if (tau < 0.0 || tau > ta + d1 + tb + d2 + tc) {
+		return false;
+	}
+	double s, walked;
+	c->wave = 0.0;
+	c->clock = 0.0;
+	if (tau < ta) {
+		s = tau * speed;
+		walked = tau;
+	} else if (tau < ta + d1) {
+		s = D * p1;
+		walked = ta;
+		c->clock = tau - ta;
+		c->wave = smoothstepf(0.0, 0.4, c->clock) * (1.0 - smoothstepf(d1 - 0.4, d1, c->clock));
+	} else if (tau < ta + d1 + tb) {
+		walked = tau - d1;
+		s = D * p1 + (tau - ta - d1) * speed;
+	} else if (tau < ta + d1 + tb + d2) {
+		s = D * p2;
+		walked = ta + tb;
+		c->clock = tau - ta - d1 - tb;
+		c->wave = smoothstepf(0.0, 0.4, c->clock) * (1.0 - smoothstepf(d2 - 0.4, d2, c->clock));
+	} else {
+		walked = tau - d1 - d2;
+		s = D * p2 + (tau - ta - d1 - tb - d2) * speed;
+	}
+	c->x = dir > 0.0 ? xs + s : xe - s;
+	/* on the sand, clear of the back of the tank and of the drawer */
+	c->y = h * (0.40 + 0.28 * life_h(n, 30.0)) + sin(s / (w * 0.25)) * 0.02 * h;
+	c->legs = walked * 7.5 * dir;
+	return true;
+}
+
+/* a leg or an arm: a thick jointed line */
+static void crab_limb(cairo_t *cr, double ax, double ay, double bx, double by, double cx,
+	double cy, double wd)
+{
+	cairo_set_line_width(cr, wd);
+	cairo_move_to(cr, ax, ay);
+	cairo_line_to(cr, bx, by);
+	cairo_line_to(cr, cx, cy);
+	cairo_stroke(cr);
+}
+
+/* A crab seen from above, facing the bottom of the screen, at (x, y),
+ * size across its shell. */
+static void crab_draw(cairo_t *cr, const struct life_crab *c)
+{
+	double S = c->size;
+	vec3 shell = c->ferris ? v3(0.97, 0.33, 0.05) : v3(0.58, 0.30, 0.17);
+	vec3 rim = c->ferris ? v3(0.72, 0.19, 0.02) : v3(0.36, 0.17, 0.09);
+	vec3 limb = c->ferris ? v3(0.88, 0.27, 0.03) : v3(0.48, 0.24, 0.13);
+	double bob = c->wave > 0.0 ? 0.0 : 0.012 * S * sin(c->legs * 2.0);
+	cairo_save(cr);
+	cairo_translate(cr, c->x, c->y + bob);
+	cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+	cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+	/* its shadow, close under it: it is on the sand */
+	for (int k = 0; k < 2; k++) {
+		cairo_save(cr);
+		cairo_translate(cr, S * 0.04, S * 0.06);
+		cairo_scale(cr, S * (0.50 + 0.05 * k), S * (0.36 + 0.05 * k));
+		cairo_arc(cr, 0, 0, 1.0, 0, 2 * M_PI);
+		cairo_restore(cr);
+		cairo_set_source_rgba(cr, 0.02, 0.06, 0.06, 0.13);
+		cairo_fill(cr);
+	}
+	/* the legs, out to the sides and fanned, the front ones forward and
+	 * the back ones back, bent at the knee: walking, they go in turn */
+	int legs = c->ferris ? 3 : 4;
+	double go = c->wave > 0.0 ? 0.0 : 1.0;
+	for (int sd = -1; sd <= 1; sd += 2) {
+		for (int j = 0; j < legs; j++) {
+			double f = (double)j / (legs - 1);
+			double ph = c->legs + j * M_PI * 0.5 + (sd > 0 ? M_PI : 0.0);
+			double th = 0.35 - 0.95 * f + go * 0.20 * sin(ph);
+			double reach = 1.0 - go * 0.10 * fmax(0.0, cos(ph));
+			double ax = sd * 0.38 * S, ay = (0.10 - 0.30 * f) * S;
+			double kx = ax + sd * cos(th) * 0.30 * S * reach, ky = ay + sin(th) * 0.30 * S;
+			double t2 = th - 0.55;
+			double fx = kx + sd * cos(t2) * 0.26 * S * reach, fy = ky + sin(t2) * 0.26 * S;
+			cairo_set_source_rgb(cr, rim.x, rim.y, rim.z);
+			crab_limb(cr, ax, ay, kx, ky, fx, fy, 0.085 * S);
+			cairo_set_source_rgb(cr, limb.x, limb.y, limb.z);
+			crab_limb(cr, ax, ay, kx, ky, fx, fy, 0.055 * S);
+		}
+	}
+	/* the claws, in front: up and opening and shutting when it stops */
+	double up = c->wave;
+	for (int sd = -1; sd <= 1; sd += 2) {
+		double snap = up * (0.5 + 0.5 * sin(c->clock * 9.0 + (sd > 0 ? 1.3 : 0.0)));
+		double ex = sd * (0.44 + 0.10 * up) * S, ey = (0.46 + 0.06 * up) * S;
+		double hx = sd * (0.30 + 0.12 * up) * S, hy = (0.70 + 0.10 * up) * S;
+		cairo_set_source_rgb(cr, rim.x, rim.y, rim.z);
+		crab_limb(cr, sd * 0.20 * S, 0.26 * S, ex, ey, hx, hy, 0.11 * S);
+		cairo_set_source_rgb(cr, limb.x, limb.y, limb.z);
+		crab_limb(cr, sd * 0.20 * S, 0.26 * S, ex, ey, hx, hy, 0.075 * S);
+		/* the hand, pointing forward and in, and its two fingers: the
+		 * fixed one and the one that moves */
+		cairo_save(cr);
+		cairo_translate(cr, hx, hy);
+		cairo_rotate(cr, M_PI * 0.5 + sd * 0.55);
+		double open = 0.15 + 0.85 * snap;
+		for (int fg = -1; fg <= 1; fg += 2) {
+			double y0 = fg * 0.035 * S, ty = fg * (0.015 + 0.075 * open) * S;
+			cairo_move_to(cr, 0.06 * S, y0 - 0.04 * S);
+			cairo_curve_to(cr, 0.18 * S, y0 - 0.04 * S + ty * 0.6, 0.27 * S, ty - 0.01 * S,
+				0.31 * S, ty);
+			cairo_curve_to(cr, 0.25 * S, ty + 0.02 * S, 0.16 * S, y0 + 0.04 * S, 0.06 * S,
+				y0 + 0.04 * S);
+			cairo_close_path(cr);
+		}
+		cairo_new_sub_path(cr);
+		cairo_save(cr);
+		cairo_scale(cr, 0.15 * S, 0.105 * S);
+		cairo_arc(cr, 0, 0, 1.0, 0, 2 * M_PI);
+		cairo_restore(cr);
+		cairo_set_fill_rule(cr, CAIRO_FILL_RULE_WINDING);
+		cairo_set_source_rgb(cr, shell.x, shell.y, shell.z);
+		cairo_fill_preserve(cr);
+		cairo_set_source_rgb(cr, rim.x, rim.y, rim.z);
+		cairo_set_line_width(cr, 0.022 * S);
+		cairo_stroke(cr);
+		cairo_restore(cr);
+	}
+	/* the shell: wide, flatter at the front. Ferris's has the round
+	 * bumps along its back. */
+	cairo_new_path(cr);
+	double rx = 0.48 * S, ry = 0.36 * S;
+	for (int i = 0; i <= 64; i++) {
+		double a = 2.0 * M_PI * i / 64.0;
+		double x = cos(a) * rx, y = sin(a) * ry;
+		if (y > 0.0) {
+			y *= 0.82;   /* the front */
+		}
+		if (c->ferris && sin(a) < -0.2) {
+			double b = 0.5 + 0.5 * cos(a * 10.0);
+			x *= 1.0 + 0.07 * b;
+			y *= 1.0 + 0.10 * b;
+		} else if (!c->ferris && sin(a) > 0.1 && fabs(cos(a)) > 0.35) {
+			/* teeth down the front edges */
+			double b = 0.5 + 0.5 * cos(a * 26.0);
+			x *= 1.0 + 0.035 * b;
+			y *= 1.0 + 0.035 * b;
+		}
+		if (i == 0) {
+			cairo_move_to(cr, x, y);
+		} else {
+			cairo_line_to(cr, x, y);
+		}
+	}
+	cairo_close_path(cr);
+	cairo_pattern_t *g = cairo_pattern_create_radial(-0.12 * S, -0.10 * S, 0.02 * S,
+		0.0, 0.0, 0.55 * S);
+	cairo_pattern_add_color_stop_rgb(g, 0.0, fmin(1.0, shell.x * 1.15 + 0.08),
+		fmin(1.0, shell.y * 1.15 + 0.08), fmin(1.0, shell.z * 1.15 + 0.06));
+	cairo_pattern_add_color_stop_rgb(g, 0.7, shell.x, shell.y, shell.z);
+	cairo_pattern_add_color_stop_rgb(g, 1.0, rim.x, rim.y, rim.z);
+	cairo_set_source(cr, g);
+	cairo_fill_preserve(cr);
+	cairo_pattern_destroy(g);
+	cairo_set_source_rgba(cr, rim.x * 0.6, rim.y * 0.6, rim.z * 0.6, 0.8);
+	cairo_set_line_width(cr, 0.025 * S);
+	cairo_stroke(cr);
+	if (!c->ferris) {
+		/* the shore crab's mottling */
+		cairo_set_source_rgba(cr, rim.x * 0.7, rim.y * 0.7, rim.z * 0.7, 0.45);
+		for (int k = 0; k < 9; k++) {
+			double mx = (hash21(k, 3.3) - 0.5) * 0.6 * S, my = (hash21(k, 5.1) - 0.5) * 0.4 * S;
+			cairo_new_sub_path(cr);
+			cairo_arc(cr, mx, my, (0.02 + 0.03 * hash21(k, 7.7)) * S, 0, 2 * M_PI);
+		}
+		cairo_fill(cr);
+	}
+	/* eyes: Ferris's big and round on top, the shore crab's on stalks at
+	 * the front */
+	for (int sd = -1; sd <= 1; sd += 2) {
+		double ex = sd * (c->ferris ? 0.13 : 0.09) * S, ey = (c->ferris ? 0.12 : 0.30) * S;
+		double er = (c->ferris ? 0.075 : 0.035) * S;
+		if (!c->ferris) {
+			cairo_set_source_rgb(cr, rim.x, rim.y, rim.z);
+			cairo_set_line_width(cr, 0.03 * S);
+			cairo_move_to(cr, ex * 0.8, ey - 0.06 * S);
+			cairo_line_to(cr, ex, ey);
+			cairo_stroke(cr);
+		}
+		cairo_new_sub_path(cr);
+		cairo_arc(cr, ex, ey, er, 0, 2 * M_PI);
+		cairo_set_source_rgb(cr, 0.03, 0.03, 0.03);
+		cairo_fill(cr);
+		cairo_new_sub_path(cr);
+		cairo_arc(cr, ex - er * 0.30, ey - er * 0.35, er * 0.34, 0, 2 * M_PI);
+		cairo_set_source_rgb(cr, 1, 1, 1);
+		cairo_fill(cr);
+	}
+	cairo_restore(cr);
+}
+
+static bool box_clip(double b[4], int w, int h)
+{
+	double x0 = fmax(0.0, floor(b[0])), y0 = fmax(0.0, floor(b[1]));
+	double x1 = fmin((double)w, ceil(b[0] + b[2])), y1 = fmin((double)h, ceil(b[1] + b[3]));
+	if (x1 - x0 < 1.0 || y1 - y0 < 1.0) {
+		return false;
+	}
+	b[0] = x0;
+	b[1] = y0;
+	b[2] = x1 - x0;
+	b[3] = y1 - y0;
+	return true;
+}
+
+bool desk_life_box(int w, int h, int i, double now, double box[4])
+{
+	if (i < 0 || i >= DESK_LIFE_CHANNELS || w < 8 || h < 8) {
+		return false;
+	}
+	if (i == LIFE_FISH) {
+		struct life_crab c;
+		if (!life_crab_at(w, h, now, &c)) {
+			return false;
+		}
+		double r = c.size * 1.15;
+		box[0] = c.x - r;
+		box[1] = c.y - r * 0.8;
+		box[2] = 2.0 * r;
+		box[3] = r * 1.9;
+		return box_clip(box, w, h);
+	}
+	struct desk_swim f[LIFE_SCHOOL];
+	double t[LIFE_SCHOOL];
+	int n = life_fish(w, h, i, now, f, t);
+	double x0 = 1e30, y0 = 1e30, x1 = -1e30, y1 = -1e30;
+	for (int m = 0; m < n; m++) {
+		if (t[m] < 0.0 || t[m] > f[m].dur) {
+			continue;
+		}
+		double b[4];
+		desk_swim_extent(&f[m], t[m], b);
+		x0 = fmin(x0, b[0]);
+		y0 = fmin(y0, b[1]);
+		x1 = fmax(x1, b[2]);
+		y1 = fmax(y1, b[3]);
+	}
+	if (x1 <= x0) {
+		return false;
+	}
+	box[0] = x0;
+	box[1] = y0;
+	box[2] = x1 - x0;
+	box[3] = y1 - y0;
+	return box_clip(box, w, h);
+}
+
+void desk_draw_life(cairo_t *cr, int w, int h, int i, double now)
+{
+	if (i < 0 || i >= DESK_LIFE_CHANNELS) {
+		return;
+	}
+	if (i == LIFE_FISH) {
+		struct life_crab c;
+		if (life_crab_at(w, h, now, &c)) {
+			crab_draw(cr, &c);
+		}
+		return;
+	}
+	struct desk_swim f[LIFE_SCHOOL];
+	double t[LIFE_SCHOOL];
+	int n = life_fish(w, h, i, now, f, t);
+	for (int m = n - 1; m >= 0; m--) {
+		desk_draw_swim(cr, &f[m], t[m]);
+	}
+}
+
+void desk_draw_life_sample(cairo_t *cr, int w, int h, double t)
+{
+	double k = h / 900.0;
+	static const int KIND[4] = { DESK_FISH_CLOWN, DESK_FISH_TANG, DESK_FISH_TETRA,
+		DESK_FISH_GROUPER };
+	static const double LEN[4] = { 72.0, 84.0, 34.0, 170.0 };
+	for (int j = 0; j < 4; j++) {
+		int count = KIND[j] == DESK_FISH_TETRA ? 5 : 1;
+		for (int m = 0; m < count; m++) {
+			struct desk_swim f;
+			double y0 = h * (0.16 + 0.16 * j) + (m ? (hash21(m, 2.0) - 0.5) * 0.08 * h : 0.0);
+			life_path(&f, KIND[j], LEN[j] * k, w, y0, 0.03 * h, w * 0.8, j + m * 0.2,
+				j & 1 ? -1.0 : 1.0, 100.0 * k, 5u + (unsigned)m);
+			/* half way across, the school a little apart */
+			desk_draw_swim(cr, &f, f.dur * (0.30 + 0.12 * j) - m * 0.35 + t);
+		}
+	}
+	for (int j = 0; j < 2; j++) {
+		struct life_crab c = { .x = w * (0.30 + 0.40 * j), .y = h * 0.80, .size = (j ? 68.0 : 60.0) * k,
+			.legs = t * 7.5, .wave = j ? 1.0 : 0.0, .clock = 0.8 + t, .ferris = j == 1 };
+		crab_draw(cr, &c);
+	}
 }
 
 bool desk_clock_glow_box(int w, int h, double box[4])

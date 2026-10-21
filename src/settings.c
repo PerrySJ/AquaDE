@@ -310,6 +310,9 @@ static const struct setting SETTINGS[] = {
 	{ S_CHECK, "tank_life", "Bubbles in the tank",
 		"Going up from the stones and the plants. Off, the water is still.",
 		NULL, NULL, 1, NULL },
+	{ S_CHECK, "tank_fish", "Fish and crabs in the tank",
+		"Now and then a fish swims across, under the windows, and a crab walks over the "
+		"sand. Off, nobody comes by.", NULL, NULL, 1, NULL },
 	{ S_CHOICE, "scale", "Size of things on the desk",
 		"Automatic follows the screen. Bigger things leave less desk; the room is traced "
 		"again for it, which takes a moment.", SCALE_WORDS, SCALE_VALS, 0, NULL },
@@ -1007,6 +1010,7 @@ static bool conf_write(const char *path, const char *key, const char *value)
 			"#   throw_closed_windows = yes | no    closed windows screwed up and thrown away\n"
 			"#   shark_eats_closed_windows = yes | no  and eaten by a shark, not thrown\n"
 			"#   tank_life = yes | no               bubbles going up in the tank\n"
+			"#   tank_fish = yes | no               fish and a crab in the tank\n"
 			"#   corner_on_hover = yes | no         corners turn up when the pointer rests\n"
 			"#   scale = auto | 1 | 1.25 | 1.5 | 2  how big things on the desk are\n"
 			"#   graphics = ultra | high | medium | low | 2d\n"

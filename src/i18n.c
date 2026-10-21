@@ -506,6 +506,26 @@ static const char *const WORDS[][DESK_LANG_COUNT] = {
 		"Suben de las piedras y las plantas. Desactivado, el agua está quieta.",
 		"Elles montent des pierres et des plantes. Désactivé, l’eau reste calme.",
 		"Sie steigen von den Steinen und Pflanzen auf. Aus: das Wasser bleibt still." },
+	{ "Fish and crabs in the tank",
+		"水槽の魚とカニ",
+		"水箱里的鱼和螃蟹",
+		"수조의 물고기와 게",
+		"Peces y cangrejos en el acuario",
+		"Des poissons et des crabes dans l’aquarium",
+		"Fische und Krabben im Becken" },
+	{ "Now and then a fish swims across, under the windows, and a crab walks over the "
+		"sand. Off, nobody comes by.",
+		"ときどき魚がウィンドウの下を泳いで横切り、カニが砂の上を歩きます。"
+		"切にすると、だれも来ません。",
+		"不时有鱼从窗口下方游过，还有螃蟹在沙子上走过。关闭后，谁也不会来。",
+		"가끔 물고기가 창 아래로 헤엄쳐 지나가고 게가 모래 위를 걸어갑니다. "
+		"끄면 아무도 오지 않습니다.",
+		"De vez en cuando un pez cruza nadando bajo las ventanas y un cangrejo camina "
+		"por la arena. Desactivado, no pasa nadie.",
+		"De temps en temps, un poisson passe à la nage sous les fenêtres et un crabe "
+		"marche sur le sable. Désactivé, personne ne vient.",
+		"Ab und zu schwimmt ein Fisch unter den Fenstern vorbei und eine Krabbe läuft "
+		"über den Sand. Aus: niemand kommt vorbei." },
 	{ "Turn a corner up when the pointer rests on it",
 		"ポインタを載せると角がめくれる",
 		"指针停在角上时把角掀起",

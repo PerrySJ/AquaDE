@@ -590,6 +590,43 @@ static int write_bubbles(const char *path, int w, int h)
 	return 0;
 }
 
+/* What lives in the tank: the desk, closed, with one of each fish and
+ * both crabs put down on it -- or, given a moment (seconds), what the
+ * schedule has out then, each channel's box outlined. */
+static int write_life(const char *path, int w, int h, const char *at)
+{
+	desk_scene_warm(w, h, false);
+	cairo_surface_t *out = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+	cairo_t *cr = cairo_create(out);
+	desk_draw_desktop(cr, w, h, time(NULL), false, 0.0);
+	if (at && *at) {
+		double now = atof(at);
+		for (int i = 0; i < DESK_LIFE_CHANNELS; i++) {
+			double box[4];
+			if (!desk_life_box(w, h, i, now, box)) {
+				continue;
+			}
+			printf("channel %d: %.0f,%.0f %.0fx%.0f\n", i, box[0], box[1], box[2], box[3]);
+			cairo_rectangle(cr, box[0] + 0.5, box[1] + 0.5, box[2] - 1, box[3] - 1);
+			cairo_set_source_rgba(cr, 1, 0, 0, 0.35);
+			cairo_set_line_width(cr, 1.0);
+			cairo_stroke(cr);
+			desk_draw_life(cr, w, h, i, now);
+		}
+	} else {
+		desk_draw_life_sample(cr, w, h, 0.0);
+	}
+	cairo_destroy(cr);
+	cairo_status_t st = cairo_surface_write_to_png(out, path);
+	cairo_surface_destroy(out);
+	if (st != CAIRO_STATUS_SUCCESS) {
+		fprintf(stderr, "could not write %s\n", path);
+		return 1;
+	}
+	printf("wrote %s\n", path);
+	return 0;
+}
+
 /* What eats a closed window, as a contact sheet: a row for the shark, the
  * grouper and the pufferfish, each coming in, at the ball, biting, and
  * going, on the sand round the ball. */
@@ -848,7 +885,7 @@ static int write_lock(const char *path, int w, int h)
 
 #define PREVIEW_USAGE "usage: aquade-preview [-o file.png] [-s 1600x1000] [--no-window] " \
 	"[--closed] [--apps] [--shelf] [--console] [--post] [--sounds DIR] [--calendar] " \
-	"[--memo] [--lock] [--shark] [--bubbles] [--boot[=u,u,...]] [--agenda] [--book] [--book-anim[=u,u,...]] " \
+	"[--memo] [--lock] [--shark] [--bubbles] [--life[=seconds]] [--boot[=u,u,...]] [--agenda] [--book] [--book-anim[=u,u,...]] " \
 	"[--lang en|ja|zh|ko|es|fr|de] [--binder-anim=N[:u,u,...]]\n"
 
 int main(int argc, char **argv)
@@ -863,6 +900,7 @@ int main(int argc, char **argv)
 	bool calendar = false, memo = false;
 	const char *boot = NULL;
 	bool lock = false, shark = false, bubbles = false;
+	const char *life = NULL;
 	bool agenda = false;
 	bool book = false, book_anim = false;
 	const char *anim_times = NULL;
@@ -898,6 +936,9 @@ int main(int argc, char **argv)
 			shark = true;
 		} else if (strcmp(argv[i], "--bubbles") == 0) {
 			bubbles = true;
+		} else if (strncmp(argv[i], "--life", 6) == 0
+			&& (argv[i][6] == '\0' || argv[i][6] == '=')) {
+			life = argv[i][6] == '=' ? argv[i] + 7 : "";
 		} else if (strncmp(argv[i], "--boot", 6) == 0
 			&& (argv[i][6] == '\0' || argv[i][6] == '=')) {
 			boot = argv[i][6] == '=' ? argv[i] + 7 : "";
@@ -965,6 +1006,9 @@ int main(int argc, char **argv)
 	}
 	if (bubbles) {
 		return write_bubbles(path, w, h);
+	}
+	if (life) {
+		return write_life(path, w, h, life);
 	}
 	if (agenda) {
 		return write_agenda(path, w, h);
