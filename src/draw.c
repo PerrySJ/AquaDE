@@ -31072,6 +31072,7 @@ void desk_draw_forget_words(void)
 
 #define LK_ROOM_Z (-2.70)   /* the far wall inside, the picture of the room on it */
 #define LK_EXPOSURE 1.15
+#define LK_HAZE 0.16       /* the water's haze, a metre */
 
 enum {
 	LK_NONE = 0, LK_WALL_ID, LK_CASING, LK_JAMB, LK_STEP, LK_INSIDE, LK_PICTURE, LK_ROOMIN,
@@ -31206,7 +31207,7 @@ struct lk_light {
 
 /* the porch lamp, out of sight overhead, and the lantern on the wall */
 static const struct lk_light LK_LIGHTS[2] = {
-	{ { 0.15, 2.32, 0.95 }, { 3.20, 2.50, 1.70 }, 0.100 },
+	{ { 0.15, 2.32, 0.95 }, { 2.50, 2.80, 2.75 }, 0.100 },
 	{ { 0.735, 1.615, 0.125 }, { 0.34, 0.21, 0.09 }, 0.030 },
 };
 static const vec3 LK_MOON_DIR = { -0.50, 0.52, 0.69 };
@@ -31243,20 +31244,26 @@ static double cloud_of(int wx)
 	return wx == DESK_WX_CLEAR ? 0.0 : wx == DESK_WX_CLOUDS ? 0.6 : 1.0;
 }
 
-/* the rig for a mood (see struct lk_rig) */
+/* The rig for a mood (see struct lk_rig), under water: the hatch is on
+ * the sea floor. The weather up top only dims what comes down (no rain
+ * or snow reaches this far); the sun comes in bent by the surface, steeply,
+ * whatever its height, softened by the water; the light all round is blue
+ * green, from the surface overhead, and there is always a haze. */
 static void lk_rig_for(const struct desk_door_mood *m, struct lk_rig *r)
 {
 	memset(r, 0, sizeof *r);
 	r->porch = r->lantern = r->glass = 1.0;
 	r->moon_col = LK_MOON_COL;
-	r->amb_lo = v3(0.018, 0.015, 0.012);
-	r->amb_hi = v3(0.026, 0.032, 0.050);
-	r->sky_lo = v3(0.022, 0.028, 0.046);
-	r->sky_hi = v3(0.006, 0.009, 0.020);
-	r->gnd_hi = v3(0.050, 0.040, 0.030);
-	r->gnd_lo = v3(0.020, 0.016, 0.012);
+	r->amb_lo = v3(0.006, 0.014, 0.016);
+	r->amb_hi = v3(0.012, 0.034, 0.048);
+	r->sky_lo = v3(0.010, 0.036, 0.046);
+	r->sky_hi = v3(0.018, 0.060, 0.080);
+	r->gnd_hi = v3(0.046, 0.044, 0.034);
+	r->gnd_lo = v3(0.010, 0.020, 0.022);
+	r->haze = v3(0.006, 0.024, 0.032);
+	r->haze_k = LK_HAZE;
 	r->exposure = LK_EXPOSURE;
-	r->sun_soft = 0.0093;
+	r->sun_soft = 0.05;
 	r->key = 1;
 	if (!m || !m->set) {
 		return;
@@ -31269,88 +31276,51 @@ static void lk_rig_for(const struct desk_door_mood *m, struct lk_rig *r)
 	int wx = m->weather < 0 || m->weather >= DESK_WX_N ? DESK_WX_CLEAR : m->weather;
 	double heavy = clampf(m->heavy, 0.0, 1.0);
 	bool dull = wx >= DESK_WX_OVERCAST;
-	bool wet_sky = wx == DESK_WX_RAIN || wx == DESK_WX_STORM;
 	/* how far through the evening (tw: night to dusk; dd: dusk to day) */
 	double tw = smoothstepf(-13.0, -3.0, el), dd = smoothstepf(-3.0, 12.0, el);
 	double day = smoothstepf(-7.0, 9.0, el);
-	/* the sun low: everything it reaches warm */
-	double low = smoothstepf(-5.0, 1.0, el) * (1.0 - smoothstepf(4.0, 22.0, el));
-	/* the lamps: on a sensor, which a dull day keeps on longer */
-	double on = 1.0 - smoothstepf(dull ? 3.0 : -2.5, dull ? 14.0 : 5.0, el);
+	/* the lamps: dark comes sooner down here */
+	double on = 1.0 - smoothstepf(dull ? 8.0 : 3.0, dull ? 22.0 : 14.0, el);
 	r->porch = r->lantern = on;
-	r->glass = 1.0 - 0.50 * day;
-	/* the sun, through whatever is in the way */
+	r->glass = 1.0 - 0.40 * day;
+	/* the sun, through whatever is in the way, then through the surface:
+	 * bent toward straight down, never lower than 41 degrees */
 	double through = wx == DESK_WX_CLEAR ? 1.0 : wx == DESK_WX_CLOUDS ? 0.55 : 0.0;
 	double up = smoothstepf(-1.0, 2.5, el) * through;
 	if (up > 0.0) {
-		double ea = el * M_PI / 180.0, aa = az * M_PI / 180.0;
-		r->sun = vnorm(v3(sin(aa) * cos(ea), sin(fmax(ea, 0.03)), -cos(aa) * cos(ea)));
-		vec3 c = vmix(v3(1.0, 0.40, 0.14), v3(1.0, 0.91, 0.80), smoothstepf(1.0, 30.0, el));
-		r->sun_col = vmul(c, 2.9 * up * (0.30 + 0.70 * smoothstepf(0.0, 25.0, el)));
-		r->sun_soft = wx == DESK_WX_CLOUDS ? 0.035 : 0.0093;
+		double ea = acos(cos(fmax(el, 0.0) * M_PI / 180.0) / 1.333), aa = az * M_PI / 180.0;
+		r->sun = vnorm(v3(sin(aa) * cos(ea), sin(ea), -cos(aa) * cos(ea)));
+		vec3 c = vmix(v3(0.55, 0.70, 0.62), v3(0.62, 0.92, 1.00), smoothstepf(1.0, 30.0, el));
+		r->sun_col = vmul(c, 2.2 * up * (0.25 + 0.75 * smoothstepf(0.0, 25.0, el)));
+		r->sun_soft = wx == DESK_WX_CLOUDS ? 0.09 : 0.05;
 	}
 	double moon = 0.35 + 0.65 * clampf(m->moon, 0.0, 1.0);
-	r->moon_col = vmul(LK_MOON_COL, moon * (1.0 - day) * (1.0 - cloud_of(wx)));
-	/* the light all round: the night, the blue of the evening, the day --
-	 * a grey one, under cloud; darker for rain, lighter off snow */
-	vec3 day_hi = v3(0.36, 0.44, 0.60), day_lo = v3(0.22, 0.19, 0.15);
-	if (dull) {
-		double k = wx == DESK_WX_STORM ? 0.42 : wx == DESK_WX_RAIN ? 0.68 - 0.18 * heavy
-			: wx == DESK_WX_SNOW ? 0.92 : 0.85;
-		day_hi = vmul(v3(0.48, 0.50, 0.54), k);
-		day_lo = vmul(wx == DESK_WX_SNOW ? v3(0.46, 0.48, 0.52) : v3(0.27, 0.26, 0.25), k);
-	} else if (wx == DESK_WX_CLOUDS) {
-		day_hi = v3(0.42, 0.46, 0.55);
-		day_lo = v3(0.24, 0.21, 0.18);
-	}
-	vec3 dusk_hi = v3(0.090, 0.100, 0.190), dusk_lo = v3(0.060, 0.045, 0.040);
-	vec3 night_hi = r->amb_hi, night_lo = r->amb_lo;
-	if (dull) {
-		/* low cloud over a town at night: the street lights on it */
-		night_hi = v3(0.036, 0.032, 0.032);
-		dusk_hi = v3(0.075, 0.072, 0.085);
-	}
-	r->amb_hi = lk_mix3(night_hi, dusk_hi, day_hi, tw, dd);
-	r->amb_lo = lk_mix3(night_lo, dusk_lo, day_lo, tw, dd);
-	r->amb_lo = vadd(r->amb_lo, vmul(v3(0.10, 0.045, 0.015), low * through));
-	/* the sky in the brass and the glass */
-	vec3 dsky_hi = v3(0.24, 0.40, 0.78), dsky_lo = v3(0.70, 0.76, 0.86);
-	vec3 dgnd_hi = v3(0.24, 0.22, 0.19), dgnd_lo = v3(0.12, 0.11, 0.10);
-	if (dull) {
-		vec3 g = vmul(v3(0.62, 0.64, 0.68), wx == DESK_WX_STORM ? 0.40
-			: wet_sky ? 0.70 : 0.95);
-		dsky_hi = vmul(g, 0.85);
-		dsky_lo = g;
-		if (wx == DESK_WX_SNOW) {
-			dgnd_hi = v3(0.70, 0.72, 0.76);
-			dgnd_lo = v3(0.50, 0.52, 0.56);
-		}
-	}
-	vec3 esky_hi = v3(0.10, 0.11, 0.24), esky_lo = v3(0.85, 0.42, 0.20);
-	if (dull) {
-		esky_hi = v3(0.08, 0.08, 0.10);
-		esky_lo = v3(0.16, 0.13, 0.12);
-	}
-	r->sky_hi = lk_mix3(r->sky_hi, esky_hi, dsky_hi, tw, dd);
-	r->sky_lo = lk_mix3(r->sky_lo, esky_lo, dsky_lo, tw, dd);
-	r->gnd_hi = lk_mix3(r->gnd_hi, vmul(r->gnd_hi, 2.0), dgnd_hi, tw, dd);
-	r->gnd_lo = lk_mix3(r->gnd_lo, vmul(r->gnd_lo, 2.0), dgnd_lo, tw, dd);
-	/* on things */
-	r->wet = wet_sky ? 0.55 + 0.45 * heavy : wx == DESK_WX_FOG ? 0.20 : 0.0;
-	r->snow = wx == DESK_WX_SNOW ? 0.40 + 0.60 * heavy : 0.0;
-	r->haze_k = wx == DESK_WX_FOG ? 0.30 : wx == DESK_WX_STORM ? 0.16
-		: wx == DESK_WX_RAIN ? 0.05 + 0.10 * heavy : wx == DESK_WX_SNOW ? 0.07 + 0.14 * heavy
-		: 0.0;
-	r->haze = wx == DESK_WX_FOG ? vmul(vadd(r->amb_hi, r->amb_lo), 0.75) : vmul(r->amb_hi, 0.75);
-	r->exposure = LK_EXPOSURE * (1.0 - 0.18 * day)
-		* (1.0 - 0.18 * day * (wx == DESK_WX_SNOW || wx == DESK_WX_FOG));
-	unsigned k = 2166136261u;
+	r->moon_col = vmul(LK_MOON_COL, 0.5 * moon * (1.0 - day) * (1.0 - cloud_of(wx)));
+	/* the light all round: the night, the evening, the day -- less of
+	 * it under cloud, least in a storm stirring the water */
+	double k = wx == DESK_WX_STORM ? 0.40 : dull ? 0.65 - 0.15 * heavy
+		: wx == DESK_WX_CLOUDS ? 0.85 : 1.0;
+	vec3 day_hi = vmul(v3(0.10, 0.30, 0.38), k), day_lo = vmul(v3(0.05, 0.11, 0.11), k);
+	vec3 dusk_hi = v3(0.030, 0.070, 0.110), dusk_lo = v3(0.014, 0.028, 0.034);
+	r->amb_hi = lk_mix3(r->amb_hi, dusk_hi, day_hi, tw, dd);
+	r->amb_lo = lk_mix3(r->amb_lo, dusk_lo, day_lo, tw, dd);
+	/* the water in the brass and the glass: the bright surface overhead,
+	 * the blue out to the sides, the sand below */
+	r->sky_hi = lk_mix3(r->sky_hi, v3(0.04, 0.10, 0.15), vmul(v3(0.30, 0.70, 0.85), k), tw, dd);
+	r->sky_lo = lk_mix3(r->sky_lo, v3(0.02, 0.06, 0.08), vmul(v3(0.08, 0.28, 0.36), k), tw, dd);
+	r->gnd_hi = lk_mix3(r->gnd_hi, vmul(r->gnd_hi, 2.0), vmul(v3(0.30, 0.28, 0.20), k), tw, dd);
+	r->gnd_lo = lk_mix3(r->gnd_lo, vmul(r->gnd_lo, 2.0), vmul(v3(0.08, 0.13, 0.13), k), tw, dd);
+	/* murkier for the weather up top */
+	r->haze = lk_mix3(r->haze, v3(0.020, 0.065, 0.085), vmul(v3(0.09, 0.27, 0.33), k), tw, dd);
+	r->haze_k = LK_HAZE + (dull ? 0.06 + 0.06 * heavy : 0.0);
+	r->exposure = LK_EXPOSURE * (1.0 - 0.15 * day);
+	unsigned key = 2166136261u;
 	int q[8] = { (int)lround(el / 1.5), (int)lround(az / 6.0), wx,
 		(int)lround(heavy * 4.0), (int)m->decor, 0, (int)lround(moon * 4.0), m->year };
 	for (int i = 0; i < 8; i++) {
-		k = (k ^ (unsigned)q[i]) * 16777619u;
+		key = (key ^ (unsigned)q[i]) * 16777619u;
 	}
-	r->key = k | 2u;
+	r->key = key | 2u;
 }
 
 static double lk_sq(double v)
@@ -32556,9 +32526,9 @@ static vec3 lk_env(const struct lk_scene *sc, vec3 r, double rough)
 	vec3 c = vmix(gnd, sky, smoothstepf(-b, b, r.y));
 	if (g->porch > 0.0) {
 		double lamp = fmax(vdot(r, vnorm(v3(0.12, 0.70, 0.70))), 0.0);
-		c = vadd(c, vmul(v3(1.0, 0.80, 0.55), 0.55 * pow(lamp, 10.0) * g->porch));
+		c = vadd(c, vmul(v3(0.88, 0.97, 1.0), 0.55 * pow(lamp, 10.0) * g->porch));
 		double step = fmax(vdot(r, vnorm(v3(0.0, -0.55, 0.84))), 0.0);
-		c = vadd(c, vmul(v3(0.30, 0.23, 0.15), 0.30 * step * step * g->porch));
+		c = vadd(c, vmul(v3(0.26, 0.26, 0.20), 0.30 * step * step * g->porch));
 	}
 	return c;
 }
@@ -32767,6 +32737,29 @@ static vec3 lk_wood(double u, double v, int piece, double *rough)
 	return c;
 }
 
+/* Painted steel on the sea floor: a dark green-grey paint, a little
+ * different on each piece, gone thin and rusty in patches and streaked
+ * with rust run down from above (v up, metres); piece says which plate. */
+static vec3 lk_steel(double u, double v, int piece, double *rough)
+{
+	double s = room_seed(piece, 13);
+	vec3 c = vmul(v3(0.075, 0.115, 0.115), 0.85 + 0.30 * s);
+	c = vmul(c, 0.88 + 0.24 * room_noise(u * 9.0 + s * 7.0, v * 9.0));
+	/* rust: patches where the paint is gone, streaks running down */
+	double patch = room_noise(u * 14.0 + s * 19.0, v * 14.0) * 0.7
+		+ room_noise(u * 70.0, v * 70.0 + s * 3.0) * 0.3;
+	double streak = room_noise(u * 55.0 + s * 11.0, v * 2.5) * room_noise(u * 21.0, v * 1.2 + s);
+	double rust = clampf(smoothstepf(0.74, 0.88, patch) * 0.8 + smoothstepf(0.38, 0.60, streak) * 0.30,
+		0.0, 1.0);
+	vec3 r = vmul(v3(0.15, 0.075, 0.040), 0.75 + 0.50 * room_noise(u * 120.0, v * 120.0));
+	c = vmix(c, r, rust);
+	/* algae, thin, more of it lower down */
+	double alg = room_noise(u * 6.0 + s * 5.0, v * 6.0) * (1.0 - smoothstepf(0.2, 2.2, v));
+	c = vmix(c, v3(0.045, 0.085, 0.035), smoothstepf(0.35, 0.65, alg) * 0.6);
+	*rough = 0.55 + 0.35 * rust;
+	return c;
+}
+
 static double lk_rect_d(double x, double y, double x0, double y0, double x1, double y1, int *edge)
 {
 	double d = x - x0;
@@ -32892,10 +32885,10 @@ static void lk_door_face(const struct lk_scene *sc, vec3 q, struct lk_mat *m)
 		break;
 	}
 	double rough;
-	m->albedo = along_y ? lk_wood(x + piece * 0.37, y, piece, &rough)
-		: lk_wood(y + piece * 0.37, x, piece, &rough);
+	(void)along_y;
+	m->albedo = lk_steel(x + 3.1, y, 90 + (piece == 7 || piece == 8 ? piece : 0), &rough);
 	m->rough = rough;
-	m->coat = 0.55;
+	m->coat = 0.20;
 	m->metal = 0.0;
 	/* shut in: the grooves, and round the frame while it is shut */
 	double ao = 1.0;
@@ -32912,7 +32905,7 @@ static void lk_door_face(const struct lk_scene *sc, vec3 q, struct lk_mat *m)
 		/* frosted, and the room's light coming through it */
 		double fr = room_noise(x * 380.0, y * 380.0) * 0.6 + room_noise(x * 90.0, y * 90.0) * 0.4;
 		double lamp = exp(-(lk_sq(x - 0.30) + lk_sq(y - 1.50) * 0.6) / 0.10);
-		vec3 warm = vmul(v3(1.00, 0.56, 0.22), (0.16 + 0.34 * lamp) * (0.70 + 0.55 * fr));
+		vec3 warm = vmul(v3(0.30, 0.78, 0.82), (0.16 + 0.34 * lamp) * (0.70 + 0.55 * fr));
 		double shut = smoothstepf(0.0, 0.035, dist);
 		m->emit = vmul(warm, sc->lamp * sc->rig.glass * (0.35 + 0.65 * shut));
 		m->albedo = v3(0.015, 0.012, 0.010);
@@ -32923,22 +32916,42 @@ static void lk_door_face(const struct lk_scene *sc, vec3 q, struct lk_mat *m)
 	m->ao = ao;
 }
 
-static double lk_brick_h(double x, double y, int *id, double *edge)
+/* The hull round the hatch: steel plates in courses, each lapped over
+ * the one beside it, a row of rivets in from every edge; as relief, the
+ * plate it is and how far it is from that plate's edge. */
+static double lk_hull_h(double x, double y, int *id, double *edge)
 {
-	const double H = 0.075, L = 0.225, J = 0.0095;
+	const double H = 0.62, L = 0.94, J = 0.0030, R = 0.040, P = 0.075, RR = 0.0090;
 	double row = floor(y / H);
 	double off = ((long)row & 1) ? L * 0.5 : 0.0;
 	double col = floor((x + off) / L);
 	double bx = x + off - col * L, by = y - row * H;
-	double e = fmin(fmin(bx - J * 0.5, L - J * 0.5 - bx), fmin(by - J * 0.5, H - J * 0.5 - by));
-	e += (room_noise(x * 150.0, y * 150.0) - 0.5) * 0.0026;
+	double e = fmin(fmin(bx, L - bx), fmin(by, H - by));
 	*id = (int)col * 73 + (int)row * 1009;
 	*edge = e;
-	if (e < 0.0) {
-		return -0.0068 - room_noise(x * 320.0, y * 320.0) * 0.0014;
+	if (e < J) {
+		return -0.0040;
 	}
-	return -0.0042 * (1.0 - smoothstepf(0.0, 0.0065, e))
-		+ (room_noise(x * 64.0 + *id, y * 64.0) - 0.5) * 0.0012;
+	/* the plate bevelled down to the seam, and the lap: the left edge
+	 * of a plate stands over the one before it */
+	double h = -0.0025 * (1.0 - smoothstepf(J, J + 0.006, e)) + (bx < L * 0.5 ? 0.0015 : 0.0);
+	/* the nearest rivet: on a line R in from an edge, every P along it */
+	double d = 1.0;
+	if (fabs(bx - R) < RR || fabs(L - R - bx) < RR) {
+		double ry = R + round((by - R) / P) * P;
+		ry = clampf(ry, R, H - R);
+		d = fmin(d, hypot(fmin(fabs(bx - R), fabs(L - R - bx)), by - ry));
+	}
+	if (fabs(by - R) < RR || fabs(H - R - by) < RR) {
+		double rx = R + round((bx - R) / P) * P;
+		rx = clampf(rx, R, L - R);
+		d = fmin(d, hypot(bx - rx, fmin(fabs(by - R), fabs(H - R - by))));
+	}
+	if (d < RR) {
+		h += 0.0055 * sqrt(1.0 - lk_sq(d / RR));
+		*edge = -d - 0.001;   /* a rivet: told apart from the seam by being proud */
+	}
+	return h + (room_noise(x * 40.0 + *id, y * 40.0) - 0.5) * 0.0008;
 }
 
 static void lk_brick(vec3 p, struct lk_mat *m)
@@ -32946,27 +32959,26 @@ static void lk_brick(vec3 p, struct lk_mat *m)
 	int id, i2;
 	double edge, e2;
 	const double e = 0.0007;
-	double h0 = lk_brick_h(p.x, p.y, &id, &edge);
-	double hx = lk_brick_h(p.x + e, p.y, &i2, &e2), hy = lk_brick_h(p.x, p.y + e, &i2, &e2);
+	double h0 = lk_hull_h(p.x, p.y, &id, &edge);
+	double hx = lk_hull_h(p.x + e, p.y, &i2, &e2), hy = lk_hull_h(p.x, p.y + e, &i2, &e2);
 	m->n = vnorm(v3(-(hx - h0) / e, -(hy - h0) / e, 1.0));
+	double rough;
+	m->albedo = lk_steel(p.x, p.y, id, &rough);
+	m->rough = rough;
+	m->coat = 0.10;
+	m->sub = 0;
+	m->ao = 1.0;
 	if (edge < 0.0) {
-		m->albedo = vmul(v3(0.27, 0.255, 0.235), 0.80 + 0.35 * room_noise(p.x * 200.0, p.y * 200.0));
-		m->rough = 0.95;
+		/* a rivet head: rust round its foot */
+		m->albedo = vmix(m->albedo, v3(0.17, 0.07, 0.03), 0.45 * smoothstepf(0.004, 0.009, -edge));
+		m->sub = 2;
+	} else if (edge < 0.0030) {
+		m->albedo = vmul(v3(0.12, 0.055, 0.025), 0.6);
+		m->rough = 0.9;
 		m->sub = 1;
-		m->ao = 0.70;
+		m->ao = 0.55;
 	} else {
-		double s0 = room_seed(id, 21), s1 = room_seed(id, 22);
-		vec3 c = vmix(v3(0.25, 0.085, 0.050), v3(0.40, 0.165, 0.085), s0);
-		if (s1 > 0.84) {
-			c = vmul(c, 0.55);
-		}
-		c = vmul(c, 0.78 + 0.40 * room_noise(p.x * 48.0 + id, p.y * 48.0));
-		double speck = room_noise(p.x * 260.0, p.y * 260.0);
-		c = vmul(c, 1.0 - 0.45 * smoothstepf(0.78, 0.95, speck));
-		m->albedo = c;
-		m->rough = 0.82;
-		m->sub = 0;
-		m->ao = 0.85 + 0.15 * smoothstepf(0.0, 0.010, edge);
+		m->ao = 0.75 + 0.25 * smoothstepf(0.003, 0.012, edge);
 	}
 	/* the casing standing off the wall beside it */
 	double dx = fabs(p.x) - (LK_OW + LK_CW), dy = p.y - (LK_OH + LK_CW);
@@ -32988,10 +33000,10 @@ static double lk_casing_h(double t)
 
 static void lk_casing(const struct lk_hit *h, vec3 p, struct lk_mat *m)
 {
-	m->albedo = vmul(v3(0.60, 0.555, 0.48), 0.95 + 0.06 * room_noise(p.x * 18.0 + p.y * 2.0,
-		p.y * 260.0 + p.x * 9.0));
-	m->rough = 0.42;
-	m->coat = 0.25;
+	double rough;
+	m->albedo = vmul(lk_steel(p.x * 1.3 + p.z, p.y, 5, &rough), 1.25);
+	m->rough = rough;
+	m->coat = 0.15;
 	m->ao = 1.0;
 	m->n = h->n;
 	if (h->face != 5) {
@@ -33314,26 +33326,30 @@ static void lk_material(const struct lk_scene *sc, const struct lk_hit *h, vec3 
 		lk_casing(h, p, m);
 		break;
 	case LK_JAMB:
-		m->albedo = v3(0.56, 0.52, 0.45);
-		m->rough = 0.50;
-		m->coat = 0.15;
+		m->albedo = v3(0.085, 0.120, 0.120);
+		m->rough = 0.60;
+		m->coat = 0.10;
 		if (p.z > LK_DZ) {
 			m->ao = 1.0 - 0.50 * exp(-(p.z - LK_DZ) / 0.014) * (1.0 - sc->open);
 		} else {
-			/* behind the door, in the wall: plaster */
-			m->albedo = v3(0.50, 0.46, 0.40);
+			/* behind the door, in the hull: bare steel */
+			m->albedo = v3(0.10, 0.10, 0.095);
 			m->rough = 0.90;
 			m->coat = 0.0;
 		}
 		break;
 	case LK_STEP: {
+		/* the sea floor: sand in ripples, shell grit in it */
 		double g = room_noise(p.x * 30.0, p.z * 30.0) * 0.6 + room_noise(p.x * 160.0, p.z * 160.0) * 0.4;
-		m->albedo = vmul(v3(0.30, 0.285, 0.265), 0.75 + 0.40 * g);
-		m->rough = 0.80;
+		double rip = 0.5 + 0.5 * sin((p.z * 9.0 + room_noise(p.x * 2.0, p.z * 2.0) * 1.6) * 2.0 * M_PI);
+		m->albedo = vmul(v3(0.42, 0.38, 0.29), 0.70 + 0.25 * g + 0.15 * rip);
+		m->albedo = vmul(m->albedo, 1.0 + 0.5 * smoothstepf(0.86, 0.95, room_noise(p.x * 300.0, p.z * 300.0)));
+		m->rough = 0.92;
 		if (p.z < 0.0) {
-			/* the sill: oak, worn */
-			m->albedo = vmul(v3(0.34, 0.22, 0.12), 0.85 + 0.25 * room_noise(p.x * 3.0, p.z * 120.0));
-			m->rough = 0.55;
+			/* the sill: the hatch's steel coaming */
+			double rough;
+			m->albedo = lk_steel(p.x, p.z * 3.0 + 0.4, 6, &rough);
+			m->rough = rough;
 		}
 		break;
 	}
@@ -33369,7 +33385,7 @@ static void lk_material(const struct lk_scene *sc, const struct lk_hit *h, vec3 
 		break;
 	case LK_DOOR_EDGE: {
 		double rough;
-		m->albedo = vmul(lk_wood(h->q.z * 3.0, h->q.y, 30 + h->face, &rough), 0.85);
+		m->albedo = vmul(lk_steel(h->q.z * 3.0, h->q.y, 30 + h->face, &rough), 0.85);
 		m->rough = rough;
 		m->coat = 0.3;
 		break;
@@ -33479,17 +33495,13 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 		return lk_tex_at(&pj->tex, px / pj->tex.w, py / pj->tex.h, true, &a);
 	}
 	*sub = 2 + kind;
-	/* made: walnut for the desk and the case, the walls in the colour they
-	 * have at the edges of the picture, the lamp over the desk */
+	/* made: stone for the desk, slate for the case, the walls in the colour
+	 * they have at the edges of the picture, the lamp over the desk */
 	vec3 c;
-	double rough;
 	switch (kind) {
 	case LK_RM_DESK:
 	case LK_RM_LEG: {
-		bool across = fabs(n.z) > 0.5;
-		vec3 a = across ? lk_wood(p.x * rm->s * 0.6, p.y * rm->s, 50 + kind, &rough)
-			: lk_wood(p.z * rm->s * 0.6, p.y * rm->s, 52 + kind, &rough);
-		c = vmul(a, 1.35);
+		c = vmul(v3(0.20, 0.22, 0.21), 0.85 + 0.25 * room_noise(p.x * rm->s * 4.0, p.y * rm->s * 4.0));
 		if (kind == LK_RM_DESK && n.z > 0.5 && p.y < -RM_TOP_T - 0.2) {
 			/* the drawer, in the apron: a dark line round it, a brass pull */
 			double dx = RM_DR_HX - fabs(p.x), dy = fmin(p.y - (RM_DR_BOT - 0.10), (-RM_TOP_T - 0.15) - p.y);
@@ -33503,22 +33515,19 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 		break;
 	}
 	case LK_RM_CASE:
-		c = vmul(lk_wood(p.z * rm->s * 0.6 + p.x * rm->s, p.y * rm->s, 60, &rough), 1.1);
+		c = vmul(v3(0.13, 0.15, 0.16), 0.85 + 0.25 * room_noise(p.z * rm->s + p.x * rm->s, p.y * rm->s * 6.0));
 		break;
 	case LK_RM_POST:
-		c = v3(0.30, 0.040, 0.025);
+		c = v3(0.16, 0.10, 0.06);   /* the chest's waterlogged oak */
 		break;
 	case LK_RM_CONSOLE:
 		c = v3(0.050, 0.046, 0.042);
 		break;
 	default:
 		if (n.y > 0.5) {
-			/* the floor: boards running away from the door */
-			double bx = p.x * rm->s / 0.14;
-			int board = (int)floor(bx);
-			c = vmul(lk_wood(bx * 0.14, p.z * rm->s + board * 1.7, 70 + board, &rough), 1.3);
-			double seam = fabs(bx - floor(bx) - 0.5);
-			c = vmul(c, 1.0 - 0.45 * smoothstepf(0.47, 0.5, seam));
+			/* the floor: the tank's sand */
+			double g = room_noise(p.x * rm->s * 20.0, p.z * rm->s * 20.0);
+			c = vmul(v3(0.46, 0.43, 0.34), 0.80 + 0.30 * g);
 		} else if (n.y < -0.5) {
 			c = rm->ceil;
 		} else {
@@ -33527,7 +33536,7 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 			c = rm->wall;
 			double up = p.y - rm->fy;
 			if (up < 4.2) {
-				c = up > 3.8 ? v3(0.30, 0.19, 0.11) : v3(0.17, 0.105, 0.06);
+				c = up > 3.8 ? v3(0.06, 0.06, 0.06) : v3(0.02, 0.02, 0.02);   /* the tank's black skirt */
 			}
 			return vmul(c, 0.86 + 0.14 * smoothstepf(-10.0, 20.0, p.y)
 				- 0.10 * smoothstepf(30.0, 60.0, fabs(p.x)));
@@ -34763,9 +34772,8 @@ bool desk_lock_key_at(int w, int h, double x, double y)
 
 bool desk_lock_fx_wanted(const struct desk_door_mood *m)
 {
-	return m && m->set && (m->weather == DESK_WX_RAIN || m->weather == DESK_WX_SNOW
-		|| m->weather == DESK_WX_STORM
-		|| (m->decor & (DESK_DECOR_XMAS | DESK_DECOR_NEWYEAR | DESK_DECOR_BIRTHDAY)));
+	/* no weather reaches the sea floor: only what the hatch is dressed in */
+	return m && m->set && (m->decor & (DESK_DECOR_XMAS | DESK_DECOR_NEWYEAR | DESK_DECOR_BIRTHDAY));
 }
 
 static double lkfx_hash(int i, int salt)
@@ -34865,85 +34873,6 @@ static void lkfx_strings(cairo_t *cr, const struct lk_cam *cam, double t, double
 		cairo_stroke(cr);
 	}
 	cairo_restore(cr);
-}
-
-/* Rain: streaks, the near ones long and quick and faint, the far ones
- * short; lit warm by the porch lamp at night, grey by day. */
-static void lkfx_rain(cairo_t *cr, int w, int h, double t, double heavy, double a, bool night)
-{
-	int n = (int)(70 + 300 * heavy);
-	cairo_save(cr);
-	cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
-	double wind = 0.10 + 0.08 * heavy;
-	for (int band = 0; band < 3; band++) {
-		double z = (band + 0.5) / 3.0;
-		cairo_new_path(cr);
-		for (int i = band; i < n; i += 3) {
-			double h1 = lkfx_hash(i, 3), h2 = lkfx_hash(i, 5), h3 = lkfx_hash(i, 7);
-			double speed = 1.5 + 1.6 * z + 0.4 * h3;
-			double len = h * (0.035 + 0.075 * z) * (0.8 + 0.4 * h1);
-			double y = fmod(h2 + t * speed * (0.9 + 0.2 * h1), 1.0) * (h + len * 2.0) - len;
-			double x = h1 * w * 1.25 - w * 0.15 + wind * y;
-			cairo_move_to(cr, x, y);
-			cairo_line_to(cr, x + wind * len, y + len);
-		}
-		double al = (0.05 + 0.14 * z) * a * (0.6 + 0.6 * heavy);
-		if (night) {
-			cairo_set_source_rgba(cr, 1.0, 0.86, 0.66, al * 1.3);
-		} else {
-			cairo_set_source_rgba(cr, 0.86, 0.89, 0.95, al);
-		}
-		cairo_set_line_width(cr, (0.6 + 1.4 * z) * h / 900.0);
-		cairo_stroke(cr);
-	}
-	cairo_restore(cr);
-}
-
-/* Snow: flakes drifting down and to and fro, the near ones big and soft. */
-static void lkfx_snow(cairo_t *cr, int w, int h, double t, double heavy, double a)
-{
-	int n = (int)(60 + 220 * heavy);
-	double k = h / 900.0;
-	cairo_save(cr);
-	for (int band = 0; band < 4; band++) {
-		double z = (band + 0.5) / 4.0;
-		double r = (1.1 + 4.2 * z * z) * k;
-		cairo_new_path(cr);
-		for (int i = band; i < n; i += 4) {
-			double h1 = lkfx_hash(i, 21), h2 = lkfx_hash(i, 23), h3 = lkfx_hash(i, 29);
-			double speed = 0.045 + 0.075 * z + 0.02 * h3;
-			double y = fmod(h2 + t * speed, 1.0) * (h + 20.0 * k) - 10.0 * k;
-			double x = h1 * w + sin(t * (0.4 + 0.5 * h3) + h1 * 40.0) * (8.0 + 22.0 * z) * k
-				+ t * 6.0 * k * (0.5 + z);
-			x = fmod(x, (double)w + 40.0 * k);
-			cairo_new_sub_path(cr);
-			cairo_arc(cr, x, y, r, 0, 2.0 * M_PI);
-		}
-		double al = (0.50 + 0.35 * z) * a;
-		if (band == 3) {
-			/* out of focus, near the eye */
-			cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, al * 0.35);
-			cairo_fill(cr);
-		} else {
-			cairo_set_source_rgba(cr, 0.97, 0.98, 1.0, al);
-			cairo_fill(cr);
-		}
-	}
-	cairo_restore(cr);
-}
-
-/* lightning, now and then: a flash, and another after it */
-static double lkfx_flash(double t)
-{
-	double period = 11.0;
-	double seg = floor(t / period);
-	double at = seg * period + lkfx_hash((int)seg, 41) * (period - 1.0);
-	double d = t - at;
-	if (d < 0.0 || d > 0.6) {
-		return 0.0;
-	}
-	double f = exp(-d * 22.0) + 0.7 * exp(-lk_sq((d - 0.16) / 0.035));
-	return lkfx_hash((int)seg, 43) < 0.75 ? f : 0.0;
 }
 
 /* ---- the New Year's party, out at the door ----
@@ -35228,21 +35157,5 @@ void desk_draw_lock_fx(cairo_t *cr, int w, int h, const struct desk_lock_look *l
 		lkfx_streamers(cr, cam, &rig, t, a);
 		lkfx_pennants(cr, cam, &rig, t, a);
 		lkfx_confetti(cr, w, h, &rig, t, a);
-	}
-	double heavy = clampf(m->heavy, 0.0, 1.0);
-	if (m->weather == DESK_WX_RAIN || m->weather == DESK_WX_STORM) {
-		lkfx_rain(cr, w, h, t, m->weather == DESK_WX_STORM ? 1.0 : heavy, a, night);
-	} else if (m->weather == DESK_WX_SNOW) {
-		lkfx_snow(cr, w, h, t, heavy, a);
-	}
-	if (m->weather == DESK_WX_STORM) {
-		double f = lkfx_flash(t);
-		if (f > 0.002) {
-			cairo_save(cr);
-			cairo_set_operator(cr, CAIRO_OPERATOR_ADD);
-			cairo_set_source_rgba(cr, 0.70, 0.78, 1.0, 0.30 * f * a);
-			cairo_paint(cr);
-			cairo_restore(cr);
-		}
 	}
 }
