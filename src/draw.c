@@ -876,6 +876,8 @@ enum {
 	MID_POST_DARK,
 	MID_BOOK_LEATHER,
 	MID_BOOK_GILT,
+	MID_SCAPE_ROCK,
+	MID_SCAPE_PLANT,
 };
 
 static hit3 map_term(vec3 p)
@@ -2507,6 +2509,8 @@ static int room_is_drawer(int id)
 	case MID_GADGET_LEATHER:
 	case MID_GADGET_DIAL:
 	case MID_GADGET_PAPER:
+	case MID_SCAPE_ROCK:
+	case MID_SCAPE_PLANT:
 		return 0;
 	default:
 		return 1;
@@ -2515,6 +2519,65 @@ static int room_is_drawer(int id)
 
 /* Declared up with the gadgets, which need to know whether the bookcase is
  * in this layer before they decide whether they exist. */
+
+/* ---- the floor of the tank: stones and plants ----
+ *
+ * A few things standing in the sand, kept to the edges so the middle stays
+ * clear for the windows. The plants are rosettes, leaves arching out from
+ * a crown, because the desk is seen from above and a rosette reads from
+ * above where a stalk would be a dot. room.glsl has the same, number for
+ * number; desk-gputest --room says whether it still does. */
+static double scape_rock(vec3 p, vec3 c, vec3 r, double seed)
+{
+	vec3 q = rot_y(vsub(p, c), seed * 2.1);
+	double k0 = vlen(v3(q.x / r.x, q.y / r.y, q.z / r.z));
+	double k1 = vlen(v3(q.x / (r.x * r.x), q.y / (r.y * r.y), q.z / (r.z * r.z)));
+	double d = k0 * (k0 - 1.0) / fmax(k1, 1e-6);
+	d += 0.07 * sin(q.x * 3.1 + seed) * sin(q.y * 3.7 + seed * 1.7) * sin(q.z * 2.9 + seed * 2.3);
+	return d * 0.8;
+}
+
+static double scape_rosette(vec3 p, vec3 c, double len, double leaves, double seed)
+{
+	/* No cheap way out far from the crown. Any bound that hands over to
+	 * the leaves' own distance is a step in the field, and the soft shadow
+	 * turns a step into black: tried at two distances, it drew false leaf
+	 * shadows both times. The room is traced once and kept, so the cost is
+	 * paid once, and on a GPU it does not show. */
+	vec3 q = vsub(p, c);
+	double sector = 2.0 * M_PI / leaves;
+	double i0 = floor((atan2(q.z, q.x) - seed) / sector + 0.5);
+	double best = 1e9;
+	for (int j = -1; j <= 1; j++) {
+		double i = i0 + j;
+		double li = len * (0.80 + 0.20 * sin(i * 2.7 + seed * 5.0));
+		vec3 l = rot_y(q, i * sector + seed);
+		double t = clampf(l.x / li, 0.0, 1.0);
+		double yc = li * (1.10 * t - 1.00 * t * t) + 0.05;
+		double wd = 0.42 * sin(M_PI * t) * li / len + 0.02;
+		double ex = l.x - t * li;
+		double dz = fmax(fabs(l.z) - wd, 0.0);
+		double dy = l.y - yc;
+		best = fmin(best, sqrt(ex * ex + dy * dy + dz * dz) - 0.035);
+	}
+	return best * 0.6;
+}
+
+static hit3 map_scape(vec3 p)
+{
+	hit3 h = { 1e9, 0 };
+	/* stones, half sunk, at the front left */
+	vec3 rk = v3(-RM_HX + 2.6, 0.0, RM_ZN - 6.2);
+	double d = scape_rock(p, vadd(rk, v3(0.0, -0.25, 0.0)), v3(1.40, 0.85, 1.05), 1.0);
+	d = fmin(d, scape_rock(p, vadd(rk, v3(1.55, -0.20, 0.75)), v3(0.80, 0.55, 0.70), 2.0));
+	d = fmin(d, scape_rock(p, vadd(rk, v3(-0.60, -0.15, 1.30)), v3(0.55, 0.40, 0.50), 3.0));
+	h = hmin3(h, (hit3){ d, MID_SCAPE_ROCK });
+	/* a big plant on the right, a small one by it, and one at the left */
+	double pl = scape_rosette(p, v3(RM_HX - 2.0, 0.0, -3.0), 2.6, 9.0, 0.3);
+	pl = fmin(pl, scape_rosette(p, v3(RM_HX - 4.6, 0.0, -0.6), 1.7, 7.0, 1.9));
+	pl = fmin(pl, scape_rosette(p, v3(-RM_HX + 2.2, 0.0, -4.2), 2.1, 8.0, 0.9));
+	return hmin3(h, (hit3){ pl, MID_SCAPE_PLANT });
+}
 
 static hit3 map_room(vec3 p)
 {
@@ -2558,6 +2621,7 @@ static hit3 map_room(vec3 p)
 		h = hmin3(h, (hit3){ sd_box(vsub(p, v3(0, -4.10, RM_ZN - 0.34)),
 			v3(RM_HX - 0.6, 0.28, 0.34)), MID_DESK_BODY });
 		h = hmin3(h, room_gadgets(p));
+		h = hmin3(h, map_scape(p));
 	}
 
 	if (g_room_layer == 1 || g_room_layer >= 4) {
@@ -3220,6 +3284,25 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		m->rough = clampf(0.185 + brush * 0.10 + tarn * 0.40 - sc * 0.07, 0.04, 1.0);
 		m->metal = 1.0;
 		m->dust = 0.3;
+		break;
+	}
+	case MID_SCAPE_ROCK: {
+		rock_at(w, m);
+		/* moss on what faces the light */
+		double moss = smoothstepf(0.10, 0.70, w.y) * room_fbm(w.x * 1.7, w.z * 1.7);
+		m->albedo = vmix(m->albedo, v3(0.060, 0.150, 0.050), moss * 0.85);
+		break;
+	}
+	case MID_SCAPE_PLANT: {
+		/* broad, waxy leaves: darker at the crown, brighter towards the tips */
+		double r = sqrt(w.x * w.x + w.z * w.z);
+		double t = room_fbm(w.x * 2.3 + 5.0, w.z * 2.3);
+		m->albedo = vmix(v3(0.030, 0.110, 0.030), v3(0.110, 0.330, 0.070),
+			clampf(t * 0.8 + w.y * 0.35, 0.0, 1.0));
+		m->albedo = vmul(m->albedo, 0.90 + 0.10 * sin(r * 40.0));
+		m->rough = 0.50;
+		m->coat = 0.25;
+		m->coat_rough = 0.18;
 		break;
 	}
 	case MID_ROOM_FLOOR:
@@ -4605,6 +4688,7 @@ static void gb_varr(struct glsl_buf *b, const char *name, const vec3 *v, int n)
 	X(MID_CC_GLASS) X(MID_CC_CHEEK) X(MID_CC_LENS_AMBER) \
 	X(MID_CC_LENS_GREEN) X(MID_CC_LENS_BLUE) X(MID_CC_LENS_RED) \
 	X(MID_POST_RED) X(MID_POST_DARK) X(MID_BOOK_LEATHER) X(MID_BOOK_GILT) \
+	X(MID_SCAPE_ROCK) X(MID_SCAPE_PLANT) \
 	X(CC_WIFI) X(CC_BT) X(CC_VOL) X(CC_BRIGHT) X(CC_CRT) X(CC_BATT) \
 	X(CC_NET) X(CC_PW_OFF) X(CC_PW_BOOT) X(CC_PW_OUT) X(CC_PW_KEY) X(CC_SCREEN) X(CC_LOCK) \
 	X(CC_COUNT) \

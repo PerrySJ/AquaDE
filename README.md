@@ -20,6 +20,8 @@ What has changed from DEsk so far:
 - The tank: the back wall is deep water with light shafts (`tank_back_at`),
   the floor is sand further down, the skirting is the tank's black frame,
   the desk's carcass is stone (`rock_at`), and caustics play on the sand.
+- Stones at the front left and three rosette plants at the sides
+  (`map_scape`), kept to the edges so the middle stays clear for windows.
 
 The rest of the aquarium (tank, plants, fish) is still to come. Below is DEsk's own README.
 

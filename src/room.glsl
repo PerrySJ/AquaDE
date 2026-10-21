@@ -1189,6 +1189,53 @@ hit3 map_shelf(vec3 p)
 	return h;
 }
 
+/* ---- the floor of the tank: stones and plants (as in draw.c) ---- */
+
+float scape_rock(vec3 p, vec3 c, vec3 r, float seed)
+{
+	vec3 q = rot_y(p - c, seed * 2.1);
+	float k0 = length(q / r);
+	float k1 = length(q / (r * r));
+	float d = k0 * (k0 - 1.0) / max(k1, 1e-6);
+	d += 0.07 * ssin(q.x * 3.1 + seed) * ssin(q.y * 3.7 + seed * 1.7) * ssin(q.z * 2.9 + seed * 2.3);
+	return d * 0.8;
+}
+
+float scape_rosette(vec3 p, vec3 c, float len, float leaves, float seed)
+{
+	vec3 q = p - c;
+	float sector = 2.0 * M_PI / leaves;
+	float i0 = floor((atan(q.z, q.x) - seed) / sector + 0.5);
+	float best = 1e9;
+	for (int j = -1; j <= 1; j++) {
+		float i = i0 + float(j);
+		float li = len * (0.80 + 0.20 * ssin(i * 2.7 + seed * 5.0));
+		vec3 l = rot_y(q, i * sector + seed);
+		float t = clampf(l.x / li, 0.0, 1.0);
+		float yc = li * (1.10 * t - 1.00 * t * t) + 0.05;
+		float wd = 0.42 * ssin(M_PI * t) * li / len + 0.02;
+		float ex = l.x - t * li;
+		float dz = max(abs(l.z) - wd, 0.0);
+		float dy = l.y - yc;
+		best = min(best, sqrt(ex * ex + dy * dy + dz * dz) - 0.035);
+	}
+	return best * 0.6;
+}
+
+hit3 map_scape(vec3 p)
+{
+	hit3 h = hit3(1e9, 0);
+	vec3 rk = vec3(-RM_HX + 2.6, 0.0, RM_ZN - 6.2);
+	float d = scape_rock(p, rk + vec3(0.0, -0.25, 0.0), vec3(1.40, 0.85, 1.05), 1.0);
+	d = min(d, scape_rock(p, rk + vec3(1.55, -0.20, 0.75), vec3(0.80, 0.55, 0.70), 2.0));
+	d = min(d, scape_rock(p, rk + vec3(-0.60, -0.15, 1.30), vec3(0.55, 0.40, 0.50), 3.0));
+	h = hmin3(h, hit3(d, MID_SCAPE_ROCK));
+	float pl = scape_rosette(p, vec3(RM_HX - 2.0, 0.0, -3.0), 2.6, 9.0, 0.3);
+	pl = min(pl, scape_rosette(p, vec3(RM_HX - 4.6, 0.0, -0.6), 1.7, 7.0, 1.9));
+	pl = min(pl, scape_rosette(p, vec3(-RM_HX + 2.2, 0.0, -4.2), 2.1, 8.0, 0.9));
+	return hmin3(h, hit3(pl, MID_SCAPE_PLANT));
+}
+
 /* ---- the room ---- */
 
 bool room_is_drawer(int id)
@@ -1196,7 +1243,8 @@ bool room_is_drawer(int id)
 	return !(id == MID_ROOM_FLOOR || id == MID_ROOM_WALL || id == MID_ROOM_SKIRT
 		|| id == MID_DESK_TOP || id == MID_DESK_BODY || id == MID_GADGET_BODY
 		|| id == MID_GADGET_GLASS || id == MID_GADGET_LEATHER
-		|| id == MID_GADGET_DIAL || id == MID_GADGET_PAPER);
+		|| id == MID_GADGET_DIAL || id == MID_GADGET_PAPER
+		|| id == MID_SCAPE_ROCK || id == MID_SCAPE_PLANT);
 }
 
 hit3 scene_map(vec3 p)
@@ -1232,6 +1280,7 @@ hit3 scene_map(vec3 p)
 		h = hmin3(h, hit3(sd_box(p - vec3(0.0, -4.10, RM_ZN - 0.34),
 			vec3(RM_HX - 0.6, 0.28, 0.34)), MID_DESK_BODY));
 		h = hmin3(h, room_gadgets(p));
+		h = hmin3(h, map_scape(p));
 	}
 
 	if (u_layer == 1 || u_layer >= 4) {
@@ -1731,6 +1780,23 @@ mtl icon_material(int id, vec3 pw)
 		m.rough = clampf(0.185 + brush * 0.10 + tarn * 0.40 - sc * 0.07, 0.04, 1.0);
 		m.metal = 1.0;
 		m.dust = 0.3;
+		break;
+	}
+	case MID_SCAPE_ROCK: {
+		rock_at(w, m);
+		float moss = smoothstepf(0.10, 0.70, w.y) * room_fbm(w.x * 1.7, w.z * 1.7);
+		m.albedo = mix(m.albedo, vec3(0.060, 0.150, 0.050), moss * 0.85);
+		break;
+	}
+	case MID_SCAPE_PLANT: {
+		float r = sqrt(w.x * w.x + w.z * w.z);
+		float t = room_fbm(w.x * 2.3 + 5.0, w.z * 2.3);
+		m.albedo = mix(vec3(0.030, 0.110, 0.030), vec3(0.110, 0.330, 0.070),
+			clampf(t * 0.8 + w.y * 0.35, 0.0, 1.0));
+		m.albedo *= 0.90 + 0.10 * ssin(r * 40.0);
+		m.rough = 0.50;
+		m.coat = 0.25;
+		m.coat_rough = 0.18;
 		break;
 	}
 	case MID_ROOM_FLOOR:
