@@ -351,6 +351,37 @@ static void swish(struct buf *b, struct rng *r, double t0, double dur, double p,
 	free(t);
 }
 
+/* A bubble let go under water: it rings at the note its size gives it
+ * (the smaller, the higher), for ten or so cycles, and its note rises as
+ * it does. f0 in Hz. */
+static void bubble(struct buf *b, double t0, double f0, double amp)
+{
+	int i0 = at(t0);
+	double decay = 7.0 / f0;
+	int len = at(decay * 7.0);
+	int na = at(0.0003) + 1;
+	double ph = 0.0;
+	for (int j = 0; j < len; j++) {
+		double t = j / SR;
+		double f = f0 * (1.0 + 0.35 * t / decay);
+		ph += TAU * f / SR;
+		double a = j < na ? (double)j / na : 1.0;
+		put(b, i0 + j, amp * a * exp(-t / decay) * sin(ph));
+	}
+}
+
+/* n bubbles over dur from t0, sizes between notes lo and hi (most of them
+ * small: high), louder the bigger */
+static void bubbles(struct buf *b, struct rng *r, double t0, double dur, int n, double lo,
+	double hi, double amp)
+{
+	for (int k = 0; k < n; k++) {
+		double u = rnd(r);
+		double f = lo * pow(hi / lo, sqrt(u));
+		bubble(b, t0 + dur * rnd(r), f, amp * near(r, 1.0, 0.3) * sqrt(lo / f));
+	}
+}
+
 /* Something drawn along a surface: noise in the bands of what is rubbing,
  * roughened by the grain of it -- a slow random wobble in how hard it
  * catches -- under the envelope env (a function of time from t0). */
@@ -469,10 +500,14 @@ static void pencil(struct buf *b, struct rng *r, double t0, double dur, double f
  * body. */
 static void finish(struct buf *b, double rms_db, double peak_db)
 {
-	struct bq hp;
+	/* Everything here is heard through water: the top of it taken off,
+	 * gently, as from the next room -- which leaves a click a click, and
+	 * makes paper sound wet. */
+	struct bq hp, lp;
 	bq_set(&hp, HP(28.0, 0.7), false);
+	bq_set(&lp, LP(5200.0, 0.6), false);
 	for (int i = 0; i < b->n; i++) {
-		b->x[i] = (float)bq_run(&hp, b->x[i]);
+		b->x[i] = (float)bq_run(&lp, bq_run(&hp, b->x[i]));
 	}
 	int win = at(0.03);
 	double ss = 0.0, best = 0.0, peak = 0.0;
@@ -680,92 +715,93 @@ static double env_push(double t, double dur)
 	return up * down * (end > 0.0 ? end : 0.0);
 }
 
-/* the small things in it shifting on the felt: soft, muffled clicks */
-static void contents(struct buf *b, struct rng *r, double t0, double span, int n, double amp)
+/* the gravel in the tray, shifting: pebbles knocking, small and dull */
+static void gravel(struct buf *b, struct rng *r, double t0, double dur, double p, double rate,
+	double amp)
 {
-	for (int k = 0; k < n; k++) {
-		double t = t0 + span * rnd(r);
-		double f = near(r, 2300.0, 0.3);
-		mode(b, t, f, amp * near(r, 0.7, 0.4), 0.004);
-		mode(b, t, near(r, 850.0, 0.2), amp * 0.6, 0.008);
-		burst(b, r, t, 0.001, 0.006, amp * 0.5, LP(2600.0, 0.7), NOF);
+	crackle(b, r, t0, dur, p, rate, amp, 250.0, 2600.0);
+	for (int k = 0; k < (int)(rate * dur / 60.0) + 1; k++) {
+		double t = t0 + dur * rnd(r);
+		mode(b, t, near(r, 1500.0, 0.35), amp * near(r, 0.25, 0.4), 0.003);
 	}
 }
 
 static void s_drawer_out(struct buf *b, struct rng *r, int v)
 {
 	(void)v;
-	/* Wood on wood along the runners: a low rumble of the drawer's box,
-	 * the rub of the runners above it, and a hiss of the fibres, all
-	 * roughened by the grain. Long enough for the slowest pull: it is
-	 * stopped when the drawer is. */
-	static const double bands[] = { 165.0, 430.0, 1250.0, 3200.0 };
-	static const double qs[] = { 1.1, 1.6, 0.9, 0.8 };
-	static const double gains[] = { 0.8, 0.55, 0.22, 0.06 };
-	friction(b, r, 0.0, 1.0, bands, qs, gains, 4, 32.0, 0.55, 0.9, env_pull);
-	crackle(b, r, 0.0, 0.6, 0.1, 55.0, 0.18, 600.0, 3000.0);
-	contents(b, r, 0.015, 0.08, 3, 0.10);
+	/* Slate on stone: a low grinding of the tray along the ledge, gritty
+	 * with sand under it, the gravel in it shifting, and the water it
+	 * pushes letting go a few bubbles. Long enough for the slowest pull:
+	 * it is stopped when the drawer is. */
+	static const double bands[] = { 120.0, 340.0, 900.0, 2400.0 };
+	static const double qs[] = { 0.9, 1.2, 0.8, 0.7 };
+	static const double gains[] = { 0.8, 0.6, 0.30, 0.10 };
+	friction(b, r, 0.0, 1.0, bands, qs, gains, 4, 55.0, 0.75, 0.9, env_pull);
+	crackle(b, r, 0.0, 0.8, 0.2, 140.0, 0.30, 500.0, 3500.0);
+	gravel(b, r, 0.0, 0.5, 0.15, 260.0, 0.35);
+	bubbles(b, r, 0.05, 0.7, 4, 380.0, 1100.0, 0.10);
 	finish(b, -29.0, -15.0);
 }
 
 static void s_drawer_in(struct buf *b, struct rng *r, int v)
 {
 	(void)v;
-	static const double bands[] = { 140.0, 380.0, 1100.0, 3000.0 };
-	static const double qs[] = { 1.1, 1.5, 0.9, 0.8 };
-	static const double gains[] = { 0.85, 0.5, 0.2, 0.05 };
-	friction(b, r, 0.0, 1.0, bands, qs, gains, 4, 28.0, 0.5, 0.9, env_push);
-	crackle(b, r, 0.0, 0.7, 0.4, 45.0, 0.15, 600.0, 3000.0);
-	contents(b, r, 0.02, 0.06, 2, 0.07);
+	static const double bands[] = { 105.0, 300.0, 820.0, 2200.0 };
+	static const double qs[] = { 0.9, 1.2, 0.8, 0.7 };
+	static const double gains[] = { 0.85, 0.55, 0.28, 0.08 };
+	friction(b, r, 0.0, 1.0, bands, qs, gains, 4, 50.0, 0.7, 0.9, env_push);
+	crackle(b, r, 0.0, 0.8, 0.45, 120.0, 0.26, 500.0, 3500.0);
+	gravel(b, r, 0.0, 0.5, 0.2, 200.0, 0.28);
+	bubbles(b, r, 0.05, 0.7, 3, 380.0, 1100.0, 0.08);
 	finish(b, -30.0, -16.0);
 }
 
 static void s_drawer_stop_out(struct buf *b, struct rng *r, int v)
 {
 	(void)v;
-	/* out against its stop: a knock in the wood, the box rattling once in
-	 * its runners, and the things in it sliding on and settling */
-	static const double f[] = { 190.0, 420.0, 960.0, 2150.0, 3700.0, 0.0 };
-	static const double a[] = { 1.0, 0.7, 0.45, 0.25, 0.12 };
-	static const double d[] = { 0.045, 0.03, 0.02, 0.009, 0.005 };
-	strike(b, r, 0.0, 0.45, 0.35, f, a, d, 0.04);
-	burst(b, r, 0.0, 0.001, 0.012, 0.5, BP(600.0, 0.8), NOF);
-	strike(b, r, near(r, 0.014, 0.2), 0.08, 0.08, f, a, d, 0.05);
-	contents(b, r, 0.025, 0.07, 4, 0.12);
+	/* out against its stop: stone knocking stone -- dull, short, the water
+	 * damping it -- and the gravel washing on and settling */
+	static const double f[] = { 150.0, 360.0, 820.0, 1900.0, 0.0 };
+	static const double a[] = { 1.0, 0.6, 0.35, 0.15 };
+	static const double d[] = { 0.030, 0.018, 0.010, 0.005 };
+	strike(b, r, 0.0, 0.50, 0.25, f, a, d, 0.04);
+	burst(b, r, 0.0, 0.001, 0.010, 0.5, BP(500.0, 0.8), NOF);
+	gravel(b, r, 0.01, 0.14, 0.2, 700.0, 0.40);
+	bubbles(b, r, 0.02, 0.15, 3, 450.0, 1300.0, 0.10);
 	finish(b, -22.0, -7.0);
 }
 
 static void s_drawer_stop_in(struct buf *b, struct rng *r, int v)
 {
 	(void)v;
-	/* home: the face meeting the carcass -- deeper, with the clack of the
-	 * edges, and a shiver of the things inside */
-	static const double f[] = { 112.0, 245.0, 560.0, 1250.0, 2600.0, 0.0 };
-	static const double a[] = { 1.0, 0.75, 0.45, 0.25, 0.10 };
-	static const double d[] = { 0.068, 0.045, 0.028, 0.013, 0.006 };
-	strike(b, r, 0.0, 0.5, 0.3, f, a, d, 0.04);
-	burst(b, r, 0.0, 0.001, 0.015, 0.5, BP(450.0, 0.8), NOF);
-	mode(b, 0.001, near(r, 820.0, 0.05), 0.12, 0.012);
-	contents(b, r, 0.02, 0.06, 2, 0.08);
+	/* home: the tray meeting the ledge -- deeper, a stone thud, and a
+	 * shiver of the gravel */
+	static const double f[] = { 95.0, 230.0, 520.0, 1200.0, 0.0 };
+	static const double a[] = { 1.0, 0.65, 0.35, 0.15 };
+	static const double d[] = { 0.045, 0.028, 0.015, 0.007 };
+	strike(b, r, 0.0, 0.55, 0.2, f, a, d, 0.04);
+	burst(b, r, 0.0, 0.001, 0.012, 0.5, BP(380.0, 0.8), NOF);
+	gravel(b, r, 0.01, 0.10, 0.2, 500.0, 0.30);
+	bubbles(b, r, 0.02, 0.12, 2, 400.0, 1000.0, 0.08);
 	finish(b, -21.0, -6.0);
 }
 
 static void s_felt_pick(struct buf *b, struct rng *r, int v)
 {
 	(void)v;
-	/* lifted off the felt: the nap brushed, and a tiny tick */
-	burst(b, r, 0.0, 0.012, 0.035, 0.8, BP(near(r, 700.0, 0.15), 0.7), LP(2000.0, 0.7));
-	mode(b, 0.004, near(r, 2600.0, 0.2), 0.04, 0.004);
+	/* lifted off the gravel: a few pebbles rolling back, a bubble */
+	gravel(b, r, 0.0, 0.06, 0.3, 500.0, 0.6);
+	bubble(b, near(r, 0.03, 0.3), near(r, 900.0, 0.2), 0.12);
 	finish(b, -37.0, -22.0);
 }
 
 static void s_felt_drop(struct buf *b, struct rng *r, int v)
 {
 	(void)v;
-	/* laid on the felt: a muffled thud, the wood of the drawer under it */
-	burst(b, r, 0.0, 0.002, 0.018, 0.9, LP(near(r, 900.0, 0.1), 0.7), NOF);
-	mode(b, 0.0, near(r, 160.0, 0.08), 0.30, 0.035);
-	mode(b, 0.0, near(r, 345.0, 0.08), 0.14, 0.02);
+	/* laid on the gravel: the pebbles giving under it, a soft thud */
+	gravel(b, r, 0.0, 0.07, 0.15, 900.0, 0.8);
+	mode(b, 0.0, near(r, 140.0, 0.08), 0.22, 0.025);
+	burst(b, r, 0.0, 0.002, 0.014, 0.6, LP(near(r, 800.0, 0.1), 0.7), NOF);
 	finish(b, -30.0, -14.0);
 }
 
@@ -891,6 +927,8 @@ static void s_post_open(struct buf *b, struct rng *r, int v)
 	creak(b, r, 0.0, 0.20, near(r, 250.0, 0.1), near(r, 330.0, 0.1), 0.7, res, 3);
 	clank(b, r, 0.23, 0.45, near(r, 1.0, 0.03));
 	clank(b, r, 0.23 + near(r, 0.07, 0.2), 0.12, near(r, 1.02, 0.03));
+	/* and the air that was in the chest, getting out */
+	bubbles(b, r, 0.12, 0.45, 9, 300.0, 1200.0, 0.22);
 	finish(b, -22.0, -8.0);
 }
 
@@ -928,6 +966,9 @@ static void s_letter_arrive(struct buf *b, struct rng *r, int v)
 	static const double fd[] = { 0.035, 0.045, 0.03, 0.02 };
 	strike(b, r, 0.30, 0.45, 0.4, ff, fa, fd, 0.02);
 	strike(b, r, 0.30 + near(r, 0.035, 0.15), 0.12, 0.1, ff, fa, fd, 0.02);
+	/* the bubble it brought down with it, and a few more */
+	bubble(b, 0.33, near(r, 260.0, 0.1), 0.35);
+	bubbles(b, r, 0.36, 0.25, 5, 500.0, 1400.0, 0.14);
 	finish(b, -20.0, -6.0);
 }
 
@@ -1422,7 +1463,7 @@ static const struct sfx_def SFX[DESK_SND_COUNT] = {
 	[DESK_SND_SHEET_DOWN] = { "sheet-down", 0.2, 3, s_sheet_down },
 	[DESK_SND_POST_OPEN] = { "post-open", 0.9, 2, s_post_open },
 	[DESK_SND_POST_CLOSE] = { "post-close", 0.8, 2, s_post_close },
-	[DESK_SND_LETTER_ARRIVE] = { "letter-arrive", 0.62, 2, s_letter_arrive },
+	[DESK_SND_LETTER_ARRIVE] = { "letter-arrive", 0.75, 2, s_letter_arrive },
 	[DESK_SND_LETTER_TAKE] = { "letter-take", 0.32, 3, s_letter_take },
 	[DESK_SND_LETTER_FLICK] = { "letter-flick", 0.15, 4, s_letter_flick },
 	[DESK_SND_KEY_PRESS] = { "key-press", 0.07, 3, s_key_press },
