@@ -661,7 +661,13 @@ static int write_lock(const char *path, int w, int h)
 	cairo_destroy(ic);
 	char login[64], name[128];
 	desk_lock_user(login, sizeof login, name, sizeof name);
-	cairo_surface_t *pic = desk_lock_picture();
+	/* a stand-in on the door, for pictures that will be shown round */
+	const char *as = getenv("DESK_PREVIEW_NAME");
+	if (as && *as) {
+		snprintf(login, sizeof login, "%s", as);
+		snprintf(name, sizeof name, "%s", as);
+	}
+	cairo_surface_t *pic = as && *as ? NULL : desk_lock_picture();
 	enum { N = 12 };
 	struct desk_lock_look looks[N];
 	memset(looks, 0, sizeof looks);

@@ -7,9 +7,11 @@
 122a4de7a1f5ea8f8dfb4c1d408e895968fb41c9e60b2a1500788fed59fab685  ./docs/design.md
 076ae54aa4de4f2f81e801825a2b28239a5113aed2481e88b53b7c37f6a2c92b  ./docs/MODDING.ja.md
 09de5237140efcf261a8e337bab2dd6a0d1922edf54d0bad3839b0b352e4a05f  ./docs/MODDING.md
-e0828de149f8aa86295cd9f4a4a62ade011507fa7d49335fe73e8bed848f87e9  ./docs/screenshots/aquade-drawer.jpg
-b53fea9eb42c430a83ca62bacb528d494ac808db8fcc1cd3cf6466e37d6de040  ./docs/screenshots/aquade-shelf.jpg
-d7e1040e0d1675bd82e1b62f6d153b603c99b96e73faa04b1b1b57c031d30f9e  ./docs/screenshots/aquade-tank.jpg
+742bfab8c41dc2194634ed39c2584c410831408801b89455664494b86e5b31bb  ./docs/screenshots/aquade-drawer.jpg
+fa0483790c435ca19db8db6278d9df6dd27204dcae2ff8f2b8bc3ed9277c53f9  ./docs/screenshots/aquade-lock.jpg
+65daa0c23451c000f1ee998d7a4959dc5338c6ae19bc2bc292ce9d0f1a87d23e  ./docs/screenshots/aquade-post.jpg
+bf565f24fc4b46af6e667f0014a748b0d9bb7b6353218101ecd183bfa58fe218  ./docs/screenshots/aquade-shelf.jpg
+bb0a4eee87b9b5de5c1fd42f9d2cf327fcf9dfc5272a6d8b1f25908e27ece134  ./docs/screenshots/aquade-tank.jpg
 df3fea73b420d4b5b411a5b270788a65bedc78b225d7233ca2fbf57b2c7eec4a  ./docs/screenshots/bookcase.jpg
 5cebb4ef413b30a48fd63d511ecdfcdb9d2daebe175fd79f94e288ac50099548  ./docs/screenshots/book.jpg
 c4efeabc60bc2cac593492b3b7e4c141a6f643819c83c9a5cd741d397a19c1a2  ./docs/screenshots/book-search.jpg
@@ -48,7 +50,7 @@ d71a97f44854ceed9b3c1c68506b083ce22099977388599e1eabaed37002deed  ./meson_option
 65b0f82a6cf129bf1a1c31a2428795abd33886c15ddd5f3ad97e5922d7bdc3a7  ./protocols/wlr-output-management-unstable-v1.xml
 7ebd98f3449d246a57829e4b4dd9fbc3ef98e3dd42fa94ea102f14f490eb20de  ./protocols/wlr-output-power-management-unstable-v1.xml
 818e5a4f16a6f80b29f44e82bb06b9f98d38dfcf4812f98f69f94e9bad3cafd8  ./README.ja.md
-dbec7127fbbc58761f42ef9c21377b03b986e567f6b67398c106eb7340f4daf1  ./README.md
+1b72a7611f9f3cf6e43e4086ee823aba71f535c968885138cad5365564ae0c52  ./README.md
 c24fc25f965f81999c25c758b42bea91a1ce0fbee29ee175367d891755df736e  ./RELEASE-NOTES.ja.md
 8529dcacf90ff20d029425b780d9ff8f18b38fba5a9e66c61dc059c9ac408fbd  ./RELEASE-NOTES.md
 d700030a565f7b1ff63810cacf19285ddb1dccf27ff9a0ed09c033fb72bd4ae2  ./scripts/aquade-ctl
@@ -105,7 +107,7 @@ da951ebafe49e8728d9109f16d8cb553966dd2bbc7764ddc9dbbd178c2918039  ./src/index.c
 330a310b1f1d2b78afb574a53f9b2697aab1dd0cda3c38dfa7b83128808dddc8  ./src/panel.c
 7b72ea3018c5bb02e1692d9d5a0bd52daa4b1f7780a1b1bd2b423a06fdc78735  ./src/post.c
 aa52cd739f4f8d8c9be3fb657a94892af7d9c5f73d0fa47fbab5a3f8a7e6dff5  ./src/power.c
-c1a3822105eb941cbbeaed487e034e99460ea2cb9d6229769e17d0d123178afc  ./src/preview.c
+68787c7d86c1761feae31a145855e9be13d07380ab02d7d8e6171f353827ac9b  ./src/preview.c
 f6ce8f3ba6a044ccde51a55d0f92b8b4c23631ee22903c3a71e9a31e8d59d05f  ./src/room.glsl
 aa012c43f6583cdaf5c7d21a8f15b8e975246933acfbb6566188a01e74b132d2  ./src/session.c
 363548c3cf5c2b81537d344cb8258a2e4874530f000c87fce594e67e241b394f  ./src/settings.c
