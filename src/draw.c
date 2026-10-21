@@ -2563,6 +2563,41 @@ static double scape_rosette(vec3 p, vec3 c, double len, double leaves, double se
 	return best * 0.6;
 }
 
+/* Ribbon grass, standing up out of the floor on either side of the
+ * bookcase: a row of blades along x, each one swaying a little and leaning
+ * as it goes up. Mirrored, so the two sides are one row and the field is
+ * the same function everywhere -- no seam down the middle for the soft
+ * shadow to find. As with the rosettes, only the blades either side of the
+ * nearest one are looked at. */
+#define RM_GR_SP 0.70
+static double scape_grass(vec3 p, double x0, double x1, double z0, double top)
+{
+	double ax = fabs(p.x);
+	double n = floor((x1 - x0) / RM_GR_SP);
+	double i0 = clampf(floor((ax - x0) / RM_GR_SP + 0.5), 0.0, n);
+	double best = 1e9;
+	for (int j = -2; j <= 2; j++) {
+		double i = i0 + j;
+		if (i < 0.0 || i > n) {
+			continue;
+		}
+		double r1 = room_seed((int)i, 61), r2 = room_seed((int)i, 62);
+		double r3 = room_seed((int)i, 63);
+		double bx = x0 + i * RM_GR_SP + (r1 - 0.5) * 0.30;
+		double bz = z0 + (r2 - 0.5) * 1.80;
+		double ht = (top - RM_FLOOR) * (0.35 + 0.65 * r3);
+		double t = clampf((p.y - RM_FLOOR) / ht, 0.0, 1.0);
+		double cx = bx + sin(t * 3.2 + r1 * 6.0) * 1.10 * t + (r3 - 0.5) * 3.0 * t * t;
+		double wd = 0.36 * (1.0 - 0.85 * t * t) + 0.03;
+		double qx = fabs(ax - cx) - wd, qz = fabs(p.z - bz) - 0.03;
+		double d2 = sqrt(fmax(qx, 0.0) * fmax(qx, 0.0) + fmax(qz, 0.0) * fmax(qz, 0.0))
+			+ fmin(fmax(qx, qz), 0.0);
+		double dy = fmax(p.y - (RM_FLOOR + ht), 0.0);
+		best = fmin(best, sqrt(fmax(d2, 0.0) * fmax(d2, 0.0) + dy * dy) + fmin(d2, 0.0));
+	}
+	return best * 0.5;
+}
+
 static hit3 map_scape(vec3 p)
 {
 	hit3 h = { 1e9, 0 };
@@ -2595,6 +2630,8 @@ static hit3 map_room(vec3 p)
 			v3(90.0, 1.10, 0.32)), MID_ROOM_SKIRT });
 		if (g_room_layer == 3) {
 			h = hmin3(h, map_shelf(p));
+			h = hmin3(h, (hit3){ scape_grass(p, RM_HX + 0.6, g_rm_sh_hx + 1.4,
+				RM_SH_ZF + 1.1, 11.0), MID_SCAPE_PLANT });
 		}
 		/* The console and the post box are part of the desk, so they are
 		 * in every view of it. */
@@ -3351,6 +3388,18 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		break;
 	}
 	case MID_SCAPE_PLANT: {
+		if (w.y < -1.0) {
+			/* the ribbon grass: dark where it comes out of the floor,
+			 * brighter up where the light reaches it, with fine veins */
+			double up = smoothstepf(RM_FLOOR, 0.0, w.y);
+			double t = room_fbm(w.x * 1.7, w.y * 0.4 + w.z);
+			m->albedo = vmix(v3(0.020, 0.060, 0.022), v3(0.140, 0.380, 0.090), up * 0.8 + t * 0.2);
+			m->albedo = vmul(m->albedo, 0.90 + 0.10 * sin(w.x * 60.0));
+			m->rough = 0.55;
+			m->coat = 0.20;
+			m->coat_rough = 0.20;
+			break;
+		}
 		/* broad, waxy leaves: darker at the crown, brighter towards the tips */
 		double r = sqrt(w.x * w.x + w.z * w.z);
 		double t = room_fbm(w.x * 2.3 + 5.0, w.z * 2.3);
@@ -25316,7 +25365,7 @@ static void clk_key(cairo_t *cr, int i)
 
 /* The room being made at login: what of it, a row of blocks filling, and
  * how far, large -- lit in the dark before the lamp is. */
-static const char *const CLK_BOOT_WORD[6] = { "DESK", "SHELF", "PANEL", "POST", "LAMP",
+static const char *const CLK_BOOT_WORD[6] = { "TANK", "SHELF", "PANEL", "CHEST", "LAMP",
 	"READY" };
 
 static void clk_page_boot(cairo_t *cr, double lit)

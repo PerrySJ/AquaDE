@@ -1222,6 +1222,34 @@ float scape_rosette(vec3 p, vec3 c, float len, float leaves, float seed)
 	return best * 0.6;
 }
 
+#define RM_GR_SP 0.70
+float scape_grass(vec3 p, float x0, float x1, float z0, float top)
+{
+	float ax = abs(p.x);
+	float n = floor((x1 - x0) / RM_GR_SP);
+	float i0 = clampf(floor((ax - x0) / RM_GR_SP + 0.5), 0.0, n);
+	float best = 1e9;
+	for (int j = -2; j <= 2; j++) {
+		float i = i0 + float(j);
+		if (i < 0.0 || i > n) {
+			continue;
+		}
+		float r1 = room_seed(int(i), 61), r2 = room_seed(int(i), 62);
+		float r3 = room_seed(int(i), 63);
+		float bx = x0 + i * RM_GR_SP + (r1 - 0.5) * 0.30;
+		float bz = z0 + (r2 - 0.5) * 1.80;
+		float ht = (top - RM_FLOOR) * (0.35 + 0.65 * r3);
+		float t = clampf((p.y - RM_FLOOR) / ht, 0.0, 1.0);
+		float cx = bx + ssin(t * 3.2 + r1 * 6.0) * 1.10 * t + (r3 - 0.5) * 3.0 * t * t;
+		float wd = 0.36 * (1.0 - 0.85 * t * t) + 0.03;
+		float qx = abs(ax - cx) - wd, qz = abs(p.z - bz) - 0.03;
+		float d2 = length(max(vec2(qx, qz), 0.0)) + min(max(qx, qz), 0.0);
+		float dy = max(p.y - (RM_FLOOR + ht), 0.0);
+		best = min(best, length(vec2(max(d2, 0.0), dy)) + min(d2, 0.0));
+	}
+	return best * 0.5;
+}
+
 hit3 map_scape(vec3 p)
 {
 	hit3 h = hit3(1e9, 0);
@@ -1259,6 +1287,8 @@ hit3 scene_map(vec3 p)
 			vec3(90.0, 1.10, 0.32)), MID_ROOM_SKIRT));
 		if (u_layer == 3) {
 			h = hmin3(h, map_shelf(p));
+			h = hmin3(h, hit3(scape_grass(p, RM_HX + 0.6, u_sh_hx + 1.4,
+				RM_SH_ZF + 1.1, 11.0), MID_SCAPE_PLANT));
 		}
 		h = hmin3(h, map_console(p));
 		h = hmin3(h, map_post(p));
@@ -1839,14 +1869,24 @@ mtl icon_material(int id, vec3 pw)
 		break;
 	}
 	case MID_SCAPE_PLANT: {
-		float r = sqrt(w.x * w.x + w.z * w.z);
-		float t = room_fbm(w.x * 2.3 + 5.0, w.z * 2.3);
-		m.albedo = mix(vec3(0.030, 0.110, 0.030), vec3(0.110, 0.330, 0.070),
-			clampf(t * 0.8 + w.y * 0.35, 0.0, 1.0));
-		m.albedo *= 0.90 + 0.10 * ssin(r * 40.0);
-		m.rough = 0.50;
-		m.coat = 0.25;
-		m.coat_rough = 0.18;
+		if (w.y < -1.0) {
+			float up = smoothstepf(RM_FLOOR, 0.0, w.y);
+			float t = room_fbm(w.x * 1.7, w.y * 0.4 + w.z);
+			m.albedo = mix(vec3(0.020, 0.060, 0.022), vec3(0.140, 0.380, 0.090), up * 0.8 + t * 0.2);
+			m.albedo *= 0.90 + 0.10 * ssin(w.x * 60.0);
+			m.rough = 0.55;
+			m.coat = 0.20;
+			m.coat_rough = 0.20;
+		} else {
+			float r = sqrt(w.x * w.x + w.z * w.z);
+			float t = room_fbm(w.x * 2.3 + 5.0, w.z * 2.3);
+			m.albedo = mix(vec3(0.030, 0.110, 0.030), vec3(0.110, 0.330, 0.070),
+				clampf(t * 0.8 + w.y * 0.35, 0.0, 1.0));
+			m.albedo *= 0.90 + 0.10 * ssin(r * 40.0);
+			m.rough = 0.50;
+			m.coat = 0.25;
+			m.coat_rough = 0.18;
+		}
 		break;
 	}
 	case MID_ROOM_FLOOR:
