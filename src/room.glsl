@@ -1050,18 +1050,14 @@ hit3 shelf_binder_map(vec3 p, int i)
 	}
 	q = q - vec3(0.0, bh * 0.5, 0.0);
 
-	float bow = 0.055 * (1.0 - abs(q.y) / max(bh * 0.5, 0.1));
-	float body = sd_round_box(q, vec3(bhw + bow, bh * 0.5, RM_BN_DEPTH * 0.5), 0.16);
+	float rho = RM_BN_DEPTH * 0.5, t = bhw;
+	float c = (rho * rho - t * t) / (2.0 * t), R = c + t;
+	vec3 s = vec3(q.x, q.y * rho / (bh * 0.5), q.z);
+	float body = max(length(s - vec3(c, 0.0, 0.0)) - R, length(s + vec3(c, 0.0, 0.0)) - R);
+	h = hmin3(h, hit3(body, MID_BINDER_A));
 
-	vec3 lp = q - vec3(0.0, BN_LABEL_Y[i] - bh * 0.5, RM_BN_DEPTH * 0.5);
-	float pocket = sd_round_box(lp, vec3(bhw * 0.72, 1.55, 0.13), 0.08);
-	body = max(body, -pocket);
-	h = hmin3(h, hit3(body, BN_MID[i]));
-	h = hmin3(h, hit3(sd_round_box(lp - vec3(0.0, 0.0, -0.10),
-		vec3(bhw * 0.72, 1.55, 0.05), 0.06), MID_BINDER_LABEL));
-
-	h = hmin3(h, hit3(sd_box(q - vec3(0.0, bh * 0.5 - 0.30, -0.35),
-		vec3(bhw - 0.22, 0.26, RM_BN_DEPTH * 0.5 - 0.55)), MID_FOLDER_PAPER));
+	vec3 lp = q - vec3(0.0, BN_LABEL_Y[i] - bh * 0.5, rho - 0.10);
+	h = hmin3(h, hit3(sd_round_box(lp, vec3(bhw * 0.72, 1.55, 0.05), 0.06), MID_BINDER_LABEL));
 	return h;
 }
 
@@ -1589,6 +1585,36 @@ void slate_at(vec3 w, inout mtl m, float seed)
 	m.bump_amp = 0.060;
 }
 
+const vec3 SHELL_COL[8] = vec3[8](
+	vec3(0.86, 0.52, 0.42), vec3(0.88, 0.82, 0.68), vec3(0.90, 0.64, 0.46), vec3(0.70, 0.58, 0.72),
+	vec3(0.80, 0.70, 0.54), vec3(0.88, 0.60, 0.64), vec3(0.82, 0.60, 0.34), vec3(0.56, 0.64, 0.72));
+
+void shell_at(vec3 w, inout mtl m)
+{
+	int i = 0;
+	for (int k = 1; k < DESK_SHELF_COUNT; k++) {
+		if (abs(w.x - BN_X[k]) < abs(w.x - BN_X[i])) {
+			i = k;
+		}
+	}
+	vec3 col = pow(SHELL_COL[i], vec3(2.2));
+	float yc = RM_BN_FOOT + BN_H[i] * 0.5, zf = RM_BN_ZC + RM_BN_DEPTH * 0.5;
+	float dy = w.y - yc, dz = w.z - zf;
+	float r = sqrt(dy * dy * 0.45 + dz * dz);
+	float ring = 0.5 + 0.5 * ssin(r * 9.0 + room_noise(w.x * 3.0, r * 2.0) * 2.0);
+	float rib = 0.5 + 0.5 * ssin(atan(dy, -dz) * 26.0);
+	m.albedo = col * (1.05 * (0.82 + 0.14 * ring + 0.10 * rib));
+	m.albedo *= 0.80 + 0.20 * smoothstepf(0.0, 2.5, r);
+	float seam = smoothstepf(0.10, 0.02, abs(w.x - BN_X[i]));
+	m.albedo *= 1.0 - 0.65 * seam;
+	m.rough = 0.55 + 0.15 * ring;
+	m.coat = 0.20;
+	m.coat_rough = 0.30;
+	m.bump_freq = 40.0;
+	m.bump_amp = 0.050;
+	m.dust = 0.3;
+}
+
 void gravel_at(vec3 w, inout mtl m)
 {
 	const float S = 0.36;
@@ -1998,43 +2024,10 @@ mtl icon_material(int id, vec3 pw)
 		m.albedo *= 0.55;
 		m.coat = 0.0;
 		break;
-	case MID_BINDER_A: {
-		float t = room_fbm(w.x * 22.0, w.y * 22.0);
-		float cell = spow(room_noise(w.x * 48.0, w.y * 48.0), 2.4);
-		m.albedo = mix(vec3(0.176, 0.048, 0.042), vec3(0.286, 0.098, 0.074), t);
-		m.albedo *= 0.90 + cell * 0.20;
-		float head = smoothstepf(RM_BN_FOOT + 3.6, RM_BN_FOOT + 7.4, w.y);
-		float fade = clampf(head * (0.24 + room_fbm2(w.x * 1.9 + 3.0, w.y * 0.8) * 1.05), 0.0, 1.0);
-		m.albedo = mix(m.albedo, vec3(0.208, 0.132, 0.112), fade * 0.30);
-		float sc = scratch_at(w.y, w.x, 0.50, 5.0, 0.011, 4.0) * 0.85
-			+ scratch_at(w.x, w.y, 0.28, 4.0, 0.008, 9.0) * 0.60;
-		m.albedo = mix(m.albedo, m.albedo * 1.80, clampf(sc, 0.0, 1.0) * 0.32);
-		m.rough = 0.50 + t * 0.22 + fade * 0.16;
-		m.coat = 0.26 * (1.0 - fade * 0.65);
-		m.coat_rough = 0.30 + fade * 0.22;
-		m.bump_freq = 56.0;
-		m.bump_amp = 0.085;
-		m.dust = 1.0;
-		m.edge = 2.6;
+	case MID_BINDER_A:
+	case MID_BINDER_B:
+		shell_at(w, m);
 		break;
-	}
-	case MID_BINDER_B: {
-		float t = room_fbm(w.x * 26.0, w.y * 26.0);
-		float weave = 0.5 + 0.5 * ssin(w.x * 120.0) * ssin(w.y * 120.0);
-		m.albedo = mix(vec3(0.044, 0.082, 0.056), vec3(0.086, 0.140, 0.092), t);
-		m.albedo *= 0.92 + weave * 0.14;
-		float head = smoothstepf(RM_BN_FOOT + 3.6, RM_BN_FOOT + 7.4, w.y);
-		float fade = clampf(head * (0.28 + room_fbm2(w.x * 1.7 + 8.0, w.y * 0.8) * 1.0), 0.0, 1.0);
-		m.albedo = mix(m.albedo, vec3(0.108, 0.118, 0.098), fade * 0.34);
-		float sc = scratch_at(w.y, w.x, 0.46, 5.0, 0.010, 14.0) * 0.8;
-		m.albedo = mix(m.albedo, m.albedo * 1.55, clampf(sc, 0.0, 1.0) * 0.30);
-		m.rough = 0.82 + fade * 0.10;
-		m.bump_freq = 78.0;
-		m.bump_amp = 0.070;
-		m.dust = 1.0;
-		m.edge = 2.4;
-		break;
-	}
 	case MID_BOOK_LEATHER: {
 		float t = room_fbm(w.x * 30.0, w.y * 30.0);
 		float peb = spow(room_noise(w.x * 70.0, w.y * 70.0), 1.8);

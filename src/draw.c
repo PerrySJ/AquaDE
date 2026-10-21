@@ -2289,6 +2289,12 @@ static const struct shelf_binder SHELF_BINDERS[DESK_SHELF_COUNT] = {
 	{  13.20, 1.65, 9.25,  0.000, 6.00, MID_BINDER_B },
 };
 
+/* each shelf's shell its own colour (as drawn: sRGB) */
+static const double SHELL_COL[DESK_SHELF_COUNT][3] = {
+	{ 0.86, 0.52, 0.42 }, { 0.88, 0.82, 0.68 }, { 0.90, 0.64, 0.46 }, { 0.70, 0.58, 0.72 },
+	{ 0.80, 0.70, 0.54 }, { 0.88, 0.60, 0.64 }, { 0.82, 0.60, 0.34 }, { 0.56, 0.64, 0.72 },
+};
+
 #define RM_BN_DEPTH 6.40
 #define RM_BN_ZF (RM_SH_ZF - 0.55)               /* the spine, facing out */
 #define RM_BN_ZC (RM_BN_ZF - RM_BN_DEPTH * 0.5)
@@ -2321,21 +2327,20 @@ static hit3 shelf_binder_map(vec3 p, int i)
 	}
 	q = vsub(q, v3(0, b->h * 0.5, 0));
 
-	/* the boards, with the spine bowed a little the way a full one is */
-	double bow = 0.055 * (1.0 - fabs(q.y) / fmax(b->h * 0.5, 0.1));
-	double body = sd_round_box(q, v3(b->hw + bow, b->h * 0.5, RM_BN_DEPTH * 0.5), 0.16);
+	/* A clam, shut, on its edge with its hinge out: two valves, each a
+	 * cap of a sphere, meeting at a sharp rim -- as thick through as the
+	 * binder was across, its rim as deep as the binder was, drawn out to
+	 * its height (squashed, its distance is still never too far). */
+	double rho = RM_BN_DEPTH * 0.5, t = b->hw;
+	double c = (rho * rho - t * t) / (2.0 * t), R = c + t;
+	vec3 s = v3(q.x, q.y * rho / (b->h * 0.5), q.z);
+	double body = fmax(vlen(vsub(s, v3(c, 0, 0))) - R, vlen(vadd(s, v3(c, 0, 0))) - R);
+	h = hmin3(h, (hit3){ body, MID_BINDER_A });
 
-	/* the label pocket, recessed into the spine */
-	vec3 lp = vsub(q, v3(0.0, b->label_y - b->h * 0.5, RM_BN_DEPTH * 0.5));
-	double pocket = sd_round_box(lp, v3(b->hw * 0.72, 1.55, 0.13), 0.08);
-	body = fmax(body, -pocket);
-	h = hmin3(h, (hit3){ body, b->mid });
-	h = hmin3(h, (hit3){ sd_round_box(vsub(lp, v3(0, 0, -0.10)),
-		v3(b->hw * 0.72, 1.55, 0.05), 0.06), MID_BINDER_LABEL });
-
-	/* the block of paper, just visible at the head */
-	h = hmin3(h, (hit3){ sd_box(vsub(q, v3(0, b->h * 0.5 - 0.30, -0.35)),
-		v3(b->hw - 0.22, 0.26, RM_BN_DEPTH * 0.5 - 0.55)), MID_FOLDER_PAPER });
+	/* the label, a card tied on at the front */
+	vec3 lp = vsub(q, v3(0.0, b->label_y - b->h * 0.5, rho - 0.10));
+	h = hmin3(h, (hit3){ sd_round_box(lp, v3(b->hw * 0.72, 1.55, 0.05), 0.06),
+		MID_BINDER_LABEL });
 	return h;
 }
 
@@ -3092,6 +3097,38 @@ static void slate_at(vec3 w, struct mtl *m, double seed)
 	m->bump_amp = 0.060;
 }
 
+/* A shut clam on the shelf: which one it is from where it stands, its
+ * colour (SHELL_COL, as drawn, made linear), the rings it grew in round
+ * its hinge at the front, faint ribs, and the line where its valves meet
+ * dark down the middle of its front. */
+static void shell_at(vec3 w, struct mtl *m)
+{
+	int i = 0;
+	for (int k = 1; k < DESK_SHELF_COUNT; k++) {
+		if (fabs(w.x - SHELF_BINDERS[k].x) < fabs(w.x - SHELF_BINDERS[i].x)) {
+			i = k;
+		}
+	}
+	const struct shelf_binder *b = &SHELF_BINDERS[i];
+	vec3 col = v3(pow(SHELL_COL[i][0], 2.2), pow(SHELL_COL[i][1], 2.2), pow(SHELL_COL[i][2], 2.2));
+	double yc = RM_BN_FOOT + b->h * 0.5, zf = RM_BN_ZC + RM_BN_DEPTH * 0.5;
+	double dy = w.y - yc, dz = w.z - zf;
+	double r = sqrt(dy * dy * 0.45 + dz * dz);
+	double ring = 0.5 + 0.5 * sin(r * 9.0 + room_noise(w.x * 3.0, r * 2.0) * 2.0);
+	double rib = 0.5 + 0.5 * sin(atan2(dy, -dz) * 26.0);
+	m->albedo = vmul(col, 1.05 * (0.82 + 0.14 * ring + 0.10 * rib));
+	/* worn toward the hinge, where it is oldest */
+	m->albedo = vmul(m->albedo, 0.80 + 0.20 * smoothstepf(0.0, 2.5, r));
+	double seam = smoothstepf(0.10, 0.02, fabs(w.x - b->x));
+	m->albedo = vmul(m->albedo, 1.0 - 0.65 * seam);
+	m->rough = 0.55 + 0.15 * ring;
+	m->coat = 0.20;
+	m->coat_rough = 0.30;
+	m->bump_freq = 40.0;
+	m->bump_amp = 0.050;
+	m->dust = 0.3;
+}
+
 /* Gravel: what the drawer is lined with. Pebbles about two centimetres
  * across (a jittered grid, the nearest point is the pebble), dark stone
  * mostly, some brown, a few pale; wet on top and dark in the gaps. */
@@ -3544,54 +3581,11 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		m->albedo = vmul(m->albedo, 0.55);
 		m->coat = 0.0;
 		break;
-	case MID_BINDER_A: {
-		/* oxblood calf, rubbed along the head and the fore edge */
-		double t = room_fbm(w.x * 22.0, w.y * 22.0);
-		double cell = pow(room_noise(w.x * 48.0, w.y * 48.0), 2.4);
-		m->albedo = vmix(v3(0.176, 0.048, 0.042), v3(0.286, 0.098, 0.074), t);
-		m->albedo = vmul(m->albedo, 0.90 + cell * 0.20);
-		/* The spine has been facing the room for years and the head takes
-		 * the worst of it. Dye goes out of calf unevenly, so it goes
-		 * patchy rather than paler all over. */
-		double head = smoothstepf(RM_BN_FOOT + 3.6, RM_BN_FOOT + 7.4, w.y);
-		double fade = clampf(head * (0.24 + room_fbm2(w.x * 1.9 + 3.0, w.y * 0.8) * 1.05),
-			0.0, 1.0);
-		m->albedo = vmix(m->albedo, v3(0.208, 0.132, 0.112), fade * 0.30);
-		/* and the marks of being pulled out by the head, every time */
-		double sc = scratch_at(w.y, w.x, 0.50, 5.0, 0.011, 4.0) * 0.85
-			+ scratch_at(w.x, w.y, 0.28, 4.0, 0.008, 9.0) * 0.60;
-		m->albedo = vmix(m->albedo, vmul(m->albedo, 1.80), clampf(sc, 0.0, 1.0) * 0.32);
-		m->rough = 0.50 + t * 0.22 + fade * 0.16;
-		m->coat = 0.26 * (1.0 - fade * 0.65);
-		m->coat_rough = 0.30 + fade * 0.22;
-		m->bump_freq = 56.0;
-		m->bump_amp = 0.085;
-		m->dust = 1.0;
-		/* the corners of a box file are the most rubbed thing in the room */
-		m->edge = 2.6;
+	case MID_BINDER_A:
+	case MID_BINDER_B:
+		/* the binders are clams */
+		shell_at(w, m);
 		break;
-	}
-	case MID_BINDER_B: {
-		/* dark green buckram: a woven cloth, so a coarser tooth and no shine */
-		double t = room_fbm(w.x * 26.0, w.y * 26.0);
-		double weave = 0.5 + 0.5 * sin(w.x * 120.0) * sin(w.y * 120.0);
-		m->albedo = vmix(v3(0.044, 0.082, 0.056), v3(0.086, 0.140, 0.092), t);
-		m->albedo = vmul(m->albedo, 0.92 + weave * 0.14);
-		/* Cloth fades further than leather does, and it goes grey doing
-		 * it, and it collects the dust of the room in its weave. */
-		double head = smoothstepf(RM_BN_FOOT + 3.6, RM_BN_FOOT + 7.4, w.y);
-		double fade = clampf(head * (0.28 + room_fbm2(w.x * 1.7 + 8.0, w.y * 0.8) * 1.0),
-			0.0, 1.0);
-		m->albedo = vmix(m->albedo, v3(0.108, 0.118, 0.098), fade * 0.34);
-		double sc = scratch_at(w.y, w.x, 0.46, 5.0, 0.010, 14.0) * 0.8;
-		m->albedo = vmix(m->albedo, vmul(m->albedo, 1.55), clampf(sc, 0.0, 1.0) * 0.30);
-		m->rough = 0.82 + fade * 0.10;
-		m->bump_freq = 78.0;
-		m->bump_amp = 0.070;
-		m->dust = 1.0;
-		m->edge = 2.4;
-		break;
-	}
 	case MID_BOOK_LEATHER: {
 		/* Navy morocco: the grain pebbled, polished by the hands that took
 		 * it down, the head gone a little grey where the light falls. */
@@ -15608,11 +15602,6 @@ static void shell_path(cairo_t *cr, double x, double y, double W, double H, bool
 	cairo_restore(cr);
 }
 
-/* each shelf's shell its own colour */
-static const double SHELL_COL[DESK_SHELF_COUNT][3] = {
-	{ 0.86, 0.52, 0.42 }, { 0.88, 0.82, 0.68 }, { 0.90, 0.64, 0.46 }, { 0.70, 0.58, 0.72 },
-	{ 0.80, 0.70, 0.54 }, { 0.88, 0.60, 0.64 }, { 0.82, 0.60, 0.34 }, { 0.56, 0.64, 0.72 },
-};
 
 /* The outside of a valve: its colour, the ribs from the hinge as stripes
  * of light and shade, the rings it grew in, darker toward the hinge. */
