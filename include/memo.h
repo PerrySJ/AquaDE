@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 /* The memo pad on the shelf: sheets of what has been written on it, kept
- * in $XDG_DATA_HOME/desk/memo -- the sheets one after another, a line
+ * in $XDG_DATA_HOME/aquade/memo -- the sheets one after another, a line
  * with nothing but a form feed between two. Read the first time it is
  * asked for; written again whenever a sheet changes. */
 #define DESK_MEMO_SHEETS 64

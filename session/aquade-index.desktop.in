@@ -11,4 +11,4 @@ Keywords[ja]=ベンチマーク;性能;スコア;評価;速度;
 Exec=@EXEC@
 Icon=@ICON@
 Categories=System;Monitor;
-StartupWMClass=desk-index
+StartupWMClass=aquade-index

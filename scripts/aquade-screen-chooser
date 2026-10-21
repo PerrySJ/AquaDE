@@ -1,5 +1,5 @@
 #!/bin/sh
-# desk-screen-chooser -- which screen to share, asked for by
+# aquade-screen-chooser -- which screen to share, asked for by
 # xdg-desktop-portal-wlr when a program (a browser, a video call) wants to
 # share one. The portal hands the screens in, one a line (its "dmenu"
 # chooser); the one chosen goes out, and nothing when the sharing is turned

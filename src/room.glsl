@@ -2,7 +2,7 @@
  *
  * A line for line port of the tracer in draw.c -- scene_map, the materials
  * and shade_surface -- and draw.c stays the reference: this file has to
- * give the same picture, and `desk-gputest --room` is what says whether
+ * give the same picture, and `aquade-gputest --room` is what says whether
  * it does. Change one, change the other.
  *
  * Every number with a name arrives from draw.c ahead of this text (see

@@ -108,7 +108,7 @@ const struct desk_app *desk_apps_find(const struct desk_app_list *list, const ch
  * For each, what shell.conf sets (app.<role> = <desktop id>), else the
  * default program for its kind of file, as GIO and xdg-open find it by the
  * XDG MIME applications spec -- the user's mimeapps.list before the
- * desk-mimeapps.list AquaDE installs; the terminal has no kind of file --
+ * aquade-mimeapps.list AquaDE installs; the terminal has no kind of file --
  * else the first installed of AquaDE's standard set, else any program of
  * the kind. NULL if there is none at all. */
 enum desk_std {

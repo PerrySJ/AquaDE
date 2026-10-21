@@ -1449,7 +1449,7 @@ static void pic_size_destroy(struct wlr_addon *addon)
 }
 
 static const struct wlr_addon_interface PIC_SIZE = {
-	.name = "desk-picture-size",
+	.name = "aquade-picture-size",
 	.destroy = pic_size_destroy,
 };
 
@@ -9993,7 +9993,7 @@ static void terminal_open(void)
 
 /* ---- the shell's own settings ----------------------------------------
  *
- * $XDG_CONFIG_HOME/desk/shell.conf, "key = value" a line, read at start
+ * $XDG_CONFIG_HOME/aquade/shell.conf, "key = value" a line, read at start
  * and again whenever it changes (looked at once a second). Shell Settings
  * writes it; so may anyone with an editor.
  *
@@ -10964,7 +10964,7 @@ static void view_fold_toggle(struct desk_toplevel *view)
  * out of the drawer and a sheet is laid down there. A sheet folded on the
  * desk is carried into the drawer the same way, and the drawer comes out
  * for it if it is carried to the drawer's pull. The programs and the
- * screwdriver, in their order, are kept ($XDG_CONFIG_HOME/desk/drawer); the sheets go
+ * screwdriver, in their order, are kept ($XDG_CONFIG_HOME/aquade/drawer); the sheets go
  * when their windows do. */
 
 static void drawer_path(char *out, size_t n)
@@ -15775,7 +15775,7 @@ static void render_unpublish(void)
 static void settings_open(void)
 {
 	const struct desk_app_list *l = desk_apps_acquire();
-	const struct desk_app *app = desk_apps_find(l, "desk-settings.desktop");
+	const struct desk_app *app = desk_apps_find(l, "aquade-settings.desktop");
 	if (app) {
 		desk_app_launch(app);
 	}
@@ -15783,16 +15783,16 @@ static void settings_open(void)
 	if (app) {
 		return;
 	}
-	if (on_path("desk-settings")) {
-		spawn("desk-settings");
+	if (on_path("aquade-settings")) {
+		spawn("aquade-settings");
 		return;
 	}
 	char exe[512];
 	ssize_t n = readlink("/proc/self/exe", exe, sizeof exe - 1);
 	exe[n > 0 ? n : 0] = '\0';
 	char *slash = strrchr(exe, '/');
-	if (slash && (size_t)(slash - exe) + sizeof "/desk-settings" < sizeof exe) {
-		memcpy(slash, "/desk-settings", sizeof "/desk-settings");
+	if (slash && (size_t)(slash - exe) + sizeof "/aquade-settings" < sizeof exe) {
+		memcpy(slash, "/aquade-settings", sizeof "/aquade-settings");
 		if (access(exe, X_OK) == 0) {
 			char *const argv[] = { exe, NULL };
 			spawn_argv(argv);
@@ -15803,7 +15803,7 @@ static void settings_open(void)
 /* A letter to say the screen is drawn on the CPU: at the end of a login,
  * when the lamp is up and the desk is there to read it on -- and not every
  * login: once, again a week on if it still is, and again if what draws it
- * has changed ($XDG_STATE_HOME/desk/cpu-letter). */
+ * has changed ($XDG_STATE_HOME/aquade/cpu-letter). */
 static void cpu_letter(struct desk_server *server)
 {
 	if (!server->on_cpu) {
@@ -15842,9 +15842,9 @@ static void cpu_letter(struct desk_server *server)
 		: TR("The screen is being drawn by the processor, not a graphics card. Check the "
 			"graphics drivers -- or, in a virtual machine, its settings (3D "
 			"acceleration)."));
-	snprintf(note.desktop, sizeof note.desktop, "desk-settings");
+	snprintf(note.desktop, sizeof note.desktop, "aquade-settings");
 	note.n_actions = 1;
-	snprintf(note.action_key[0], sizeof note.action_key[0], "desk-settings");
+	snprintf(note.action_key[0], sizeof note.action_key[0], "aquade-settings");
 	snprintf(note.action_label[0], sizeof note.action_label[0], "%s", TR("Shell Settings"));
 	desk_post_own(&note);
 	wlr_log(WLR_INFO, "a letter: the screen is drawn on the CPU");
@@ -15863,7 +15863,7 @@ static void cpu_letter(struct desk_server *server)
  * and you turn back to the desk, where what it opened comes. */
 static void own_letter_action(struct desk_server *server, unsigned id, const char *key)
 {
-	if (!strcmp(key, "desk-settings")) {
+	if (!strcmp(key, "aquade-settings")) {
 		settings_open();
 	}
 #ifdef DESK_HAVE_POST
@@ -17912,7 +17912,7 @@ static void om_test_cb(struct wl_listener *listener, void *data)
 
 /* ---- the screens as they were left -----------------------------------
  *
- * $XDG_CONFIG_HOME/desk/displays.conf: how a display tool last set out
+ * $XDG_CONFIG_HOME/aquade/displays.conf: how a display tool last set out
  * each set of screens that have been plugged in together -- each screen's
  * mode, where it is, which way up, whether it is on -- written when a tool
  * has done something, and done again whenever the same screens are there:
@@ -18708,14 +18708,14 @@ static void show_midnight_check(struct desk_server *server)
 }
 
 /* A picture of the screen -- or of the sheet in front, paper and all --
- * with grim, by desk-screenshot (which files it and posts a letter). */
+ * with grim, by aquade-screenshot (which files it and posts a letter). */
 static void screenshot_take(struct desk_server *server, bool window)
 {
-	char cmd[160] = "desk-screenshot";
+	char cmd[160] = "aquade-screenshot";
 	if (window && !wl_list_empty(&server->toplevels)) {
 		struct desk_toplevel *v = wl_container_of(server->toplevels.next, v, link);
 		if (v->scene_tree && v->scene_tree->node.enabled && v->outer_w > 0 && v->outer_h > 0) {
-			snprintf(cmd, sizeof cmd, "desk-screenshot --geometry '%d,%d %dx%d'",
+			snprintf(cmd, sizeof cmd, "aquade-screenshot --geometry '%d,%d %dx%d'",
 				v->scene_tree->node.x, v->scene_tree->node.y, v->outer_w, v->outer_h);
 		}
 	}
@@ -19164,7 +19164,7 @@ static bool ti_mods_in(struct desk_server *server, const struct wlr_keyboard_mod
  * OUT on the Control Panel ends it: the windows asked to close first, and
  * one that will not holds it up until it is asked again. Counted as they
  * come, at the door too, and never passed on to a window; acted on once no
- * other has come for CAD_GAP_S (the third at once). desk-ctl does the same
+ * other has come for CAD_GAP_S (the third at once). aquade-ctl does the same
  * from a terminal or another VT, by signal (cad_signal). */
 #define CAD_GAP_S 0.8
 
@@ -19253,7 +19253,7 @@ static void cad_press(struct desk_server *server)
 	}
 }
 
-/* desk-ctl's signals, USR1 for a reset and USR2 for the end of the session,
+/* aquade-ctl's signals, USR1 for a reset and USR2 for the end of the session,
  * and TERM, HUP and INT -- logind ending the session for a restart or a
  * power-off, ^C on a desk in a window -- which end the desk the way a log
  * out finally does, at once (the session is going whatever the windows
@@ -19290,10 +19290,10 @@ static int cad_signal(int fd, uint32_t mask, void *data)
 	unsigned char b;
 	while (read(fd, &b, 1) == 1) {
 		if (b == SIGUSR1) {
-			wlr_log(WLR_INFO, "desk-ctl reset");
+			wlr_log(WLR_INFO, "aquade-ctl reset");
 			cad_reset(server);
 		} else if (b == SIGUSR2) {
-			wlr_log(WLR_INFO, "desk-ctl logout: the session ends");
+			wlr_log(WLR_INFO, "aquade-ctl logout: the session ends");
 			end_begin(server, END_LOG_OUT);
 		} else if (b == SIGTERM || b == SIGHUP || b == SIGINT) {
 			wlr_log(WLR_INFO, "%s: the desk ends",
@@ -21237,7 +21237,7 @@ static void output_destroy(struct wl_listener *listener, void *data)
  * connection of our own, because wlroots keeps its window to itself -- so
  * the window is found by a title nobody else has, and then given the real
  * one. */
-#define DESK_APP_ID "desk-window"
+#define DESK_APP_ID "aquade-window"
 
 #if WLR_HAS_X11_BACKEND && defined(DESK_HAVE_XWAYLAND)
 static xcb_atom_t x_atom(xcb_connection_t *c, const char *name)
@@ -22751,7 +22751,7 @@ static int desk_claim_session(void)
 		close(fd);
 		return -2;   /* somebody else has it */
 	}
-	/* and who has it, for desk-ctl */
+	/* and who has it, for aquade-ctl */
 	if (ftruncate(fd, 0) == 0) {
 		char pid[24];
 		int n = snprintf(pid, sizeof pid, "%d\n", (int)getpid());
@@ -23143,7 +23143,7 @@ int main(int argc, char **argv)
 
 	server.cursor = wlr_cursor_create();
 	wlr_cursor_attach_output_layout(server.cursor, server.output_layout);
-	/* the pointer as programs have it (desk-session takes it from the look
+	/* the pointer as programs have it (aquade-session takes it from the look
 	 * of other programs) */
 	const char *cur_theme = getenv("XCURSOR_THEME");
 	const char *cur_size = getenv("XCURSOR_SIZE");

@@ -4,7 +4,7 @@
 
 > **DEsk**（デスク）は、**D**esktop **E**nvironment と **desk**（机）を掛け合わせた名前です。
 > Reddit のコミュニティからの提案で生まれました。以前の名前は DeskWM です
-> （コマンドは `desk`・`desk-session`・`desk-settings` などに変わりました。旧名の設定・データ・
+> （コマンドは `desk`・`aquade-session`・`aquade-settings` などに変わりました。旧名の設定・データ・
 > 環境変数 `DESKWM_*` はそのまま引き継がれます）。
 
 **リアルなスキューモーフィズム**で作った、**Linux 向けの Wayland デスクトップ**です。
@@ -115,8 +115,8 @@ DEsk のセッションでは、ほかのアプリも机に合わせた見た目
 - **GTK テーマ「DEsk」**（`themes/gtk/DEsk`）：Adwaita の上に、窓は紙の色、リストや
   文字欄は白い紙、文字はインク、選んだものは真鍮、メニューバーとツールバーはマニラの色。
   Qt のアプリも GTK に合わせて着替えます（qt6-gtk-platformtheme）。
-- **DEsk のセッションの中だけ**：desk-session が dconf に DEsk 用の層
-  （`desk-dconf-profile`：DEsk の層をユーザーの設定の上に重ねる）を使わせ、最初の
+- **DEsk のセッションの中だけ**：aquade-session が dconf に DEsk 用の層
+  （`aquade-dconf-profile`：DEsk の層をユーザーの設定の上に重ねる）を使わせ、最初の
   ログインでその層にアイコンと GTK テーマを入れます。GNOME など、同じ機械のほかの
   デスクトップの見た目は変わりません。DEsk の中で nwg-look などで変えた見た目も DEsk の
   中だけに残ります。X で動く GTK アプリ（Caja・Pluma など MATE のもの）は設定デーモンの
@@ -142,7 +142,7 @@ DEsk のセッションでは、ほかのアプリも机に合わせた見た目
 - 当たり判定はトレーサが出す **ID バッファ**を引きます。透視投影された物は、矩形では
   表現できません。引き出しの中身だけは置き場所が決まっていないので、フェルトの上の列の
   座標で引きます（`desk_drawer_at`）
-- 部屋は静物なので一度焼いてキャッシュします（`~/.cache/desk/room-*`）。
+- 部屋は静物なので一度焼いてキャッシュします（`~/.cache/aquade/room-*`）。
   焼き上がるまではコンポジタは無地の机を出し、焼けたら差し替えるので起動は止まりません。
   **机だけ先に焼いて先に出します**（下記）
 
@@ -311,8 +311,8 @@ menu spec の規則どおりに — 近いディレクトリが id を勝ち取�
 保持して遠いディレクトリからの復活を防ぐ — 8 つの棚に配ります。`Name[ja]` も読みます。
 この機械では 856 ファイルから 106 本、0.46 秒。
 
-`desk-preview --apps` で何がどの棚に入ったかを画素なしで確認できます。
-`$XDG_CONFIG_HOME/desk/shelves.conf` に `org.kde.kate.desktop = Development` の形で
+`aquade-preview --apps` で何がどの棚に入ったかを画素なしで確認できます。
+`$XDG_CONFIG_HOME/aquade/shelves.conf` に `org.kde.kate.desktop = Development` の形で
 書けば、規則より優先されます。
 
 アイコンが SVG しかない場合は cairo が読めないので、rsvg-convert（インストーラが入れます。
@@ -434,7 +434,7 @@ LAMP を動かします。`DESK_SYSFS` に別の木を指せば、バックラ�
 焼けません。動くからです。焼いたシートは一度だけ scene node に載せ、**上に重ねる
 のは生きている半分だけ**にしてあります。
 
-`desk-preview --console` で機械だけを書き出せます。
+`aquade-preview --console` で機械だけを書き出せます。
 
 **スイッチのレバー、LAMP のつまみ、鍵は、パネルに刷った絵ではありません。** レバーは
 ボスから手前へ突き出して ON か OFF の側へ倒れ（WIRELESS は黒いベークライトのバット、
@@ -636,7 +636,7 @@ BLUETOOTH は先に玉の付いたクロームのトグル）、LAMP のつま�
 - **戻す**：Esc、右クリック、メモの外をクリック。棚に戻ると、表の紙は今書いたものに
   なっています。
 - 書いたものは最後の変更から 1 秒後と、めくったとき・戻したときに
-  `$XDG_DATA_HOME/desk/memo` に残ります（紙と紙の間は改ページ文字 1 行のテキスト
+  `$XDG_DATA_HOME/aquade/memo` に残ります（紙と紙の間は改ページ文字 1 行のテキスト
   ファイル。最後の白紙は残しません）。
 - 字は手書きの書体で書きます（`fonts-klee` の Klee One があればそれ、無ければ明朝）。
 
@@ -684,12 +684,12 @@ BLUETOOTH は先に玉の付いたクロームのトグル）、LAMP のつま�
 （重なる予定は横に並べて）、時刻なしは NOTES、TO DO は TO DO の欄に。年のページでは
 日付の下に色の点。棚の上のカレンダーにも色の印が付きます。
 
-付箋は `$XDG_DATA_HOME/desk/calendar`（ふつうは `~/.local/share/desk/calendar`）に
+付箋は `$XDG_DATA_HOME/aquade/calendar`（ふつうは `~/.local/share/aquade/calendar`）に
 1 行 1 枚で書かれます（日付・予定か TO DO か・色・時刻（`10:00` か `10:00-11:30`）・
 済んだか・書いたこと、タブ区切り）。
 - ページの外をクリックするか、右クリック、Esc で棚に戻します。次に手に取ると今月から。
 
-`desk-preview --calendar [-s 720x450] [-o file.png]` で、拡大したカレンダーのいろいろな
+`aquade-preview --calendar [-s 720x450] [-o file.png]` で、拡大したカレンダーのいろいろな
 状態（そのまま、端が立ったところ、めくりの途中を両方向）を 1 枚に並べて書き出せます。
 
 ## 素材 — 何年も使われた机
@@ -759,7 +759,7 @@ CG」の主成分**です。
 
 - wlroots 0.18（Debian 13 と、Fedora 43 以降の `wlroots0.18` にはあります。Ubuntu 24.04 は
   0.17、Ubuntu 26.04 は 0.19、Arch は 0.20 しか持っていないので、インストーラが 0.18.3 を
-  公式のリリースから `/opt/desk-wlroots` にビルドし、DEsk だけがそれを使います）
+  公式のリリースから `/opt/aquade-wlroots` にビルドし、DEsk だけがそれを使います）
 - wayland、wayland-protocols、xkbcommon、cairo、pixman、fontconfig、libdrm、PAM
 - libsystemd（任意 — あれば通知デーモンとシステムトレイになります。無ければポストは空のまま、トレイの紙片と時計の MEDIA の再生情報は出ません。`-Dpost=disabled` で、あっても組み込みません）
 - libpulse（任意 — 机の音。無ければ実行時に ALSA を試します。`-Dsound=disabled`）
@@ -853,15 +853,15 @@ High）、紙を折る 1 フレームが 9.0 ms から 5.4 ms に。GPU で画�
 
 Shell Settings の DESK のページの **Graphics**（`shell.conf` の `graphics`）で、机が
 どれだけ描くかを 5 段階から選べます。**インストールのとき、機械を軽く調べて段階を選び
-ます**（`desk-index --suggest`：グラフィック（無ければ CPU）を 2 秒ほど走らせ、スレッドの
+ます**（`aquade-index --suggest`：グラフィック（無ければ CPU）を 2 秒ほど走らせ、スレッドの
 数とメモリと合わせて、最初の部屋がおよそ 1 分以内に焼ける一番上の段階。Ultra は GPU・
 8 スレッド・12 GB 以上のときだけ、GPU が無ければ Low まで。メモリ 2 GB 未満は 2D。
 さらに**紙を折る 1 コマを CPU で描く時間**を測り、そのコマが 5 ms に収まる段階まで
 （動いている紙の手間は High を 1 として Medium 0.56、Low 0.25）。GPU が速くても CPU が
 遅い機械は、グラフィックだけで決めると High になり、紙を折るたびに 30 fps に落ちて
 いました。i3-6100U の速さに絞ると Medium、2010 年ごろの機械なら Low になります）。選んだ
-段階は機械全体の既定として `/etc/xdg/desk/shell.conf` に書き、各ユーザーが Shell Settings で
-変えた値（`~/.config/desk/shell.conf`）がそれより優先します。`sudo DESK_GRAPHICS=low
+段階は機械全体の既定として `/etc/xdg/aquade/shell.conf` に書き、各ユーザーが Shell Settings で
+変えた値（`~/.config/aquade/shell.conf`）がそれより優先します。`sudo DESK_GRAPHICS=low
 sh scripts/install_debian.sh` のように指定すれば、調べずにその段階にします。調べられない
 ときの既定は **High**（今までどおりの机）です。
 切り替えるとその場で効き、部屋はその段階で焼き直します（焼き上がるまでは前の部屋の
@@ -900,13 +900,13 @@ Ultra でも、眺めへ向き直る間のフィルムは**部屋の半分の大
   確認してみてください。仮想環境の場合は設定（3D アクセラレーション）を確認してみて
   ください」。ログインして机が整ったときに届きます。毎回ではなく、一度届いたら 1 週間は
   届かず、描いているもの（pixman・llvmpipe など）が変わればまた届きます
-  （`~/.local/state/desk/cpu-letter`）。角の裏の「シェルの設定」で Shell Settings が開きます。
+  （`~/.local/state/aquade/cpu-letter`）。角の裏の「シェルの設定」で Shell Settings が開きます。
 - **Shell Settings の Graphics** に赤い字で同じことと、何が描いているか（`(llvmpipe …)`）。
   そのとき Graphics は 2D フォールバックが選ばれた状態で出ます。
 - ログに `the screen is drawn on the CPU (…): the desk draws in 2D Fallback`。
   `DESK_ON_CPU=1`（または `0`）で、見分けずにそうだと決められます。
 
-この機械がどのくらいかは **DEsk Experience Index**（`desk-index`、下の節）で
+この機械がどのくらいかは **DEsk Experience Index**（`aquade-index`、下の節）で
 確かめられます。各部分が 3 以上なら日常の操作に足ります。GPU が無いと 3D の点が
 2.9 までに抑えられますが、変わるのは最初の部屋の焼き上げの長さだけです。
 
@@ -964,8 +964,8 @@ zypper（openSUSE）で動きます。それぞれの物に配布ごとの名前
 できます（equivs）:
 
 ```sh
-equivs-build packaging/debian/desk-desktop.equivs
-sudo apt install ./desk-desktop_*_all.deb
+equivs-build packaging/debian/aquade-desktop.equivs
+sudo apt install ./aquade-desktop_*_all.deb
 ```
 
 | 何に | 入るもの |
@@ -988,12 +988,12 @@ sudo apt install ./desk-desktop_*_all.deb
 
 Xfce と MATE の昔ながらの GTK のソフトが中心なのは、メニューバー・素直な道具・文書と
 いう、紙に合う形の窓だからです。軽く、すぐ起動し、Wayland でそのまま動き、既定アプリ
-の表（`desk-mimeapps.list`）に従います。GTK 3 のソフトは KDE の server-decoration で
+の表（`aquade-mimeapps.list`）に従います。GTK 3 のソフトは KDE の server-decoration で
 枠を DEsk に頼むので、GTK のタイトルバー無しで紙に載り、明朝の見出しが付きます
 （下の「ウィンドウの枠」）。KDE のソフトはその次、ヘッダーバーで自分の枠を描く GNOME
 のソフトは最後です。
 
-**セッションがすること**（`desk-session` から起動したとき、つまりログイン画面や
+**セッションがすること**（`aquade-session` から起動したとき、つまりログイン画面や
 コンソールから DEsk をデスクトップとして始めたときだけ。窓の中や入れ子では
 しません）:
 
@@ -1007,7 +1007,7 @@ Xfce と MATE の昔ながらの GTK のソフトが中心なのは、メニュ�
   `~/.config/autostart` に置きます。どのデスクトップとも書いていないのに机とぶつかる
   もの（別の通知デーモン、X のスクリーンロッカー・スクリーンセーバー、他の
   デスクトップの認証エージェントなど）は起こしません。
-- **DEsk 自身の自動起動**（`OnlyShowIn=DEsk`、`desk-session-helper` が入って
+- **DEsk 自身の自動起動**（`OnlyShowIn=DEsk`、`aquade-session-helper` が入って
   いるものを選んで起こす）：認証エージェント（MATE → Xfce（xfce-polkit）→ LXDE
   （lxpolkit）→ GNOME → KDE → LXQt の順）、キーリング、入力メソッド（IBus か
   fcitx5）、ネットワークアプレット（トレイに出る `nm-applet --indicator`）、取り外せる
@@ -1024,7 +1024,7 @@ Xfce と MATE の昔ながらの GTK のソフトが中心なのは、メニュ�
   `kde`、自分で決めてあればそのまま。GTK のテーマには触りません（Wayland の GTK は
   `org.gnome.desktop.interface` を読みます。変えるのは Shell Settings の「ほかの
   プログラムの外観」から）。入力メソッドは下の「日本語入力」。
-- **PATH と XDG_DATA_DIRS**：`desk-session` は自分のフォルダを PATH に足すので、
+- **PATH と XDG_DATA_DIRS**：`aquade-session` は自分のフォルダを PATH に足すので、
   `/opt/desk` などに入れても動きます。その share が DEsk の既定アプリの表を持って
   いれば XDG_DATA_DIRS の先頭に。snap と Flatpak のアプリのメニュー項目のフォルダ
   （`/var/lib/snapd/desktop`、`/var/lib/flatpak/exports/share`、
@@ -1039,7 +1039,7 @@ Xfce と MATE の昔ながらの GTK のソフトが中心なのは、メニュ�
   カタカナひらがな**が効かず、IME を切り替えられませんでした。
 - 入力メソッドは**要るときだけ**起こします：日本語・中国語・韓国語・ベトナム語・タイ語の
   ロケールか、IBus にキーボード以外のエンジン（Mozc など）が設定されているとき
-  （`desk-session-helper ime-kind`）。英語などでは何も起こさず、何も出ません。
+  （`aquade-session-helper ime-kind`）。英語などでは何も起こさず、何も出ません。
 - 入力メソッドは**トレイ**に出ます（時計からは外しました）。IBus はパネル自身の
   トレイ項目（StatusNotifierItem）を出させて使います。紙片には今の入力方式（Mozc なら
   「あ」／「A」、半角/全角に合わせて変わる）、メニューには入力モード（直接入力・
@@ -1068,7 +1068,7 @@ Xfce と MATE の昔ながらの GTK のソフトが中心なのは、メニュ�
 
 - **Print** で画面全体、**Alt+Print** で前の窓（紙ごと）のスクリーンショット
   （grim）。`ピクチャ/Screenshots` に入り、クリップボードにも乗り、ポストに手紙が
-  届きます（`desk-screenshot`）。
+  届きます（`aquade-screenshot`）。
 - **Control Panel** のネットワークのメーターをクリックするとネットワークの接続
   （nm-connection-editor）。WIRELESS・BLUETOOTH・VOLUME を**右クリック**すると、
   それぞれネットワーク・Bluetooth の機器（blueman-manager）・音の機器
@@ -1084,14 +1084,14 @@ Xfce と MATE の昔ながらの GTK のソフトが中心なのは、メニュ�
   モード・位置・向き・オン/オフを変えられます。ツールが言ったスケールは机の「ものの
   大きさ」で、shell.conf の `scale` に書かれます（プログラムの窓は拡大しません）。
   DEsk は、つながっている画面の組ごとに、ツールが決めた配置を
-  `~/.config/desk/displays.conf` に覚え、同じ組がそろうと（起動時・抜き差し）
+  `~/.config/aquade/displays.conf` に覚え、同じ組がそろうと（起動時・抜き差し）
   そのとおりに戻します。机が描かれるのは位置 (0,0) の画面です（ほかの画面は下の
   「画面が二つ以上のとき」）。
 - 離席（ext-idle-notify・idle-inhibit・wlr-output-power-management）：swayidle や
   wlopm も使えます。動画を再生しているプレーヤーやブラウザ（Wayland のもの）は、窓が
   見えている間、画面を点けたままにできます。
 - 画面共有：xdg-desktop-portal-wlr は、どの画面を共有するかを slurp などで聞きます
-  が、それにはレイヤーシェルが要るので、DEsk では `desk-screen-chooser` が普通の窓
+  が、それにはレイヤーシェルが要るので、DEsk では `aquade-screen-chooser` が普通の窓
   （zenity。無ければ kdialog・yad）で聞きます。画面が一つなら聞かずにそれを共有
   （`/etc/xdg/xdg-desktop-portal-wlr/DEsk`）。共有できるのは画面全体で、窓ごとはまだ
   （wlroots 0.18 にその仕組みが無いため）。
@@ -1143,7 +1143,7 @@ Shell Settings の「Camera bounce」（カメラの揺れ）で低く、また�
   毎フレーム描き直し、止まったところで細かく描き直します（別のスレッドで。机は
   止まりません）。
 - パスワードはログインと同じく **PAM** で確かめます（サービス `desk` =
-  `/etc/pam.d/desk`、中身は `login` を include。無ければ `login`）。別のスレッドで
+  `/etc/pam.d/aquade`、中身は `login` を include。無ければ `login`）。別のスレッドで
   確かめるので、間違えたときの数秒の待ちで机は止まりません。打ったものは確かめに
   渡した時点で消します。
 - ロック中は、窓にもショートカットにもキーとポインタが届きません（VT の切り替え
@@ -1209,25 +1209,25 @@ sudo sh scripts/install_debian.sh --prefix /opt/desk   # 入れる場所（既�
 ```
 
 `sh scripts/install_session.sh` は `/etc/os-release` を見て、次のどれかに自分で渡し
-（同じオプション）、言ったことを `~/.local/state/desk/install.log` にも残します。
+（同じオプション）、言ったことを `~/.local/state/aquade/install.log` にも残します。
 Linux Mint・Pop!_OS は Ubuntu、EndeavourOS・Manjaro は Arch、Nobara などは Fedora として扱います。
 
 | 配布 | スクリプト | wlroots 0.18 |
 | --- | --- | --- |
 | Debian 13 | `scripts/install_debian.sh` | 配布のもの（`libwlroots-0.18-dev`） |
-| Ubuntu 24.04 / 26.04 LTS | `scripts/install_ubuntu.sh` | 配布に無い（24.04 は 0.17、26.04 は 0.19）ので、0.18.3 を公式のリリースから `/opt/desk-wlroots` にビルド（24.04 では Wayland 1.23.1 も）。DEsk だけが RUNPATH で使い、ほかのプログラムには見えません。universe が切られていれば聞いてから入れます。Firefox は snap（snapd が動いていれば `snap install firefox`） |
-| Arch Linux | `scripts/install_arch.sh` | 公式のリポジトリには 0.20 しか無いので、入っている `wlroots0.18`（AUR）を使い、無ければ 0.18.3 を `/opt/desk-wlroots` にビルド。Klee One と ibus-mozc は AUR にしか無いので、そう言って代わりのものを使います。ログイン画面が無ければ、コンソールから `desk-session` か LightDM の入れ方を案内します |
-| Fedora 43 / 44 | `scripts/install_fedora.sh` | 配布の `wlroots0.18`（`wlroots0.18-devel`）。無い Fedora では 0.18.3 を `/opt/desk-wlroots` にビルド。dnf で入れ、弱い依存（おすすめ）は入れません（GNOME Tweaks が GNOME Shell と GDM まで連れてくるので）。Klee One・Mugshot・電池と更新の知らせは Fedora に無いので、そう言って入れずに済ませます。ログイン画面が無ければ、コンソールから `desk-session` か LightDM の入れ方を案内します |
+| Ubuntu 24.04 / 26.04 LTS | `scripts/install_ubuntu.sh` | 配布に無い（24.04 は 0.17、26.04 は 0.19）ので、0.18.3 を公式のリリースから `/opt/aquade-wlroots` にビルド（24.04 では Wayland 1.23.1 も）。DEsk だけが RUNPATH で使い、ほかのプログラムには見えません。universe が切られていれば聞いてから入れます。Firefox は snap（snapd が動いていれば `snap install firefox`） |
+| Arch Linux | `scripts/install_arch.sh` | 公式のリポジトリには 0.20 しか無いので、入っている `wlroots0.18`（AUR）を使い、無ければ 0.18.3 を `/opt/aquade-wlroots` にビルド。Klee One と ibus-mozc は AUR にしか無いので、そう言って代わりのものを使います。ログイン画面が無ければ、コンソールから `aquade-session` か LightDM の入れ方を案内します |
+| Fedora 43 / 44 | `scripts/install_fedora.sh` | 配布の `wlroots0.18`（`wlroots0.18-devel`）。無い Fedora では 0.18.3 を `/opt/aquade-wlroots` にビルド。dnf で入れ、弱い依存（おすすめ）は入れません（GNOME Tweaks が GNOME Shell と GDM まで連れてくるので）。Klee One・Mugshot・電池と更新の知らせは Fedora に無いので、そう言って入れずに済ませます。ログイン画面が無ければ、コンソールから `aquade-session` か LightDM の入れ方を案内します |
 
 どのスクリプトも同じ順にします：足りないパッケージを入れる（パッケージの一覧は
 スクリプトの頭の表。Shell Settings の **System タブの各行が開くプログラム**と、それが
 動くのに要るもの（認証エージェント、キーリング、印刷、IBus）は、`--no-apps` でも必ず
 入れます。`--bare` のときだけ入れません）、`build-install` にリリースでビルドして入れる、PAM の
-`/etc/pam.d/desk`、ログイン画面の項目 `/usr/share/wayland-sessions/desk.desktop`
+`/etc/pam.d/aquade`、ログイン画面の項目 `/usr/share/wayland-sessions/aquade.desktop`
 （`Exec` は入れた場所のフルパス）、それから**旧名 DeskWM の残り**（`deskwm*` の
 コマンド・データ、`/usr/share/wayland-sessions/deskwm.desktop`、`/etc/pam.d/deskwm`）を
-見せて、聞いてから消します。そのあと `desk-index --suggest` で機械を軽く調べて Graphics
-の段階を選び（上の「グラフィックの段階」）、最後に `desk-settings --check` で、System タブの各行が
+見せて、聞いてから消します。そのあと `aquade-index --suggest` で機械を軽く調べて Graphics
+の段階を選び（上の「グラフィックの段階」）、最後に `aquade-settings --check` で、System タブの各行が
 何を開くか（無ければ `MISSING` と、それを入れるパッケージの名前）を一覧にします。何度
 走らせても同じ結果で、2 回目からは数秒です。
 
@@ -1235,9 +1235,9 @@ Linux Mint・Pop!_OS は Ubuntu、EndeavourOS・Manjaro は Arch、Nobara など
 もう一度走らせるだけです（入っていれば「this updates it」と出ます）。入っているものは入れ替わり、
 前回のビルド（`build-install`）は作り直して使います。作り直せないとき（別の版の
 Meson のもの、以前 sudo で走らせて一部が root のもの）は、消して作り直します。
-設定（`~/.config/desk`）と焼いた部屋はそのまま残り、部屋は見た目が変わった更新の
+設定（`~/.config/aquade`）と焼いた部屋はそのまま残り、部屋は見た目が変わった更新の
 ときだけ焼き直します。途中で止まったときは、端末に出た最後の数行を見るか送ってください
-（`install_session.sh` から走らせたときは、全部が `~/.local/state/desk/install.log`
+（`install_session.sh` から走らせたときは、全部が `~/.local/state/aquade/install.log`
 （最後の 1 回分）にも残ります）。
 
 配るためのフォルダには `SHA256SUMS`（全ファイルの SHA-256）が入っていて、
@@ -1247,12 +1247,12 @@ Meson のもの、以前 sudo で走らせて一部が root のもの）は、�
 （メモリは memtest86+ で調べられます）。git で取ったものには無いので照合しません。
 
 **困ったときのログ**：ログイン画面から入った DEsk は、自分の言ったことを全部
-`~/.local/state/desk/session.log` に書きます（一つ前のセッションの分は
+`~/.local/state/aquade/session.log` に書きます（一つ前のセッションの分は
 `session.log.old`。DEsk から開いたプログラムの出力も入ります）。起動が遅いときは `desk: room:` で始まる行を見てください。
 部屋をどの GPU で焼いたか（`tracing on …`）、机・眺めの絵・フィルムがそれぞれ何秒
 かかったか、GPU と C の検算が合わなかった層があればそれも出ます。GPU が試運転に
 落ちて CPU で焼いているときは `failed its trial: <理由>` の行が出ます。端末から
-`desk-window` などで動かしたときは、今までどおり端末に出ます（`DESK_LOG=-` で
+`aquade-window` などで動かしたときは、今までどおり端末に出ます（`DESK_LOG=-` で
 ログインのときも書かずにおけます）。
 
 日本語のロケール（`LANG` などが `ja` で始まる）のときだけ、日本語の変換（Mozc）を
@@ -1260,20 +1260,20 @@ Meson のもの、以前 sudo で走らせて一部が root のもの）は、�
 入れますが、動かすのは日本語・中国語・韓国語・ベトナム語・タイ語のロケールか、IBus に
 入力方式を設定してあるときだけです。
 設定とデータ（`~/.config/deskwm` など）は、新しい DEsk が最初に起きたときに
-`~/.config/desk` などへ移します。
+`~/.config/aquade` などへ移します。
 
 入るもの（prefix が `/usr/local` のとき）:
 
-- `/usr/local/bin/desk` — コンポジタ、`desk-session` — セッションラッパー、
-  `desk-settings`（Shell Settings）、`desk-index`（Experience Index）、`desk-preview`、
-  `desk-ctl`（困ったときの立て直し・ログアウト）
+- `/usr/local/bin/aquade` — コンポジタ、`aquade-session` — セッションラッパー、
+  `aquade-settings`（Shell Settings）、`aquade-index`（Experience Index）、`aquade-preview`、
+  `aquade-ctl`（困ったときの立て直し・ログアウト）
 - `/usr/local/share/icons/DEsk`・`/usr/local/share/themes/DEsk` — アイコンと GTK テーマ、
-  `/usr/local/share/desk/desk-dconf-profile` — DEsk のセッションの設定の層
-- `/etc/xdg/desk/shell.conf` — インストーラが選んだ Graphics の段階（機械全体の既定）
-- `/usr/share/wayland-sessions/desk.desktop` — ログイン項目
-- `/usr/local/share/xdg-desktop-portal/desk-portals.conf`、
+  `/usr/local/share/aquade/aquade-dconf-profile` — DEsk のセッションの設定の層
+- `/etc/xdg/aquade/shell.conf` — インストーラが選んだ Graphics の段階（機械全体の既定）
+- `/usr/share/wayland-sessions/aquade.desktop` — ログイン項目
+- `/usr/local/share/xdg-desktop-portal/aquade-portals.conf`、
   `/etc/xdg/xdg-desktop-portal-wlr/DEsk` — ポータルの割り当て
-- `/etc/pam.d/desk` — 画面ロックの PAM
+- `/etc/pam.d/aquade` — 画面ロックの PAM
 
 依存がもう入っている機械（ほかの配布など）では、ビルドして入れるだけの
 `scripts/install.sh`（同じ既定・同じログイン項目の扱い）と、プログラムを入れる
@@ -1281,27 +1281,27 @@ Meson のもの、以前 sudo で走らせて一部が root のもの）は、�
 
 **消すとき**は、DEsk からログアウトして、ほかのデスクトップ（か文字のコンソール）で、
 入れたときのフォルダから `sudo sh scripts/uninstall.sh`。消すもの（DEsk のプログラムと
-ファイル、ログイン画面の「DEsk」、機械全体の設定 `/etc/xdg/desk`、インストーラが
-ビルドした wlroots の `/opt/desk-wlroots`。`--keep-wlroots` で残す）を見せてから
+ファイル、ログイン画面の「DEsk」、機械全体の設定 `/etc/xdg/aquade`、インストーラが
+ビルドした wlroots の `/opt/aquade-wlroots`。`--keep-wlroots` で残す）を見せてから
 聞きます。ディストリから入れたパッケージはほかのプログラムも使うので残し、あなたの
-もの（`~/.config/desk`・`~/.local/share/desk`・`~/.local/state/desk`・`~/.cache/desk`）
+もの（`~/.config/aquade`・`~/.local/share/aquade`・`~/.local/state/aquade`・`~/.cache/aquade`）
 にも触りません。`sudo ninja -C build-install uninstall` だけでは、ログイン項目・
-`/etc/xdg/desk`・アイコンのキャッシュ・wlroots が残ります。
+`/etc/xdg/aquade`・アイコンのキャッシュ・wlroots が残ります。
 
 ログイン画面に **DEsk** が出ます。TTY から直接始めるなら:
 
 ```sh
-desk-session
+aquade-session
 ```
 
 入れ子（既存の Wayland / X11 セッションの中）:
 
 ```sh
-DESK_NESTED=1 desk-session -s foot
+DESK_NESTED=1 aquade-session -s foot
 # または
 ./build/desk -s foot
 # ウィンドウとして開く（大きさは DESK_SIZE=1600x900 のように変えられます）
-./scripts/desk-window
+./scripts/aquade-window
 ```
 
 入れ子で動かすときの Wayland ソケットは `wayland-0` ではなく **`desk-0`**（空いている
@@ -1310,15 +1310,15 @@ WAYLAND_DISPLAY が無いので、既定の `wayland-0` を取ると、外で起
 アプリがすべて DEsk の中に開いてしまいます。DEsk の中から起動したアプリには
 この名前が渡されます。
 
-入れ子の窓には「DEsk」という名前、クラス `desk-window`、プロセス ID が付くので、
+入れ子の窓には「DEsk」という名前、クラス `aquade-window`、プロセス ID が付くので、
 GNOME などのドックでは起動した項目のアイコンにまとまります。
 
 ### GNOME から開く
 
-`~/.local/share/applications/desk-window.desktop` を置くと、アプリ一覧とドックから
+`~/.local/share/applications/aquade-window.desktop` を置くと、アプリ一覧とドックから
 開けます（この機械ではドックのお気に入りにも加えてあります）。中身は
-`session/desk-window.desktop` と同じで、`Exec` をこのリポジトリの
-`scripts/desk-window` にし、`StartupWMClass=desk-window` を付けたものです。
+`session/aquade-window.desktop` と同じで、`Exec` をこのリポジトリの
+`scripts/aquade-window` にし、`StartupWMClass=aquade-window` を付けたものです。
 GNOME は標準ではデスクトップにアイコンを出しません。デスクトップに置きたいときは
 拡張機能 Desktop Icons NG（`gnome-shell-extension-desktop-icons-ng`）を入れ、
 `~/デスクトップ` の .desktop ファイルを「起動を許可」にします。
@@ -1385,7 +1385,7 @@ DEsk は通知デーモンとして `actions` に対応していると答える�
 机の上の紙だからです。片付けるのはこちらがやることで、勝手に消えるものではありません。
 持って引きずれば好きな所へ動かせ、置いた所に残ります。動かさずにクリックすると捨てられ、送り主には `NotificationClosed` が返ります。
 
-`desk-preview --post` で箱だけ書き出せます（静止画のために手紙を数通入れてあります）。
+`aquade-preview --post` で箱だけ書き出せます（静止画のために手紙を数通入れてあります）。
 
 ## 解像度が変わったとき
 
@@ -1539,7 +1539,7 @@ Retina のような高密度の画面では 2 画素です。**画面が大き�
 小物は一つの種類につき一つです。同じ種類の 2 つ目（端末を 2 つ入れたなど）と、種類の
 無いアプリは、アイコンを刷った**カード**になります。数が増えると列が詰まり、収まらなく
 なると一つ一つが小さくなります（32 まで）。入れたアプリと順番は
-`$XDG_CONFIG_HOME/desk/drawer`（`app <desktop id>` と `panel` の行）に残ります。
+`$XDG_CONFIG_HOME/aquade/drawer`（`app <desktop id>` と `panel` の行）に残ります。
 折りたたんだ紙は残しません。窓が終われば消えるものなので。
 
 中身は焼いた部屋の一部ではありません。引き出しは**空で**焼き、中身は置いた所に描いて
@@ -1664,7 +1664,7 @@ C のほう**です。片方を変えたら、もう片方も変えます。
   実行ファイルを子として起こしてプログラムを作らせ、机の隅を焼いて検算させます。落ちても、
   固まっても（2 分なにも言わなければ殺します。プログラムを作るのが遅いだけのドライバは、
   一本作るたびに言うので殺されません）、描き間違えても、親は C で焼くだけです。結果は
-  `~/.cache/desk/room-gpu-*.ok` / `.bad` に残り、`.bad` には**落ちた理由**（シェーダの
+  `~/.cache/aquade/room-gpu-*.ok` / `.bad` に残り、`.bad` には**落ちた理由**（シェーダの
   エラー、何サンプル食い違ったか、どこで落ちたか・黙ったか）が入ります。ログにも
   `desk: room: … failed its trial: <理由>` と出ます。消せば聞き直します
 - **CPU で焼くときの Ultra は High の部屋です。** 1 画素 9 サンプルと半分の大きさの
@@ -1704,7 +1704,7 @@ C のほう**です。片方を変えたら、もう片方も変えます。
 初めての機械では、GPU と C をまるごと突き合わせられます:
 
 ```sh
-./build/desk-gputest --room 480 300 /tmp/room-check
+./build/aquade-gputest --room 480 300 /tmp/room-check
 ```
 
 シートの種類ごとに両方で焼き、サンプルと画素の食い違いを表にして、GPU・C・差分の
@@ -1930,11 +1930,11 @@ Wayland に対応していないアプリ — 古いアプリ、多くのゲー�
 使いたくないとき:
 
 ```sh
-DESK_NO_XWAYLAND=1 desk-session       # 実行時に使わない
+DESK_NO_XWAYLAND=1 aquade-session       # 実行時に使わない
 meson setup build -Dxwayland=disabled     # 最初から組み込まない
 ```
 
-ログインセッション（`desk-session`）では、GTK・Qt・SDL に「Wayland を先に試し、
+ログインセッション（`aquade-session`）では、GTK・Qt・SDL に「Wayland を先に試し、
 だめなら X11」と指定しています（`GDK_BACKEND=wayland,x11` など）。
 
 **VMware の仮想 GPU（vmwgfx）の場合:** wlroots は、クライアントから受け取った GPU
@@ -2043,7 +2043,7 @@ WAV に書く、試験用。`%p` はプロセス番号）。ビルドは `-Dsoun
 > 鳴らしてから聞こえるまでが約 0.2 秒になる。クリックの音はそのぶん遅れて聞こえ、動きの
 > 終わりの音は DEsk がそのぶん早く出して合わせる。
 
-**聞いてみる**：`desk-preview --sounds DIR` で、全部の音（各 1〜4 通り）を WAV に書き出し、
+**聞いてみる**：`aquade-preview --sounds DIR` で、全部の音（各 1〜4 通り）を WAV に書き出し、
 通しで聞ける `all.wav`（約 40 秒）と、何秒目が何の音かの `all.txt` も作ります。
 
 **設定**：Shell Settings の SOUND（`shell.conf` の `sound = off | quiet | normal`、
@@ -2066,7 +2066,7 @@ WAV に書く、試験用。`%p` はプロセス番号）。ビルドは `-Dsoun
   紙の余白の上と折り目そのものだけで、すぐ下にあるアプリの「閉じる」は押せます
 - X11 のアプリ（Motif ヒントで枠を断るもの）も同じ。スプラッシュ画面は載せません
 
-**設定**は `$XDG_CONFIG_HOME/desk/shell.conf`（無ければ `~/.config/desk/shell.conf`）：
+**設定**は `$XDG_CONFIG_HOME/aquade/shell.conf`（無ければ `~/.config/aquade/shell.conf`）：
 
 ```
 paper_for_all_windows = yes      # no にすると、枠を自分で描くアプリはそのまま
@@ -2078,7 +2078,7 @@ DEsk はこのファイルを 1 秒ごとに見ていて、変わったらすぐ
 
 ### Shell Settings
 
-シェルの設定を変える小さなアプリ **Shell Settings**（`desk-settings`）があります。
+シェルの設定を変える小さなアプリ **Shell Settings**（`aquade-settings`）があります。
 ALL APPS の **System** のバインダーに入っています。窓は DEsk の紙（見出しと折れた角は
 DEsk のもの）で、その上に描いたフォルダーとメモ帳にフォームが刷ってあります。どれも
 変えた瞬間に DEsk に反映されます。
@@ -2159,7 +2159,7 @@ DEsk のもの）で、その上に描いたフォルダーとメモ帳にフォ
 | Backups | | | Back In Time → Déjà Dup（Arch は Déjà Dup） |
 | What the computer is doing | | | Xfce タスクマネージャ → GNOME システムモニター |
 | About this computer | | | hardinfo2 → CPU-X（Ubuntu 24.04 は CPU-X） |
-| DEsk Experience Index | | | desk-index（下の節） |
+| DEsk Experience Index | | | aquade-index（下の節） |
 
 - 箱は鉛筆でチェック、選ぶ項目は選んだ語を鉛筆の丸で囲みます。クリックのほか、
   ↑↓（または Tab）で行を移り、Space / Enter で切り替え、←→ で選ぶ語を移します。
@@ -2194,7 +2194,7 @@ DEsk のもの）で、その上に描いたフォルダーとメモ帳にフォ
 
 ## DEsk Experience Index
 
-**DEsk Experience Index**（`desk-index`、ALL APPS と Shell Settings の System タブから）は、
+**DEsk Experience Index**（`aquade-index`、ALL APPS と Shell Settings の System タブから）は、
 この機械が DEsk の求める仕事をどのくらいこなせるかを、Windows エクスペリエンス
 インデックスのように測って点にします。黒い計器盤に真鍮の縁のメーターが五つ並び、
 測っている間は針が揺れ、最後に基本スコアのゴム印が押されます。
@@ -2212,10 +2212,10 @@ DEsk のもの）で、その上に描いたフォルダーとメモ帳にフォ
   何に足を引っ張られているかも書きます
 - 全部で 10〜20 秒。測っている間もウィンドウは動き、Esc や「Stop」で止められます。
   ほかのプログラムが忙しいと、そう注記します
-- 結果は `$XDG_STATE_HOME/desk/index.conf` に残り、次に開くと日付と一緒に出ます。
+- 結果は `$XDG_STATE_HOME/aquade/index.conf` に残り、次に開くと日付と一緒に出ます。
   「Rate again」でもう一度
-- 端末から：`desk-index --text`（表を出して保存。コンテナや CI でも）
-- `desk-index --suggest`：軽く調べて（2〜3 秒）、この機械に合う Graphics の段階を
+- 端末から：`aquade-index --text`（表を出して保存。コンテナや CI でも）
+- `aquade-index --suggest`：軽く調べて（2〜3 秒）、この機械に合う Graphics の段階を
   `ultra` / `high` / `medium` / `low` / `2d` で出します（理由は標準エラーに）。インストーラが
   使います（上の「グラフィックの段階」）
 
@@ -2262,11 +2262,11 @@ DEsk は GNOME や KDE のように**一揃いのデスクトップ**として�
 
 1. `shell.conf` の `app.terminal` / `app.browser` / `app.files` / `app.editor`
    （.desktop の id。例 `app.editor = pluma.desktop`）
-2. freedesktop.org の順の既定アプリの表：`~/.config/desk-mimeapps.list`（DEsk の
+2. freedesktop.org の順の既定アプリの表：`~/.config/aquade-mimeapps.list`（DEsk の
    中だけ）、`~/.config/mimeapps.list`（Shell Settings の「Default programs」＝
    xfce4-mime-settings が書くもの）、同じ二つを `$XDG_CONFIG_DIRS`、
    `~/.local/share/applications`、`$XDG_DATA_DIRS` の `applications/` の順に。
-   インストールすると DEsk の既定のもの（`desk-mimeapps.list`）が
+   インストールすると DEsk の既定のもの（`aquade-mimeapps.list`）が
    `/usr/local/share/applications/` に入ります。役目は MIME 型で引きます（ブラウザは
    `x-scheme-handler/https`、ファイルは `inode/directory`、エディタは `text/plain`）。
    xdg-open・GIO と同じ答えになります（GIO と同じく [Added Associations] と
@@ -2312,9 +2312,9 @@ DEsk の机の部品（引き出し・本棚・Control Panel・ポスト・カ�
   ならロックのままです（玄関のドアを描き直すだけ）。
 - **Ctrl+Alt+Del を 3 回**：ログアウトします（LOG OUT と同じく、窓に閉じるよう頼んで
   から。保存していない窓が止めたら、もう一度 3 回押せば進みます）。玄関の前でも効きます。
-- 端末や別の VT（Ctrl+Alt+F3 で同じユーザーでログイン）から **`desk-ctl`** でも同じこと
-  ができます：`desk-ctl reset`（2 回と同じ）、`desk-ctl logout`（3 回と同じ）、
-  `desk-ctl logout --now`（すぐに終える。窓が保存していないものは失われます。机のメモと
+- 端末や別の VT（Ctrl+Alt+F3 で同じユーザーでログイン）から **`aquade-ctl`** でも同じこと
+  ができます：`aquade-ctl reset`（2 回と同じ）、`aquade-ctl logout`（3 回と同じ）、
+  `aquade-ctl logout --now`（すぐに終える。窓が保存していないものは失われます。机のメモと
   カレンダーは残ります）。DEsk のプロセス番号は `$XDG_RUNTIME_DIR/desk.lock` に書いて
   あります。
 - Ctrl+Alt+Del は窓には渡しません。VMware などの仮想マシンでは、ホストが Ctrl+Alt+Del を
@@ -2322,18 +2322,18 @@ DEsk の机の部品（引き出し・本棚・Control Panel・ポスト・カ�
 
 ### 不具合を知らせるとき
 
-一番簡単なのは、端末で次を実行して、できたファイル `~/desk-report.txt` を添えることです（どのデスクトップからでも、コンソールからでも。DEsk が起動しなくても使えます）。
+一番簡単なのは、端末で次を実行して、できたファイル `~/aquade-report.txt` を添えることです（どのデスクトップからでも、コンソールからでも。DEsk が起動しなくても使えます）。
 
 ```sh
-desk-report
+aquade-report
 ```
 
 DEsk の版、Linux、グラフィックカードとドライバー、直前のセッションのログ、DEsk が落ちたかどうかをまとめ、ユーザー名・ホームフォルダ・マシン名・ネットワークのアドレスは取り除きます。送る前に中身を見てください。何をして何が起きたかも書いてください。
 
 これが無いとき（古い DEsk や、インストールされていないとき）は、次を手で添えてください。
 
-- `~/.local/state/desk/session.log`（ひとつ前のセッションのことなら `session.log.old` も）— DEsk が動きながら言ったこと
-- インストーラが止まったなら、端末に出た最後の数行（`install_session.sh` から走らせたときは `~/.local/state/desk/install.log`）
+- `~/.local/state/aquade/session.log`（ひとつ前のセッションのことなら `session.log.old` も）— DEsk が動きながら言ったこと
+- インストーラが止まったなら、端末に出た最後の数行（`install_session.sh` から走らせたときは `~/.local/state/aquade/install.log`）
 
 どちらもただのテキストです。送る前に中身を見てください。
 
@@ -2408,7 +2408,7 @@ chmod +x scripts/verify.sh scripts/entrypoint.sh
 
 Dockerfile は木全体をコピーし（`.dockerignore` が `build*`・`out`・`.git` を除く）、
 ビルドの段で `scripts/install_debian.sh --yes --bare --prefix /usr` を走らせるので、
-パッケージの一覧はインストーラとずれません。部屋のキャッシュは `/tmp/desk-cache` に
+パッケージの一覧はインストーラとずれません。部屋のキャッシュは `/tmp/aquade-cache` に
 置き、一度焼いた部屋をプレビューとデスクトップで使い回します。
 
 `out/preview.png` と `out/desktop.png` ができます。
@@ -2419,11 +2419,11 @@ Dockerfile は木全体をコピーし（`.dockerignore` が `build*`・`out`・
 ## コマンドライン
 
 ```
-desk --version                          # どの版か（desk-settings・desk-index も同じ）
-desk --headless --size 1600x1000 --dump chrome.png --screenshot desk.png --delay 4000 -s foot
-desk-preview -o preview.png -s 1600x1000
-desk-preview -o console.png -s 1440x900 --console
-desk-preview --help                     # 描けるものの一覧
+desk --version                          # どの版か（aquade-settings・aquade-index も同じ）
+aquade --headless --size 1600x1000 --dump chrome.png --screenshot aquade.png --delay 4000 -s foot
+aquade-preview -o preview.png -s 1600x1000
+aquade-preview -o console.png -s 1440x900 --console
+aquade-preview --help                     # 描けるものの一覧
 meson test -C build                     # 訳の表の確かめ（scripts/check-words.py）
 ```
 

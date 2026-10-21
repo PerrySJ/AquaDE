@@ -1,10 +1,10 @@
 # DEsk configuration reference
 
 Everything DEsk reads and writes, for v0.1 (BETA). Shell Settings
-(`desk-settings`) edits `shell.conf` for you; everything here can also be
+(`aquade-settings`) edits `shell.conf` for you; everything here can also be
 edited by hand, and DEsk picks up a changed `shell.conf` within a second.
 Unknown keys and bad values are reported in the session log
-(`~/.local/state/desk/session.log`) and otherwise ignored.
+(`~/.local/state/aquade/session.log`) and otherwise ignored.
 
 `$XDG_CONFIG_HOME` is `~/.config`, `$XDG_DATA_HOME` is `~/.local/share`,
 `$XDG_STATE_HOME` is `~/.local/state` and `$XDG_CACHE_HOME` is `~/.cache`
@@ -14,18 +14,18 @@ unless set otherwise.
 
 | File | Written by | What it holds |
 | --- | --- | --- |
-| `$XDG_CONFIG_HOME/desk/shell.conf` | Shell Settings, you | DEsk's settings (below). |
-| `/etc/xdg/desk/shell.conf` | the installer | The machine's defaults, under each user's own file; the installer writes the Graphics level it measured. |
-| `$XDG_CONFIG_HOME/desk/displays.conf` | DEsk | How a display tool last arranged each set of screens. |
-| `$XDG_CONFIG_HOME/desk/drawer` | DEsk | The programs in the drawer, in order. |
-| `$XDG_CONFIG_HOME/desk/shelves.conf` | you | Programs filed on a shelf other than their own. |
-| `~/.config/desk-mimeapps.list` | you | Default programs inside DEsk only, before `mimeapps.list`. |
-| `$XDG_DATA_HOME/desk/calendar` | DEsk | Notes stuck on the calendar. |
-| `$XDG_DATA_HOME/desk/memo` | DEsk | The memo pad's sheets. |
-| `$XDG_CACHE_HOME/desk/` | DEsk | The traced room, icons converted from SVG, your picture for the door. Safe to delete; it is made again. |
-| `$XDG_STATE_HOME/desk/session.log`, `session.log.old` | `desk-session` | What DEsk said this session and the one before. |
-| `$XDG_STATE_HOME/desk/install.log` | `install_session.sh` | What the last install run through it said (one run straight from `install_<system>.sh` says it only on the terminal). |
-| `$XDG_STATE_HOME/desk/cpu-letter` | DEsk | When the "running on the CPU" letter was last sent. |
+| `$XDG_CONFIG_HOME/aquade/shell.conf` | Shell Settings, you | DEsk's settings (below). |
+| `/etc/xdg/aquade/shell.conf` | the installer | The machine's defaults, under each user's own file; the installer writes the Graphics level it measured. |
+| `$XDG_CONFIG_HOME/aquade/displays.conf` | DEsk | How a display tool last arranged each set of screens. |
+| `$XDG_CONFIG_HOME/aquade/drawer` | DEsk | The programs in the drawer, in order. |
+| `$XDG_CONFIG_HOME/aquade/shelves.conf` | you | Programs filed on a shelf other than their own. |
+| `~/.config/aquade-mimeapps.list` | you | Default programs inside DEsk only, before `mimeapps.list`. |
+| `$XDG_DATA_HOME/aquade/calendar` | DEsk | Notes stuck on the calendar. |
+| `$XDG_DATA_HOME/aquade/memo` | DEsk | The memo pad's sheets. |
+| `$XDG_CACHE_HOME/aquade/` | DEsk | The traced room, icons converted from SVG, your picture for the door. Safe to delete; it is made again. |
+| `$XDG_STATE_HOME/aquade/session.log`, `session.log.old` | `aquade-session` | What DEsk said this session and the one before. |
+| `$XDG_STATE_HOME/aquade/install.log` | `install_session.sh` | What the last install run through it said (one run straight from `install_<system>.sh` says it only on the terminal). |
+| `$XDG_STATE_HOME/aquade/cpu-letter` | DEsk | When the "running on the CPU" letter was last sent. |
 
 DEsk writes every file to a new name and renames it into place, so a crash
 never leaves half a file.
@@ -144,9 +144,9 @@ For users:
 | `DESK_SLOW` | Make every movement this many times slower. |
 | `DESK_SOUND` | `auto`, `pulse`, `alsa`, `off`, or `file:PATH` (`%p` is the process id). |
 | `DESK_LOOK` | `0`: do not install DEsk's icons and GTK theme into its dconf layer. |
-| `DESK_LOG` | `-`: `desk-session` leaves the log on stderr instead of `session.log`. |
+| `DESK_LOG` | `-`: `aquade-session` leaves the log on stderr instead of `session.log`. |
 | `DESK_ALLOW_MULTIPLE` | `1`: start even though a DEsk is already running for this user. |
-| `DESK_SIZE`, `DESK_RENDERER` | For `desk-window`: the window's size, and `pixman` or `gles2`. |
+| `DESK_SIZE`, `DESK_RENDERER` | For `aquade-window`: the window's size, and `pixman` or `gles2`. |
 
 For development and testing:
 
@@ -161,12 +161,12 @@ For development and testing:
 | `DESK_SOUND_DEBUG` | Log each sound's latency. |
 | `DESK_SYSFS` | Read the Control Panel's instruments from this directory instead of `/sys`. |
 
-`DESK_SESSION`, `DESK_IM` and `DESK_NESTED` are set by `desk-session` and
-`desk-session-helper` for their own use. Old `DESKWM_*` names still work.
+`DESK_SESSION`, `DESK_IM` and `DESK_NESTED` are set by `aquade-session` and
+`aquade-session-helper` for their own use. Old `DESKWM_*` names still work.
 
 ## Starting over
 
-- Settings: delete `~/.config/desk/` (or one file in it).
-- The traced room: delete `~/.cache/desk/` and it is traced again at the next
+- Settings: delete `~/.config/aquade/` (or one file in it).
+- The traced room: delete `~/.cache/aquade/` and it is traced again at the next
   start.
-- Notes and memo: `~/.local/share/desk/`.
+- Notes and memo: `~/.local/share/aquade/`.

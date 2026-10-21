@@ -7,8 +7,9 @@
 What has changed from DEsk so far:
 
 - The name: AquaDE in what you see, in the session entry and in the icon and
-  GTK theme names. Program names (`desk`, `desk-settings`...) are unchanged
-  for now.
+  GTK theme names, and the programs: `aquade`, `aquade-session`,
+  `aquade-settings` and so on, installed under `share/aquade`, with the PAM
+  service `/etc/pam.d/aquade`. (The C code still uses `desk_` names inside.)
 - Its own folders: `~/.config/aquade`, `~/.local/share/aquade`,
   `~/.local/state/aquade`, `~/.cache/aquade`, and the lock
   `$XDG_RUNTIME_DIR/aquade.lock`, so it never shares files with a DEsk.
@@ -36,8 +37,8 @@ box, fish) is still to come. Below is DEsk's own README.
 W=$PWD/deps/wlroots
 PKG_CONFIG_PATH=$W/lib/pkgconfig meson setup build -Dc_link_args="-Wl,-rpath,$W/lib"
 meson compile -C build
-./build/desk-preview -o out.png -s 1440x900   # a picture, no compositor
-./scripts/desk-window                         # run in a window
+./build/aquade-preview -o out.png -s 1440x900   # a picture, no compositor
+./scripts/aquade-window                         # run in a window
 ```
 
 ---
@@ -125,12 +126,12 @@ sudo sh scripts/uninstall.sh
 
 It shows what it will remove and asks first: DEsk's programs and files,
 "DEsk" on the login screen, its settings for the whole machine
-(`/etc/xdg/desk`), and the wlroots the installer built for it
-(`/opt/desk-wlroots`, on Ubuntu, Arch and some Fedoras; `--keep-wlroots`
+(`/etc/xdg/aquade`), and the wlroots the installer built for it
+(`/opt/aquade-wlroots`, on Ubuntu, Arch and some Fedoras; `--keep-wlroots`
 leaves it). The packages the installer brought from your distribution stay,
 since other programs may use them, and so does everything of yours: to
-remove that too, `rm -rf ~/.config/desk ~/.local/share/desk
-~/.local/state/desk ~/.cache/desk`.
+remove that too, `rm -rf ~/.config/aquade ~/.local/share/aquade
+~/.local/state/aquade ~/.cache/aquade`.
 
 More options, building by hand and running DEsk in a window are under
 [Build](#build) and [Run](#run).
@@ -211,7 +212,7 @@ there -- its material, the light on it, its shadow and the wear of use.
 - **Seven languages.** Everything DEsk prints itself, and the names of
   programs, are in English, Japanese, Chinese (simplified), Korean,
   Spanish, French or German: the locale's, or `language = en | ja | zh |
-  ko | es | fr | de` in `~/.config/desk/shell.conf` (or the Shell Settings
+  ko | es | fr | de` in `~/.config/aquade/shell.conf` (or the Shell Settings
   app), and switch live. The calendar is printed as one sold there is,
   and Chinese and Korean are set in their own cut of the CJK faces.
 
@@ -225,10 +226,10 @@ browser, a file manager and a text editor. The drawer's things and
 1. `app.terminal`, `app.browser`, `app.files`, `app.editor` in `shell.conf`
    (a `.desktop` id),
 2. the default-applications lists in the freedesktop.org order:
-   `~/.config/desk-mimeapps.list` (DEsk only), `~/.config/mimeapps.list`
+   `~/.config/aquade-mimeapps.list` (DEsk only), `~/.config/mimeapps.list`
    (what Shell Settings' Default programs, xfce4-mime-settings, writes), and
    the same two in the system's folders, ending with the
-   `desk-mimeapps.list` installed with DEsk -- the same answers xdg-open
+   `aquade-mimeapps.list` installed with DEsk -- the same answers xdg-open
    and GIO give,
 3. the standard set, classic GTK programs first: Xfce Terminal, Firefox
    ESR, Thunar, Mousepad (then MATE Terminal, Caja, Pluma, and so on),
@@ -288,7 +289,7 @@ sh scripts/install-desktop.sh --extras   # and the office suite, mail...
 
 `install-desktop.sh` works with apt, dnf, pacman and zypper. On Debian and
 Ubuntu the same set is also one package:
-`equivs-build packaging/debian/desk-desktop.equivs`.
+`equivs-build packaging/debian/aquade-desktop.equivs`.
 
 | For | What comes |
 | --- | --- |
@@ -315,7 +316,7 @@ server-decoration protocol, so they lie on DEsk's paper with its printed
 heading and no GTK title bar. Windows with a header bar (GNOME's programs,
 Firefox) keep their own frame, inside a paper margin.
 
-Shell Settings (`desk-settings`) holds DEsk's own settings -- windows, the
+Shell Settings (`aquade-settings`) holds DEsk's own settings -- windows, the
 size of things, how much is drawn, language, clock, your birthday and the
 weather, when the screen goes
 off and whether the desk locks then -- on its Shell tab, and on its System
@@ -334,7 +335,7 @@ desk calendar (Page Up and Down too). Changing tab (a click, Ctrl+Tab or
 Ctrl+Page Up/Down) draws the other pad up out of the folder from below, and
 the pad comes up the same way when the window opens.
 
-Started as a session (`desk-session`, from a login screen), DEsk tells
+Started as a session (`aquade-session`, from a login screen), DEsk tells
 D-Bus and systemd where its display is, runs the XDG autostart entries
 (leaving out the ones that would fight it, such as another notification
 daemon or an X screen locker), and starts an authentication agent, the
@@ -362,10 +363,10 @@ on its CPU: no shadows, nothing fading, blurred or moving, nothing ray-traced
 as it moves, and the room traced once, small and plain. On two CPU cores
 without a GPU the first start goes from nearly ten minutes to about a quarter
 of a minute, and a frame from 2 ms to 0.5 ms. The installer takes a quick look
-at the machine (`desk-index --suggest`: the graphics, or the processor, for a
+at the machine (`aquade-index --suggest`: the graphics, or the processor, for a
 couple of seconds, the threads and the memory, and how long the processor takes
 to draw a sheet of paper folding) and picks the level for it, as the machine's
-default (`/etc/xdg/desk/shell.conf`); each user's own choice wins.
+default (`/etc/xdg/aquade/shell.conf`); each user's own choice wins.
 
 Where the screen is drawn by the processor -- no GPU, a virtual machine without
 3D, a GPU without its driver -- the desk runs in 2D Fallback unless you choose
@@ -403,16 +404,16 @@ keeps its look.
 
 When something on the desk gets stuck: Ctrl+Alt+Del twice puts everything
 of the desk's own away and draws it all again (the windows stay as they are);
-three times logs out. `desk-ctl reset` and `desk-ctl logout` do the same from
+three times logs out. `aquade-ctl reset` and `aquade-ctl logout` do the same from
 a terminal or another VT.
 
 ### The DEsk Experience Index
 
-`desk-index` rates the machine at what the desk asks of it, the way the
+`aquade-index` rates the machine at what the desk asks of it, the way the
 Windows Experience Index did: processor, memory, 2D graphics (the desk's
 own drawing), 3D graphics (the room's shader, checked against the CPU) and
 disk, each 1.0-9.9, on brass-rimmed meters; the base score is the lowest.
-`desk-index --text` prints the same in a terminal.
+`aquade-index --text` prints the same in a terminal.
 
 ## Requirements
 
@@ -421,7 +422,7 @@ brings everything. To build it yourself:
 
 - wlroots 0.18 (Debian 13 has it, and Fedora 43 and later as `wlroots0.18`;
   Ubuntu 24.04 has 0.17, Ubuntu 26.04 only 0.19 and Arch only 0.20, so the
-  installers build 0.18.3 from its release into `/opt/desk-wlroots`, used by
+  installers build 0.18.3 from its release into `/opt/aquade-wlroots`, used by
   DEsk alone through its run path)
 - wayland, wayland-protocols, xkbcommon, cairo, pixman, fontconfig, libdrm, PAM
 - libsystemd (optional): the notification daemon and the system tray.
@@ -479,21 +480,21 @@ sudo sh scripts/install_debian.sh --prefix /opt/desk
 ```
 
 `sh scripts/install_session.sh` picks the right one by itself and keeps what
-it says in `~/.local/state/desk/install.log`. Each installer does the same
+it says in `~/.local/state/aquade/install.log`. Each installer does the same
 (derivatives such as Mint, Pop!_OS, EndeavourOS, Manjaro and Nobara are recognised):
 packages, a release build in `build-install`, the PAM file, the login entry,
 and the removal of what the old name, DeskWM, left behind (after asking).
 Every program Shell Settings' System tab opens is installed, `--no-apps` or
-not, and at the end `desk-settings --check` lists what each row opens (or
+not, and at the end `aquade-settings --check` lists what each row opens (or
 which package would bring it).
 On other distributions, install the requirements and run `scripts/install.sh`.
-Or from a TTY: `desk-session`.
+Or from a TTY: `aquade-session`.
 
 To update, get the new copy and run the installer again the same
 way ("this updates it", it says): what is installed is replaced, the last build
 is reused (or made afresh when it cannot be), and your settings and the traced
 room stay. All the installer says is also kept in
-`~/.local/state/desk/install.log` (the last run's) -- the thing to look at, or
+`~/.local/state/aquade/install.log` (the last run's) -- the thing to look at, or
 send, if it stops part way. A copy made for passing round carries SHA256SUMS,
 and the installer checks every file against it before building: a copy damaged
 on its way says which files are wrong and stops (copy it again; if a fresh copy
@@ -508,7 +509,7 @@ the Control Panel and the post box, each there to turn to as soon as its
 picture is, and last the films of the camera moves to them (until a film is
 done, the move to its view is a cut). Each part is cached as it is done, so a
 first start cut short picks up where it stopped. What DEsk says as it runs is
-kept in `~/.local/state/desk/session.log` (the session before in
+kept in `~/.local/state/aquade/session.log` (the session before in
 `session.log.old`); its `desk: room:` lines say what the room was traced on
 and how long each part took -- the thing to send if a start is slow. A GPU
 is tried once, in a child process, before the room is traced on it; one that
@@ -539,10 +540,10 @@ GPU's to trace.
 ## Reporting a problem
 
 The quickest way: run this in a terminal (any desktop, or a console -- DEsk
-need not start), and attach the file it writes, `~/desk-report.txt`:
+need not start), and attach the file it writes, `~/aquade-report.txt`:
 
 ```sh
-desk-report
+aquade-report
 ```
 
 It gathers DEsk's version, your Linux, your graphics card and driver, the
@@ -552,14 +553,14 @@ sending it. Say too what you did and what happened.
 
 Without it (an older DEsk, or one not installed), attach by hand:
 
-- `~/.local/state/desk/session.log` (and `session.log.old` if the problem was
+- `~/.local/state/aquade/session.log` (and `session.log.old` if the problem was
   in the session before) -- what DEsk said as it ran;
 - if the installer stopped, its last lines from the terminal (or
-  `~/.local/state/desk/install.log` when it was run through
+  `~/.local/state/aquade/install.log` when it was run through
   `install_session.sh`).
 
 Both are plain text; look them over before sending them. If the desk is stuck,
-`desk-ctl reset` from a terminal (or another VT) draws everything again
+`aquade-ctl reset` from a terminal (or another VT) draws everything again
 without closing your windows.
 
 ## How it was made

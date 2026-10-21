@@ -1,5 +1,5 @@
 #!/bin/sh
-# desk-session-helper JOB -- the parts of a desktop session AquaDE does
+# aquade-session-helper JOB -- the parts of a desktop session AquaDE does
 # not draw, each started from an autostart entry of AquaDE's own
 # (session/autostart, OnlyShowIn=AquaDE) with whichever free program for it
 # is installed. Nothing here is AquaDE's own code; it only picks.
@@ -9,12 +9,12 @@
 #   keyring   the store programs keep passwords in (the Secret Service)
 #   ime       the input method, for typing Japanese and the like
 #   ime-kind  which input method this session wants: ibus, fcitx, or
-#             nothing (desk-session asks, before it sets things up)
+#             nothing (aquade-session asks, before it sets things up)
 #   network   the network applet, in the tray
 #   media     memory sticks and disks: mounted when put in, a letter saying
 #             so, and a slip in the tray while there is one to take out
 #   power     a letter when the battery runs low
-#   end NAME  the session is over (desk-session, once AquaDE has gone): what it
+#   end NAME  the session is over (aquade-session, once AquaDE has gone): what it
 #             told systemd is taken back, and the portals it started stopped,
 #             while systemd's XDG_CURRENT_DESKTOP is still NAME (AquaDE)
 set -u
@@ -79,7 +79,7 @@ end)
 		QT_QPA_PLATFORM QT_QPA_PLATFORMTHEME GDK_BACKEND MOZ_ENABLE_WAYLAND \
 		GTK_IM_MODULE QT_IM_MODULE QT_IM_MODULES XMODIFIERS DESK_IM \
 		XCURSOR_THEME XCURSOR_SIZE DCONF_PROFILE >/dev/null 2>&1 || true
-	echo "desk-session-helper: the session's environment and portals taken back"
+	echo "aquade-session-helper: the session's environment and portals taken back"
 	exit 0
 	;;
 polkit)
@@ -115,7 +115,7 @@ ime-kind)
 	ime_kind
 	;;
 ime)
-	# the one desk-session told programs to use (its own tray item,
+	# the one aquade-session told programs to use (its own tray item,
 	# fcitx5's, is in the tray already)
 	case "${DESK_IM:-$(ime_kind)}" in
 	fcitx)
@@ -163,7 +163,7 @@ power)
 	exec batsignal
 	;;
 *)
-	echo "usage: desk-session-helper polkit|keyring|ime|ime-kind|network|media|power" >&2
+	echo "usage: aquade-session-helper polkit|keyring|ime|ime-kind|network|media|power" >&2
 	exit 2
 	;;
 esac

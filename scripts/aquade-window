@@ -8,10 +8,10 @@ size="${DESK_SIZE:-1440x900}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Prefer the build in the tree, fall back to an installed one.
-if [ -x "$root/build/desk" ]; then
-	bin="$root/build/desk"
-elif command -v desk >/dev/null 2>&1; then
-	bin="$(command -v desk)"
+if [ -x "$root/build/aquade" ]; then
+	bin="$root/build/aquade"
+elif command -v aquade >/dev/null 2>&1; then
+	bin="$(command -v aquade)"
 else
 	msg="AquaDE is not built. Run: meson compile -C $root/build"
 	if command -v zenity >/dev/null 2>&1; then
@@ -48,7 +48,7 @@ if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
 	export XDG_RUNTIME_DIR
 fi
 if [ ! -d "$XDG_RUNTIME_DIR" ]; then
-	XDG_RUNTIME_DIR="/tmp/desk-$(id -u)"
+	XDG_RUNTIME_DIR="/tmp/aquade-$(id -u)"
 	export XDG_RUNTIME_DIR
 	# ours alone: made now, or left from before and still a directory of
 	# ours -- not something another user put there first

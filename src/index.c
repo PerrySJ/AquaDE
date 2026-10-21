@@ -1,4 +1,4 @@
-/* desk-index: the AquaDE Experience Index.
+/* aquade-index: the AquaDE Experience Index.
  *
  * How this machine does at what the desk asks of it, rated the way Windows
  * once rated a PC: five parts, each from 1.0 to 9.9, and a base score that
@@ -27,11 +27,11 @@
  * whose needles swing while each part is measured, the report typed out
  * under it, and the base score stamped. The measuring is done on a thread
  * of its own, so the sheet stays live, and all of it takes under twenty
- * seconds. The last rating is kept in $XDG_STATE_HOME/desk/index.conf and
+ * seconds. The last rating is kept in $XDG_STATE_HOME/aquade/index.conf and
  * shown when the Index is opened again; with none kept, it rates at once.
  *
- *   desk-index           the sheet
- *   desk-index --text    the same measuring with no window: the figures on
+ *   aquade-index           the sheet
+ *   aquade-index --text    the same measuring with no window: the figures on
  *                        standard output, and kept as the sheet keeps them */
 
 #define _GNU_SOURCE
@@ -866,7 +866,7 @@ struct meter {
 	atomic_bool stop;         /* asked to stop */
 	int wake;                 /* written to when anything changes; -1 none */
 	double settle;            /* seconds to wait before the first part */
-	bool text;                /* desk-index --text: what it is doing, on stderr */
+	bool text;                /* aquade-index --text: what it is doing, on stderr */
 };
 
 static void meter_poke(struct meter *m)
@@ -950,7 +950,7 @@ static double machine_busy(struct meter *m, double secs)
  * The shape of the room tracer: a ray from the eye through each pixel of a
  * 1440 x 900 frame, marched through a distance field until it is close
  * enough to something, and that something shaded. Three spheres and a
- * plane, as desk-gputest has it, because what is being measured is the
+ * plane, as aquade-gputest has it, because what is being measured is the
  * marching and not the scene. The processor runs some of its pixels (in
  * double precision, as the room's C tracer does) and the graphics card
  * all of them; and the card's answers are checked against these. */
@@ -1450,7 +1450,7 @@ static void gpu_short(const char *name, char *out, size_t n)
 }
 
 #ifdef DESK_HAVE_GPU
-/* desk-gputest's march, on a window of the frame (u_origin) at a time. */
+/* aquade-gputest's march, on a window of the frame (u_origin) at a time. */
 static const char *MARCH_SRC =
 	"#version 300 es\n"
 	"precision highp float;\n"
@@ -1651,10 +1651,10 @@ static bool measure_gpu(struct meter *m, struct rating *r)
 					&& gpu_band_right(band, y0);
 				r->gpu_kind = !right ? GPU_WRONG : soft ? GPU_SOFT : GPU_HARD;
 			} else if (!ok) {
-				fprintf(stderr, "desk-index: the graphics card would not march\n");
+				fprintf(stderr, "aquade-index: the graphics card would not march\n");
 			}
 		} else if (band) {
-			fprintf(stderr, "desk-index: the march would not compile: %s\n", err);
+			fprintf(stderr, "aquade-index: the march would not compile: %s\n", err);
 		}
 		free(band);
 		desk_gpu_close(g);
@@ -1721,7 +1721,7 @@ static bool measure_disk(struct meter *m, struct rating *r)
 	if (in_memory(dir) && !in_memory("/var/tmp") && access("/var/tmp", W_OK) == 0) {
 		snprintf(dir, sizeof dir, "%s", "/var/tmp");
 	}
-	snprintf(path, sizeof path, "%s/desk-index-%ld.tmp", dir, (long)getpid());
+	snprintf(path, sizeof path, "%s/aquade-index-%ld.tmp", dir, (long)getpid());
 	r->disk_in_memory = in_memory(dir);
 	/* never more than a quarter of the room there is */
 	size_t bytes = DISK_BYTES;
@@ -1746,7 +1746,7 @@ static bool measure_disk(struct meter *m, struct rating *r)
 	}
 	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
 	if (fd < 0) {
-		fprintf(stderr, "desk-index: cannot write %s: %s\n", path, strerror(errno));
+		fprintf(stderr, "aquade-index: cannot write %s: %s\n", path, strerror(errno));
 		free(buf);
 		return false;
 	}
@@ -1853,7 +1853,7 @@ static void *meter_run(void *arg)
 				pthread_mutex_lock(&m->lock);
 				m->failed = i;
 				pthread_mutex_unlock(&m->lock);
-				fprintf(stderr, "desk-index: could not measure the %s\n", PART_KEY[i]);
+				fprintf(stderr, "aquade-index: could not measure the %s\n", PART_KEY[i]);
 			}
 			break;
 		}
@@ -1912,11 +1912,11 @@ static bool rating_save(const struct rating *r)
 	snprintf(tmp, sizeof tmp, "%s.new", path);
 	FILE *f = fopen(tmp, "we");
 	if (!f) {
-		fprintf(stderr, "desk-index: cannot write %s: %s\n", tmp, strerror(errno));
+		fprintf(stderr, "aquade-index: cannot write %s: %s\n", tmp, strerror(errno));
 		return false;
 	}
 	fprintf(f, "# The AquaDE Experience Index: how this machine did, the last time it was\n"
-		"# rated. desk-index writes this.\n");
+		"# rated. aquade-index writes this.\n");
 	fprintf(f, "when = %lld\nbase = %.1f\n", (long long)r->when, r->base);
 	for (int i = 0; i < N_PARTS; i++) {
 		fprintf(f, "%s = %.1f\n", PART_KEY[i], r->score[i]);
@@ -1935,7 +1935,7 @@ static bool rating_save(const struct rating *r)
 	bool ok = fflush(f) == 0 && !ferror(f);
 	ok = fclose(f) == 0 && ok;
 	if (!ok || rename(tmp, path) != 0) {
-		fprintf(stderr, "desk-index: cannot write %s\n", path);
+		fprintf(stderr, "aquade-index: cannot write %s\n", path);
 		unlink(tmp);
 		return false;
 	}
@@ -3257,11 +3257,11 @@ static int shm_file(size_t size)
 {
 	int fd = -1;
 #ifdef MFD_CLOEXEC
-	fd = memfd_create("desk-index", MFD_CLOEXEC);
+	fd = memfd_create("aquade-index", MFD_CLOEXEC);
 #endif
 	if (fd < 0) {
 		char name[64];
-		snprintf(name, sizeof name, "/desk-index-%ld-%ld", (long)getpid(), (long)time(NULL));
+		snprintf(name, sizeof name, "/aquade-index-%ld-%ld", (long)getpid(), (long)time(NULL));
 		fd = shm_open(name, O_RDWR | O_CREAT | O_EXCL, 0600);
 		if (fd >= 0) {
 			shm_unlink(name);
@@ -3481,7 +3481,7 @@ static void run_start(struct app *a, double settle)
 	atomic_store(&a->m.stop, false);
 	pthread_mutex_unlock(&a->m.lock);
 	if (pthread_create(&a->th, NULL, meter_run, &a->m) != 0) {
-		fprintf(stderr, "desk-index: cannot start measuring: %s\n", strerror(errno));
+		fprintf(stderr, "aquade-index: cannot start measuring: %s\n", strerror(errno));
 		return;
 	}
 	a->running = true;
@@ -4142,7 +4142,7 @@ static int run_window(void)
 	a.scale = 1;
 	a.stamp_t = -2.0;
 	if (pipe2(a.wake, O_CLOEXEC | O_NONBLOCK) != 0) {
-		fprintf(stderr, "desk-index: %s\n", strerror(errno));
+		fprintf(stderr, "aquade-index: %s\n", strerror(errno));
 		return 1;
 	}
 	a.m.wake = a.wake[1];
@@ -4159,7 +4159,7 @@ static int run_window(void)
 
 	a.dpy = wl_display_connect(NULL);
 	if (!a.dpy) {
-		fprintf(stderr, "desk-index: no Wayland display to open on (desk-index --text "
+		fprintf(stderr, "aquade-index: no Wayland display to open on (aquade-index --text "
 			"rates the machine without one)\n");
 		return 1;
 	}
@@ -4169,7 +4169,7 @@ static int run_window(void)
 	wl_registry_add_listener(a.reg, &reg_listener, &a);
 	wl_display_roundtrip(a.dpy);
 	if (!a.comp || !a.shm || !a.wm) {
-		fprintf(stderr, "desk-index: the compositor lacks what a window needs\n");
+		fprintf(stderr, "aquade-index: the compositor lacks what a window needs\n");
 		return 1;
 	}
 #ifdef DESK_HAVE_WL_CURSOR
@@ -4185,7 +4185,7 @@ static int run_window(void)
 	a.top = xdg_surface_get_toplevel(a.xsurf);
 	xdg_toplevel_add_listener(a.top, &top_listener, &a);
 	xdg_toplevel_set_title(a.top, W("AquaDE Experience Index"));
-	xdg_toplevel_set_app_id(a.top, "desk-index");
+	xdg_toplevel_set_app_id(a.top, "aquade-index");
 	xdg_toplevel_set_min_size(a.top, 380, 300);
 	/* the desk's frame: this is one of its sheets */
 	a.own_paper = !a.decoman;
@@ -4305,7 +4305,7 @@ static int run_window(void)
 	return 0;
 }
 
-/* ---- desk-index --text ---- */
+/* ---- aquade-index --text ---- */
 
 /* s, and spaces after it to make it cols wide on a terminal, where a
  * Japanese letter takes two. */
@@ -4330,7 +4330,7 @@ static int run_text(void)
 	meter_run(&m);
 	pthread_mutex_destroy(&m.lock);
 	if (m.stopped) {
-		fprintf(stderr, "desk-index: the rating did not finish\n");
+		fprintf(stderr, "aquade-index: the rating did not finish\n");
 		return 1;
 	}
 	struct rating *r = &m.r;
@@ -4359,7 +4359,7 @@ static int run_text(void)
 	return 0;
 }
 
-/* desk-index --suggest: a quick look -- the graphics (or, with none, the
+/* aquade-index --suggest: a quick look -- the graphics (or, with none, the
  * processor) marching for a couple of seconds, the processor's threads and
  * the memory -- and the Graphics level this machine is best started at,
  * printed as shell.conf takes it (ultra, high, medium, low or 2d), with
@@ -4481,7 +4481,7 @@ static int run_suggest(void)
 			break;
 		}
 	}
-	fprintf(stderr, "desk-index: graphics %s (%s, %.0f million a second); %d threads; "
+	fprintf(stderr, "aquade-index: graphics %s (%s, %.0f million a second); %d threads; "
 		"%.1f GB; a High room in about %.0f s; a sheet folding %.1f ms a frame, "
 		"smooth up to %s -- %s\n", r.gpu_name,
 		GPU_KIND[r.gpu_kind], r.gpu_mpx, threads, ram, high_s, fold, LEVEL[moving],
@@ -4505,7 +4505,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	if (argc > 1) {
-		fprintf(stderr, "usage: desk-index [--text | --suggest | --version]\n"
+		fprintf(stderr, "usage: aquade-index [--text | --suggest | --version]\n"
 			"  The AquaDE Experience Index: how this machine does at what the desk asks\n"
 			"  of it. --text rates it with no window and prints the figures; --suggest\n"
 			"  takes a quick look and prints the Graphics level to start it at.\n");

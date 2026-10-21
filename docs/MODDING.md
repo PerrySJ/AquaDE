@@ -28,12 +28,12 @@ Three ways to see a change, from cheapest to closest to real:
 1. **The preview** draws without a compositor, into a PNG:
 
    ```sh
-   ./build/desk-preview -o out.png -s 1440x900            # the desk
-   ./build/desk-preview -o out.png --shelf --lang de       # the bookcase, in German
-   ./build/desk-preview --help                             # every view it can draw
+   ./build/aquade-preview -o out.png -s 1440x900            # the desk
+   ./build/aquade-preview -o out.png --shelf --lang de       # the bookcase, in German
+   ./build/aquade-preview --help                             # every view it can draw
    ```
 
-2. **Nested**: `scripts/desk-window` runs DEsk as a window in the session you
+2. **Nested**: `scripts/aquade-window` runs DEsk as a window in the session you
    are in (`DESK_SIZE=1600x900` for another size). It shares your real
    settings; to keep them apart, set `XDG_CONFIG_HOME`, `XDG_DATA_HOME`,
    `XDG_STATE_HOME` and `XDG_CACHE_HOME` to directories of their own.
@@ -42,7 +42,7 @@ Three ways to see a change, from cheapest to closest to real:
 3. **Installed**: `scripts/install_session.sh` again replaces the installed
    copy; log out and in.
 
-What DEsk says as it runs is in `~/.local/state/desk/session.log` (or on
+What DEsk says as it runs is in `~/.local/state/aquade/session.log` (or on
 stderr when nested). `DESK_PROFILE=1` adds frame timings.
 
 ## 2. House rules
@@ -86,7 +86,7 @@ stderr when nested). `DESK_PROFILE=1` adds frame timings.
 4. `meson test -C build` checks every row (column count, duplicate keys,
    printf conversions).
 
-Words used only by `desk-index` go in the table at the top of `src/index.c`
+Words used only by `aquade-index` go in the table at the top of `src/index.c`
 instead, looked up with `W()`.
 
 ### A new language
@@ -110,7 +110,7 @@ instead, looked up with `W()`.
    programs are filed under.
 7. If it uses CJK characters, the region's fonts in `src/fonts.c` (`CUTS`,
    `ONLY_FOR`, `desk_font_set_region`).
-8. Check: `meson test`, then `desk-preview --lang xx` with `--shelf`,
+8. Check: `meson test`, then `aquade-preview --lang xx` with `--shelf`,
    `--console`, `--post`, `--calendar`, `--memo`, `--agenda`, `--lock`.
    Long words are shrunk to fit in a few places; anything that still runs
    over needs a shorter word.
@@ -175,7 +175,7 @@ without rebuilding.
 
 ### Which shelf a program is filed on
 
-Users can do this without code, in `~/.config/desk/shelves.conf`:
+Users can do this without code, in `~/.config/aquade/shelves.conf`:
 
 ```
 org.kde.kate.desktop = Development
@@ -211,9 +211,9 @@ by `src/room.glsl` on the GPU. **Change both, the same way.**
   numbers as named constants in `draw.c` rather than writing them twice.
 - The build hashes `room.glsl` and `gpu.c` into `ROOM_KEY`, so cached rooms
   made by old code are not used. A change to `draw.c` alone does not change
-  the key: delete `~/.cache/desk/room-*` (or set `XDG_CACHE_HOME` to an
+  the key: delete `~/.cache/aquade/room-*` (or set `XDG_CACHE_HOME` to an
   empty directory) to see it.
-- Check that the two agree: `./build/desk-gputest --room`. It traces every
+- Check that the two agree: `./build/aquade-gputest --room`. It traces every
   sheet both ways and reports coverage, owner and colour differences.
 - Check the cost on the CPU: `DESK_NO_GPU=1` traces on the processor, and
   the log's `desk: room:` lines say how long each sheet took. The 2D
@@ -240,7 +240,7 @@ one:
 4. If it is clickable, a hit test in `draw.c` and a branch in
    `server_cursor_button` in the right place in the order (ARCHITECTURE.md
    §4.4).
-5. Draw it in `desk-preview` too, so it can be checked without a compositor.
+5. Draw it in `aquade-preview` too, so it can be checked without a compositor.
 
 ## 9. Icons and theme
 

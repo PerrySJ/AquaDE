@@ -73,7 +73,7 @@ static void agenda_save(void)
 	snprintf(tmp, sizeof tmp, "%s.new", path);
 	FILE *f = fopen(tmp, "we");
 	if (!f) {
-		fprintf(stderr, "desk: calendar: cannot write %s: %s\n", tmp, strerror(errno));
+		fprintf(stderr, "aquade: calendar: cannot write %s: %s\n", tmp, strerror(errno));
 		return;
 	}
 	fprintf(f, "# What is stuck on the desk calendar, a note to a line: the day, plan or\n"
@@ -96,7 +96,7 @@ static void agenda_save(void)
 			s->done ? 1 : 0, s->text);
 	}
 	if (fclose(f) != 0 || rename(tmp, path) != 0) {
-		fprintf(stderr, "desk: calendar: cannot keep %s: %s\n", path, strerror(errno));
+		fprintf(stderr, "aquade: calendar: cannot keep %s: %s\n", path, strerror(errno));
 	}
 }
 

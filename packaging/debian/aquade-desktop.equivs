@@ -1,12 +1,12 @@
-### The DEsk desktop for Debian and Ubuntu, as one package that brings
+### The AquaDE desktop for Debian and Ubuntu, as one package that brings
 ### the rest: build it with equivs (apt install equivs) --
 ###
-###   equivs-build packaging/debian/desk-desktop.equivs
-###   sudo apt install ./desk-desktop_*_all.deb
+###   equivs-build packaging/debian/aquade-desktop.equivs
+###   sudo apt install ./aquade-desktop_*_all.deb
 ###
 ### -- and the programs listed come with it, as GNOME's or KDE's come with
 ### theirs. They are the classic GTK programs of Xfce and MATE, the same
-### set scripts/install_debian.sh and install_ubuntu.sh install. DEsk
+### set scripts/install_debian.sh and install_ubuntu.sh install. AquaDE
 ### itself is installed from its source (those scripts, or meson install),
 ### so it is not one of them. scripts/install-desktop.sh does the same on
 ### Fedora, Arch and openSUSE.
@@ -19,9 +19,9 @@
 Section: x11
 Priority: optional
 Standards-Version: 4.7.0
-Package: desk-desktop
+Package: aquade-desktop
 Version: 0.2
-Maintainer: DEsk <desk@users.noreply.invalid>
+Maintainer: AquaDE <aquade@users.noreply.invalid>
 Architecture: all
 Depends: xfce4-terminal, thunar, gvfs, udisks2, thunar-volman, tumbler, mousepad, ristretto,
  atril, engrampa, zip, unzip, parole, firefox-esr | firefox, mate-polkit, gnome-keyring,
@@ -41,12 +41,12 @@ Depends: xfce4-terminal, thunar, gvfs, udisks2, thunar-volman, tumbler, mousepad
 Recommends: fonts-klee, ibus-mozc,
  libreoffice-writer, libreoffice-calc, libreoffice-impress, libreoffice-gtk3,
  thunderbird, galculator, xfce4-taskmanager, simple-scan
-Description: DEsk desktop: the free programs that go with DEsk
- DEsk draws the desk -- windows as sheets of paper on a walnut desk, the
+Description: AquaDE desktop: the free programs that go with AquaDE
+ AquaDE draws the desk -- windows as sheets of paper on a walnut desk, the
  drawer, the bookcase, the post box, the Control Panel. This brings the free
  programs that make it a whole desktop: the classic GTK programs of Xfce
  and MATE -- terminal, files, text editor, viewers and player, archives --
- which leave their frame to DEsk and lie on the desk as sheets of paper,
+ which leave their frame to AquaDE and lie on the desk as sheets of paper,
  Firefox, and the usual parts of a Linux desktop: networks, Bluetooth,
  sound, printing, disks, displays, the authentication agent, the keyring,
  portals and typefaces, with Qt programs dressed as the GTK ones.

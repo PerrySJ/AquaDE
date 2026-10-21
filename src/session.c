@@ -13,7 +13,7 @@
  * because they are parts of other desktops that name no desktop: a second
  * notification daemon (the post box is AquaDE's), a screen locker or a
  * screensaver for X, a colour daemon for X, the authentication agents of
- * other desktops (AquaDE starts one of its own, desk-session-helper), and
+ * other desktops (AquaDE starts one of its own, aquade-session-helper), and
  * the network applet's own entry (AquaDE starts it in the form the tray can
  * show). */
 
@@ -147,14 +147,14 @@ static bool on_path(const char *name, char *out, size_t n)
 
 /* The variables a program started for the session needs to find it. Only
  * those that are set are passed on. All of them are taken back when the
- * session is over (desk-session-helper end, which names them too): another
+ * session is over (aquade-session-helper end, which names them too): another
  * desktop is not to get them. */
 static const char *const ACTIVATION_VARS[] = {
 	"WAYLAND_DISPLAY", "DISPLAY", "XDG_CURRENT_DESKTOP", "XDG_SESSION_TYPE",
 	"XDG_SESSION_DESKTOP", "DESKTOP_SESSION", "QT_QPA_PLATFORM", "QT_QPA_PLATFORMTHEME",
 	"GDK_BACKEND", "MOZ_ENABLE_WAYLAND", "GTK_IM_MODULE", "QT_IM_MODULE", "QT_IM_MODULES",
 	"XMODIFIERS", "DESK_IM", "XCURSOR_THEME", "XCURSOR_SIZE",
-	/* AquaDE's own layer of settings over the user's (desk-session): what
+	/* AquaDE's own layer of settings over the user's (aquade-session): what
 	 * D-Bus starts for the session -- a file manager asked to show a
 	 * folder -- looks as the rest of the session does. */
 	"DCONF_PROFILE",
@@ -427,7 +427,7 @@ static void autostart(void)
 #ifdef DESK_DATADIR
 	/* and AquaDE's own, last: a file of the same name anywhere above
 	 * stands in for one of these */
-	autostart_dir(DESK_DATADIR "/desk/autostart");
+	autostart_dir(DESK_DATADIR "/aquade/autostart");
 #endif
 }
 

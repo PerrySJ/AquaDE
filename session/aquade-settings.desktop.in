@@ -11,4 +11,4 @@ Exec=@EXEC@
 Icon=@ICON@
 Categories=Settings;DesktopSettings;
 OnlyShowIn=AquaDE;
-StartupWMClass=desk-settings
+StartupWMClass=aquade-settings

@@ -1,4 +1,4 @@
-project('desk', 'c',
+project('aquade', 'c',
   version: '0.0.1',
   default_options: [
     'buildtype=debugoptimized',
@@ -115,7 +115,7 @@ if libpulse.found()
   sound_deps += libpulse
   sound_args += '-DDESK_HAVE_PULSE=1'
 endif
-sound_lib = static_library('desk-sound',
+sound_lib = static_library('aquade-sound',
   ['src/sfx.c', 'src/sound.c'],
   c_args: sound_args,
   include_directories: include_directories('include'),
@@ -123,14 +123,14 @@ sound_lib = static_library('desk-sound',
 )
 summary({'Sound to the sound server (libpulse)': libpulse.found()})
 
-draw_lib = static_library('desk-draw',
+draw_lib = static_library('aquade-draw',
   draw_sources,
   include_directories: include_directories('include'),
   dependencies: draw_deps,
 )
 
 if have_gpu
-  executable('desk-gputest',
+  executable('aquade-gputest',
     'src/gputest.c',
     include_directories: include_directories('include'),
     link_with: draw_lib,
@@ -138,7 +138,7 @@ if have_gpu
   )
 endif
 
-executable('desk-preview',
+executable('aquade-preview',
   'src/preview.c',
   include_directories: include_directories('include'),
   link_with: [draw_lib, sound_lib],
@@ -207,7 +207,7 @@ if sdbus.found()
   wm_deps += sdbus
 endif
 
-executable('desk',
+executable('aquade',
   wm_sources,
   c_args: wm_args,
   include_directories: include_directories('include'),
@@ -244,7 +244,7 @@ if wayland_client.found()
     settings_deps += wayland_cursor
     settings_args += '-DDESK_HAVE_WL_CURSOR=1'
   endif
-  executable('desk-settings',
+  executable('aquade-settings',
     ['src/settings.c'] + client_protos,
     c_args: settings_args,
     include_directories: include_directories('include'),
@@ -253,18 +253,18 @@ if wayland_client.found()
     install: true,
   )
   configure_file(
-    input: 'session/desk-settings.desktop.in',
-    output: 'desk-settings.desktop',
-    configuration: { 'EXEC': get_option('prefix') / get_option('bindir') / 'desk-settings',
-      'ICON': 'desk-settings' },
+    input: 'session/aquade-settings.desktop.in',
+    output: 'aquade-settings.desktop',
+    configuration: { 'EXEC': get_option('prefix') / get_option('bindir') / 'aquade-settings',
+      'ICON': 'aquade-settings' },
     install_dir: get_option('datadir') / 'applications',
   )
-  install_data('session/desk-settings.png',
+  install_data('session/aquade-settings.png',
     install_dir: get_option('datadir') / 'icons/hicolor/128x128/apps',
   )
   # the AquaDE Experience Index: how this machine does at what the desk asks
   # of it (src/index.c)
-  executable('desk-index',
+  executable('aquade-index',
     ['src/index.c'] + client_protos,
     c_args: settings_args,
     include_directories: include_directories('include'),
@@ -273,34 +273,34 @@ if wayland_client.found()
     install: true,
   )
   configure_file(
-    input: 'session/desk-index.desktop.in',
-    output: 'desk-index.desktop',
-    configuration: { 'EXEC': get_option('prefix') / get_option('bindir') / 'desk-index',
-      'ICON': 'desk-settings' },
+    input: 'session/aquade-index.desktop.in',
+    output: 'aquade-index.desktop',
+    configuration: { 'EXEC': get_option('prefix') / get_option('bindir') / 'aquade-index',
+      'ICON': 'aquade-settings' },
     install_dir: get_option('datadir') / 'applications',
   )
   subdir('applications')
 endif
 summary({'Shell Settings (wayland-client)': wayland_client.found()})
 
-install_data('session/desk-session',
+install_data('session/aquade-session',
   install_dir: get_option('bindir'),
   install_mode: 'rwxr-xr-x',
 )
-install_data('session/desk.desktop',
+install_data('session/aquade.desktop',
   install_dir: get_option('datadir') / 'wayland-sessions',
 )
-install_data('session/desk-portals.conf',
+install_data('session/aquade-portals.conf',
   install_dir: get_option('datadir') / 'xdg-desktop-portal',
 )
 # xdg-desktop-portal-wlr reads its settings for a desktop only from
 # /etc/xdg (or the user's own), by the desktop's name
 # (with where its chooser of a screen to share is)
 xdpw_conf = configure_file(
-  input: 'session/desk-xdpw.conf',
-  output: 'desk-xdpw.conf',
+  input: 'session/aquade-xdpw.conf',
+  output: 'aquade-xdpw.conf',
   configuration: {
-    'CHOOSER': get_option('prefix') / get_option('bindir') / 'desk-screen-chooser',
+    'CHOOSER': get_option('prefix') / get_option('bindir') / 'aquade-screen-chooser',
   },
 )
 install_data(xdpw_conf,
@@ -309,17 +309,17 @@ install_data(xdpw_conf,
 )
 # AquaDE's standard programs: the default program for each kind of file in
 # its session, and what the drawer's things open (apps.c)
-install_data('session/desk-mimeapps.list',
+install_data('session/aquade-mimeapps.list',
   install_dir: get_option('datadir') / 'applications',
 )
 
 # The look of other programs in a AquaDE session: its icons (themes/icons,
 # drawn by themes/make-icons.py) and its GTK theme (themes/gtk), given to
-# the session's own layer of settings by desk-session (desk-dconf-profile)
+# the session's own layer of settings by aquade-session (aquade-dconf-profile)
 install_subdir('themes/icons/AquaDE', install_dir: get_option('datadir') / 'icons')
 install_subdir('themes/gtk/AquaDE', install_dir: get_option('datadir') / 'themes')
-install_data('session/desk-dconf-profile',
-  install_dir: get_option('datadir') / 'desk',
+install_data('session/aquade-dconf-profile',
+  install_dir: get_option('datadir') / 'aquade',
 )
 gtk_update_icon_cache = find_program('gtk-update-icon-cache', required: false)
 if gtk_update_icon_cache.found()
@@ -330,32 +330,32 @@ endif
 
 # the desktop session: AquaDE's autostart entries, and the helper they run
 install_data(
-  'session/autostart/desk-polkit.desktop',
-  'session/autostart/desk-keyring.desktop',
-  'session/autostart/desk-ime.desktop',
-  'session/autostart/desk-network.desktop',
-  'session/autostart/desk-media.desktop',
-  'session/autostart/desk-power.desktop',
-  install_dir: get_option('datadir') / 'desk' / 'autostart',
+  'session/autostart/aquade-polkit.desktop',
+  'session/autostart/aquade-keyring.desktop',
+  'session/autostart/aquade-ime.desktop',
+  'session/autostart/aquade-network.desktop',
+  'session/autostart/aquade-media.desktop',
+  'session/autostart/aquade-power.desktop',
+  install_dir: get_option('datadir') / 'aquade' / 'autostart',
 )
 # the screen lock's PAM service (it includes "login"); PAM reads only /etc
-install_data('session/pam/desk', install_dir: '/etc/pam.d')
-install_data('scripts/desk-session-helper', 'scripts/desk-screenshot', 'scripts/desk-ctl',
-  'scripts/desk-report', 'scripts/desk-screen-chooser',
+install_data('session/pam/aquade', install_dir: '/etc/pam.d')
+install_data('scripts/aquade-session-helper', 'scripts/aquade-screenshot', 'scripts/aquade-ctl',
+  'scripts/aquade-report', 'scripts/aquade-screen-chooser',
   install_dir: get_option('bindir'),
   install_mode: 'rwxr-xr-x',
 )
 
 # AquaDE nested in the session you are already in, and something to double
 # click to get it.
-install_data('scripts/desk-window',
+install_data('scripts/aquade-window',
   install_dir: get_option('bindir'),
   install_mode: 'rwxr-xr-x',
 )
-install_data('session/desk-window.desktop',
+install_data('session/aquade-window.desktop',
   install_dir: get_option('datadir') / 'applications',
 )
-install_data('session/desk.png',
+install_data('session/aquade.png',
   install_dir: get_option('datadir') / 'icons/hicolor/512x512/apps',
 )
 

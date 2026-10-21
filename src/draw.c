@@ -3,7 +3,7 @@
  *
  * Everything AquaDE shows that is not a program's own window: the room, ray
  * traced, and everything drawn over it with cairo. The compositor (wm.c),
- * Shell Settings, the Experience Index, desk-preview and desk-gputest all
+ * Shell Settings, the Experience Index, aquade-preview and aquade-gputest all
  * draw through here, so a thing looks the same wherever it is drawn.
  *
  *   The room            one signed-distance scene (scene_map), marched per
@@ -12,7 +12,7 @@
  *                       films of the camera moving to them -- on every CPU
  *                       core, or on the GPU (room.glsl, gpu.c: a port of
  *                       this C, which stays the reference), and kept in
- *                       $XDG_CACHE_HOME/desk.
+ *                       $XDG_CACHE_HOME/aquade.
  *   Flat things         window frames and paper, folding, crumpling, the
  *                       book and binders, letters, the calendar and memo
  *                       pad, Shell Settings' form, the Control Panel's
@@ -250,7 +250,7 @@ static vec3 rot_z(vec3 p, double a)
  *
  * All of it, down to shade_surface, has a twin in room.glsl that traces it
  * on a GPU. This is the reference and that is the port: change one, change
- * the other, and `desk-gputest --room` says whether they still agree.
+ * the other, and `aquade-gputest --room` says whether they still agree.
  * Named numbers go across by themselves (room_glsl_build); the arithmetic
  * does not.
  * ================================================================ */
@@ -2560,7 +2560,7 @@ static int room_is_drawer(int id)
  * clear for the windows. The plants are rosettes, leaves arching out from
  * a crown, because the desk is seen from above and a rosette reads from
  * above where a stalk would be a dot. room.glsl has the same, number for
- * number; desk-gputest --room says whether it still does. */
+ * number; aquade-gputest --room says whether it still does. */
 static double scape_rock(vec3 p, vec3 c, vec3 r, double seed)
 {
 	vec3 q = rot_y(vsub(p, c), seed * 2.1);
@@ -4666,7 +4666,7 @@ static void room_log(const char *fmt, ...)
 		va_end(ap);
 		return;
 	}
-	fputs("desk: room: ", stderr);
+	fputs("aquade: room: ", stderr);
 	vfprintf(stderr, fmt, ap);
 	fputc('\n', stderr);
 	va_end(ap);
@@ -5141,7 +5141,7 @@ static int room_gpu_trial_run(const char *node, char *why, size_t whysz)
 		posix_spawn_file_actions_adddup2(&fa, fds[1], target);
 		posix_spawn_file_actions_addopen(&fa, 1, "/dev/null", O_WRONLY, 0);
 		posix_spawn_file_actions_addopen(&fa, 2, "/dev/null", O_WRONLY, 0);
-		char *argv[] = { (char *)"desk-gpu-trial", NULL };
+		char *argv[] = { (char *)"aquade-gpu-trial", NULL };
 		rc = posix_spawn(&pid, "/proc/self/exe", &fa, NULL, argv, envp);
 	}
 	if (fa_ok) {
@@ -7230,7 +7230,7 @@ static struct room_render *room_for_whole(int screen_w, int screen_h)
 	return room_for_views(screen_w, screen_h, ROOM_VIEWS_ALL);
 }
 
-/* ---- desk-gputest --room ------------------------------------------
+/* ---- aquade-gputest --room ------------------------------------------
  *
  * Every kind of sheet, on the GPU and on the CPU, side by side. Not the
  * spot check a bake does -- all of it: how many samples differ in coverage
@@ -18944,7 +18944,7 @@ void desk_draw_sheet_flight(cairo_t *cr, cairo_surface_t *sheet,
 /* ---- Shell Settings ------------------------------------------------
  *
  * The shell's own settings are a form printed on a sheet of the shell's
- * paper (desk-settings, a program like any other, which asks for our
+ * paper (aquade-settings, a program like any other, which asks for our
  * frame and leaves its own surface clear where there is no ink): small
  * capitals over a rule for each part, a box ticked in pencil for each
  * choice, what it means set under it, and where it is kept at the foot.

@@ -1389,7 +1389,7 @@ void desk_apps_release(const struct desk_app_list *list)
  * of: what shell.conf sets for it (app.terminal = <desktop id>); the
  * default program for its kind of file, found where GIO and xdg-open find
  * it (mime_default) -- the user's choice in mimeapps.list before the
- * desk-mimeapps.list AquaDE installs -- for all but the terminal, which no
+ * aquade-mimeapps.list AquaDE installs -- for all but the terminal, which no
  * kind of file stands for; then the first installed of AquaDE's standard
  * set; then any program of its kind by its Categories, one not filed under
  * Development (a programmer's editor) before one that is.
@@ -1535,11 +1535,11 @@ static const struct desk_app *mime_default_in(const struct desk_app_list *l, con
 	return found;
 }
 
-/* In one directory: desk-mimeapps.list, then mimeapps.list. */
+/* In one directory: aquade-mimeapps.list, then mimeapps.list. */
 static const struct desk_app *mime_default_dir(const struct desk_app_list *l, const char *dir,
 	const char *mime)
 {
-	static const char *const NAME[] = { "desk-mimeapps.list", "mimeapps.list" };
+	static const char *const NAME[] = { "aquade-mimeapps.list", "mimeapps.list" };
 	const struct desk_app *a = NULL;
 	for (int i = 0; !a && i < 2; i++) {
 		char file[1100];
@@ -1574,11 +1574,11 @@ static const struct desk_app *mime_default_dirs(const struct desk_app_list *l, c
  * installed program a [Default Applications] line names, the files looked
  * at in the spec's order -- $XDG_CONFIG_HOME, each of $XDG_CONFIG_DIRS,
  * $XDG_DATA_HOME/applications, each of $XDG_DATA_DIRS/applications, and in
- * each desk-mimeapps.list before mimeapps.list. That is how GIO and
+ * each aquade-mimeapps.list before mimeapps.list. That is how GIO and
  * xdg-open find it in the session, so the drawer opens what a double click
  * on a file opens: the user's own choice in mimeapps.list (which
  * xfce4-mime-settings, Default programs in Shell Settings, writes) before
- * the desk-mimeapps.list AquaDE installs. Like them, it takes a default as
+ * the aquade-mimeapps.list AquaDE installs. Like them, it takes a default as
  * it is written, and does not also ask, as the spec does, that the program
  * be associated with the kind of file (its MimeType=, [Added
  * Associations]) and not taken back by a [Removed Associations] line. NULL

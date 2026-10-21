@@ -91,7 +91,7 @@ static void save(void)
 	snprintf(tmp, sizeof tmp, "%s.new", path);
 	FILE *f = fopen(tmp, "we");
 	if (!f) {
-		fprintf(stderr, "desk: cannot keep the memo in %s: %s\n", tmp, strerror(errno));
+		fprintf(stderr, "aquade: cannot keep the memo in %s: %s\n", tmp, strerror(errno));
 		return;
 	}
 	/* blank sheets at the end are not kept */
@@ -109,7 +109,7 @@ static void save(void)
 	bool ok = fflush(f) == 0 && !ferror(f);
 	ok = fclose(f) == 0 && ok;
 	if (!ok || rename(tmp, path) != 0) {
-		fprintf(stderr, "desk: cannot keep the memo in %s\n", path);
+		fprintf(stderr, "aquade: cannot keep the memo in %s\n", path);
 		unlink(tmp);
 	}
 }

@@ -21,15 +21,15 @@ meson test -C build                # 訳の表を確かめる
 1. **プレビュー**：コンポジタなしで PNG に描きます。
 
    ```sh
-   ./build/desk-preview -o out.png -s 1440x900            # 机
-   ./build/desk-preview -o out.png --shelf --lang de       # 本棚をドイツ語で
-   ./build/desk-preview --help                             # 描けるもの一覧
+   ./build/aquade-preview -o out.png -s 1440x900            # 机
+   ./build/aquade-preview -o out.png --shelf --lang de       # 本棚をドイツ語で
+   ./build/aquade-preview --help                             # 描けるもの一覧
    ```
 
-2. **入れ子**：`scripts/desk-window` で、今のセッションの中に DEsk を窓として起動します（大きさは `DESK_SIZE=1600x900`）。本物の設定を共有するので、分けたいときは `XDG_CONFIG_HOME`・`XDG_DATA_HOME`・`XDG_STATE_HOME`・`XDG_CACHE_HOME` を専用のディレクトリにします。`DESK_ALLOW_MULTIPLE=1` で、別の DEsk が動いていても起動できます。X11 の中なら `WLR_X11_OUTPUTS=2` で画面が二つになります。
+2. **入れ子**：`scripts/aquade-window` で、今のセッションの中に DEsk を窓として起動します（大きさは `DESK_SIZE=1600x900`）。本物の設定を共有するので、分けたいときは `XDG_CONFIG_HOME`・`XDG_DATA_HOME`・`XDG_STATE_HOME`・`XDG_CACHE_HOME` を専用のディレクトリにします。`DESK_ALLOW_MULTIPLE=1` で、別の DEsk が動いていても起動できます。X11 の中なら `WLR_X11_OUTPUTS=2` で画面が二つになります。
 3. **インストール**：`scripts/install_session.sh` をもう一度実行すると入れ替わります。ログアウトしてログインし直します。
 
-DEsk が動きながら言うことは `~/.local/state/desk/session.log`（入れ子では標準エラー）にあります。`DESK_PROFILE=1` でフレームの時間も出ます。
+DEsk が動きながら言うことは `~/.local/state/aquade/session.log`（入れ子では標準エラー）にあります。`DESK_PROFILE=1` でフレームの時間も出ます。
 
 ## 2. 決まり
 
@@ -55,7 +55,7 @@ DEsk が動きながら言うことは `~/.local/state/desk/session.log`（入�
 3. printf の書式なら、どの訳も英語と同じ変換を同じ順で取らなければなりません（英語に `%d` があるところは `%d`）。
 4. `meson test -C build` がすべての行を確かめます（列の数、キーの重複、printf の変換）。
 
-`desk-index` だけが使う言葉は、`src/index.c` の冒頭の表に書き、`W()` で引きます。
+`aquade-index` だけが使う言葉は、`src/index.c` の冒頭の表に書き、`W()` で引きます。
 
 ### 言語を足す
 
@@ -66,7 +66,7 @@ DEsk が動きながら言うことは `~/.local/state/desk/session.log`（入�
 5. `src/settings.c`：`LANG_WORDS` にその言語自身での名前を、`LANG_VALS` にコードを。`src/wm.c`：`shell.conf` の `language` が受け付けるコードの一覧に。
 6. `src/apps.c`：`REGION`（`locale_build`）にその言語のふつうのロケールを。プログラムの名前に使います。
 7. CJK の文字を使うなら、`src/fonts.c` にその地域の書体を（`CUTS`、`ONLY_FOR`、`desk_font_set_region`）。
-8. 確認：`meson test`、それから `desk-preview --lang xx` に `--shelf`・`--console`・`--post`・`--calendar`・`--memo`・`--agenda`・`--lock`。長い語はいくつかの場所では縮めて収めますが、それでもはみ出す所は短い語を選びます。
+8. 確認：`meson test`、それから `aquade-preview --lang xx` に `--shelf`・`--console`・`--post`・`--calendar`・`--memo`・`--agenda`・`--lock`。長い語はいくつかの場所では縮めて収めますが、それでもはみ出す所は短い語を選びます。
 
 訳の無い行は英語で出て、名前の表に行の無い言語は英語の名前で出るので、言語は少しずつ足せます。
 
@@ -99,7 +99,7 @@ DEsk が知らないキーは記録に書かれ、ファイルにはそのまま
 
 ### プログラムを置く棚
 
-ユーザーはコードなしで `~/.config/desk/shelves.conf` に書けます。
+ユーザーはコードなしで `~/.config/aquade/shelves.conf` に書けます。
 
 ```
 org.kde.kate.desktop = Development
@@ -122,8 +122,8 @@ org.kde.kate.desktop = Development
 部屋は二度トレースされます。`src/draw.c` の C（基準）と、GPU の `src/room.glsl` です。**両方を同じように変えてください。**
 
 - 場面は `draw.c` の `scene_map(vec3 p, int kind)` と `room.glsl` の `scene_map` で、素材と陰影がそれに続きます。名前の付いた数値（`RM_*`）は `room_glsl_preamble` でシェーダに届くので、新しい数値は二度書かずに `draw.c` の名前付きの定数にします。
-- ビルドは `room.glsl` と `gpu.c` から `ROOM_KEY` を作るので、古いコードで焼いた部屋は使われません。`draw.c` だけの変更ではキーは変わらないので、見るときは `~/.cache/desk/room-*` を消すか、`XDG_CACHE_HOME` を空のディレクトリにします。
-- 両者が合っているかは `./build/desk-gputest --room` で。すべてのシートを両方で焼き、被覆率・持ち主・色の違いを出します。
+- ビルドは `room.glsl` と `gpu.c` から `ROOM_KEY` を作るので、古いコードで焼いた部屋は使われません。`draw.c` だけの変更ではキーは変わらないので、見るときは `~/.cache/aquade/room-*` を消すか、`XDG_CACHE_HOME` を空のディレクトリにします。
+- 両者が合っているかは `./build/aquade-gputest --room` で。すべてのシートを両方で焼き、被覆率・持ち主・色の違いを出します。
 - CPU での重さは `DESK_NO_GPU=1` で。記録の `desk: room:` の行が各シートにかかった時間を言います。2D Fallback（`graphics = 2d`）は軽いままにしてください。
 - 当たり判定（本棚・Control Panel・ポストでポインタの下に何があるか）はトレースが記録する持ち主の番号を使うので、新しくクリックできる物には番号が要ります（`room_owner` と `*_owner` の関数）。
 
@@ -135,7 +135,7 @@ org.kde.kate.desktop = Development
 2. 画面上のどこにあるか（箱）を部屋から。今の重ね描きについて `desk_overlay_box` がしているように。
 3. `struct desk_server` にスプライトを持ち、見せる内容が変わったときに描き（その内容のハッシュを鍵に）、正しい層に置きます（ARCHITECTURE の §4.1）。
 4. クリックできるなら、`draw.c` に当たり判定、`server_cursor_button` の正しい順番の所に分岐を（ARCHITECTURE の §4.4）。
-5. コンポジタなしで確かめられるよう、`desk-preview` でも描きます。
+5. コンポジタなしで確かめられるよう、`aquade-preview` でも描きます。
 
 ## 9. アイコンとテーマ
 

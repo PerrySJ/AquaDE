@@ -1,7 +1,7 @@
 /* The screen lock, apart from its drawing (lock.h).
  *
  * The password is checked with PAM, as at login, under the service
- * "desk" (session/pam/desk, which includes "login"), or "login" itself
+ * "aquade" (session/pam/aquade, which includes "login"), or "login" itself
  * where that is not installed. On a thread: pam_unix waits a few seconds
  * after a wrong one on purpose, and the desk must not stop for it. Only a
  * AquaDE that is not the session (nested, in a window, under test) may be
@@ -76,8 +76,8 @@ static void *check_thread(void *arg)
 	struct check *c = arg;
 	struct pam_conv pc = { conv, c };
 	pam_handle_t *h = NULL;
-	const char *service = access("/etc/pam.d/desk", F_OK) == 0 ? "desk" : "login";
-	int r = c->confdir[0] ? pam_start_confdir("desk", c->user, &pc, c->confdir, &h)
+	const char *service = access("/etc/pam.d/aquade", F_OK) == 0 ? "aquade" : "login";
+	int r = c->confdir[0] ? pam_start_confdir("aquade", c->user, &pc, c->confdir, &h)
 		: pam_start(service, c->user, &pc, &h);
 	if (r == PAM_SUCCESS) {
 		r = pam_authenticate(h, 0);

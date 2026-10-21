@@ -8,7 +8,7 @@ export XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:-AquaDE}"
 export DESKTOP_SESSION=AquaDE
 
 # Its own directory on PATH: installed where a display manager does not
-# look (/opt/desk/bin, say), it still finds desk, desk-session-helper and
+# look (/opt/desk/bin, say), it still finds desk, aquade-session-helper and
 # the rest that came with it. A display manager runs it by its full path,
 # or by its name from a shell that found it on PATH; a link to it is
 # followed to where it really is.
@@ -27,7 +27,7 @@ export PATH
 # The directories programs' menu entries are found in (XDG_DATA_DIRS),
 # with what a display manager leaves off. First the share directory beside
 # that bin, when AquaDE is installed there: its default programs
-# (desk-mimeapps.list) and its own programs' entries, for the drawer and
+# (aquade-mimeapps.list) and its own programs' entries, for the drawer and
 # for GIO. Then snaps and flatpaks: snapd and flatpak add theirs from
 # /etc/profile.d, which a display manager does not read for the Wayland
 # session of a desktop it does not know. Their entries go after the
@@ -47,7 +47,7 @@ XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 case "$here" in
 */bin)
 	share="${here%/bin}/share"
-	if [ -f "$share/applications/desk-mimeapps.list" ] && ! data_listed "$share"; then
+	if [ -f "$share/applications/aquade-mimeapps.list" ] && ! data_listed "$share"; then
 		XDG_DATA_DIRS="$share:$XDG_DATA_DIRS"
 	fi
 	;;
@@ -101,7 +101,7 @@ if [ -z "${QT_QPA_PLATFORMTHEME:-}" ]; then
 	fi
 fi
 
-# The input method, for programs (desk-session-helper ime starts it).
+# The input method, for programs (aquade-session-helper ime starts it).
 # IBus: programs on Wayland type through AquaDE (text-input), which hands
 # the keys to IBus and knows where the window is -- so the candidates come
 # up under the cursor and the clock shows あ/A as 半角/全角 goes. Told to use
@@ -110,12 +110,12 @@ fi
 # in the corner of the screen, so those are taken back for IBus; X programs
 # keep XIM. fcitx5 is still used directly. DESK_IM says which it is, for
 # the helper.
-# Only where one is wanted (desk-session-helper ime-kind: a language
+# Only where one is wanted (aquade-session-helper ime-kind: a language
 # typed through one, or an engine set up); otherwise none, and nothing in
 # the tray.
 DESK_IM=
-if command -v desk-session-helper >/dev/null 2>&1; then
-	DESK_IM=$(desk-session-helper ime-kind) || DESK_IM=
+if command -v aquade-session-helper >/dev/null 2>&1; then
+	DESK_IM=$(aquade-session-helper ime-kind) || DESK_IM=
 fi
 case "${DESK_IM:-}" in
 ibus)
@@ -128,7 +128,7 @@ fcitx)
 esac
 
 # The look of other programs in AquaDE: its own layer of settings over the
-# user's (desk-dconf-profile: dconf's "desk" database over "user"), so what
+# user's (aquade-dconf-profile: dconf's "desk" database over "user"), so what
 # is set for programs here -- nwg-look choosing a theme, say -- stays here,
 # and another desktop on the machine keeps its own look. The first time,
 # that layer is given AquaDE's icons (manila folders, papers, a brass globe)
@@ -138,17 +138,17 @@ esac
 # a settings daemon -- which AquaDE does not run, and every other desktop
 # does -- that file is what they go by. DESK_LOOK=0 leaves all of it alone.
 look_share=""
-for d in "$here" "${here%/bin}/share/desk" $(printf '%s\n' "$XDG_DATA_DIRS" | tr ':' ' '); do
+for d in "$here" "${here%/bin}/share/aquade" $(printf '%s\n' "$XDG_DATA_DIRS" | tr ':' ' '); do
 	case "$d" in
-	*/share) d="$d/desk" ;;
+	*/share) d="$d/aquade" ;;
 	esac
-	if [ -f "$d/desk-dconf-profile" ]; then
+	if [ -f "$d/aquade-dconf-profile" ]; then
 		look_share="$d"
 		break
 	fi
 done
 if [ "${DESK_LOOK:-1}" != 0 ] && [ -n "$look_share" ] && [ -z "${DCONF_PROFILE:-}" ]; then
-	export DCONF_PROFILE="$look_share/desk-dconf-profile"
+	export DCONF_PROFILE="$look_share/aquade-dconf-profile"
 	look_done="${XDG_STATE_HOME:-$HOME/.local/state}/aquade/look-given"
 	look_installed() {
 		for d in "${XDG_DATA_HOME:-$HOME/.local/share}" $(printf '%s\n' "$XDG_DATA_DIRS" | tr ':' ' '); do
@@ -205,12 +205,12 @@ if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
 	if [ -d "/run/user/$(id -u)" ]; then
 		export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 	else
-		export XDG_RUNTIME_DIR="${TMPDIR:-/tmp}/desk-$(id -u)"
+		export XDG_RUNTIME_DIR="${TMPDIR:-/tmp}/aquade-$(id -u)"
 		# ours alone: made now, or left from before and still a directory
 		# of ours -- not something another user put there first
 		mkdir -m 700 -p "$XDG_RUNTIME_DIR"
 		if [ -L "$XDG_RUNTIME_DIR" ] || [ "$(stat -c %u "$XDG_RUNTIME_DIR")" != "$(id -u)" ]; then
-			echo "desk-session: $XDG_RUNTIME_DIR is not yours: set XDG_RUNTIME_DIR" >&2
+			echo "aquade-session: $XDG_RUNTIME_DIR is not yours: set XDG_RUNTIME_DIR" >&2
 			exit 1
 		fi
 		chmod 700 "$XDG_RUNTIME_DIR"
@@ -224,13 +224,13 @@ fi
 #
 # A session of its own runs AquaDE as a child rather than in this shell's
 # place, so that once AquaDE has gone -- logged out, or fallen -- what it told
-# the rest of the login is taken back (desk-session-helper end): the next
+# the rest of the login is taken back (aquade-session-helper end): the next
 # desktop the same user logs in to, with systemd still running, would
 # otherwise start its services with AquaDE's display and portals (Plasma sat
 # at a black screen). What the login screen sends to end the session is
 # handed on to AquaDE.
 if [ -n "${DESK_NESTED:-}" ]; then
-	exec desk "$@"
+	exec aquade "$@"
 fi
 log=/dev/stderr
 if [ "${DESK_LOG:-}" != "-" ]; then
@@ -241,9 +241,9 @@ if [ "${DESK_LOG:-}" != "-" ]; then
 	fi
 fi
 if [ "$log" = /dev/stderr ]; then
-	desk "$@" &
+	aquade "$@" &
 else
-	desk "$@" > "$log" 2>&1 &
+	aquade "$@" > "$log" 2>&1 &
 fi
 pid=$!
 trap 'kill -TERM "$pid" 2>/dev/null || true' TERM HUP
@@ -254,5 +254,5 @@ while :; do
 	kill -0 "$pid" 2>/dev/null || break
 done
 trap - TERM HUP
-desk-session-helper end "$XDG_CURRENT_DESKTOP" >> "$log" 2>&1 || true
+aquade-session-helper end "$XDG_CURRENT_DESKTOP" >> "$log" 2>&1 || true
 exit "$rc"

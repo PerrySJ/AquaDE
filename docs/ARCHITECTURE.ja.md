@@ -20,24 +20,24 @@ DEsk v0.1 (BETA) の技術的な全体像です。どんなプログラムがあ
 
 | プログラム | ソース | 何か |
 | --- | --- | --- |
-| `desk` | `src/wm.c` と描画ライブラリ | Wayland コンポジタ。デスクトップのすべて。GPU の試運転の子プロセス（`desk-gpu-trial`。同じ実行ファイルを `DESK_GPU_PROBE` 付きで起動）も兼ねます。 |
-| `desk-session` | `session/desk-session`（sh） | ログイン画面が起動するもの。セッションの環境（Wayland 優先のツールキットの変数、入力メソッド、DEsk 用の dconf の層）を整え、`~/.local/state/desk/session.log` に記録を残し、`DESK_SESSION=1` で `desk` を起動します。 |
-| `desk-session-helper` | `scripts/desk-session-helper`（sh） | DEsk が描かない部分（polkit エージェント、キーリング、IBus か fcitx、ネットワークのアプレット、udiskie、電池の知らせ）を、DEsk 自身の autostart エントリから選んで起動します。 |
-| `desk-settings` | `src/settings.c` | Shell Settings。同じライブラリで描く普通の Wayland クライアントで、`shell.conf` を書きます。 |
-| `desk-index` | `src/index.c` | DEsk Experience Index（1.0〜9.9 で採点するベンチマーク）。`--text` は端末向け、`--suggest` はインストーラが Graphics の段階を選ぶのに使います。 |
-| `desk-preview` | `src/preview.c` | コンポジタなしで机・眺め・部品を PNG に描きます。描画の変更を確かめる主な道具です。 |
-| `desk-gputest` | `src/gputest.c` | GPU の経路を確かめます。`desk-gputest --room` はすべてのシートを GPU と CPU の両方で焼いて比べます。 |
-| `desk-ctl` | `scripts/desk-ctl`（sh） | 固まった机のための `reset` と `logout`。端末やほかの VT から使います。 |
-| `desk-window` | `scripts/desk-window`（sh） | 今のセッションの中に DEsk を窓として起動します。 |
-| `desk-screenshot` | `scripts/desk-screenshot`（sh） | Print / Alt+Print：grim で撮り、ピクチャに保存し、手紙で知らせます。 |
+| `desk` | `src/wm.c` と描画ライブラリ | Wayland コンポジタ。デスクトップのすべて。GPU の試運転の子プロセス（`aquade-gpu-trial`。同じ実行ファイルを `DESK_GPU_PROBE` 付きで起動）も兼ねます。 |
+| `aquade-session` | `session/aquade-session`（sh） | ログイン画面が起動するもの。セッションの環境（Wayland 優先のツールキットの変数、入力メソッド、DEsk 用の dconf の層）を整え、`~/.local/state/aquade/session.log` に記録を残し、`DESK_SESSION=1` で `desk` を起動します。 |
+| `aquade-session-helper` | `scripts/aquade-session-helper`（sh） | DEsk が描かない部分（polkit エージェント、キーリング、IBus か fcitx、ネットワークのアプレット、udiskie、電池の知らせ）を、DEsk 自身の autostart エントリから選んで起動します。 |
+| `aquade-settings` | `src/settings.c` | Shell Settings。同じライブラリで描く普通の Wayland クライアントで、`shell.conf` を書きます。 |
+| `aquade-index` | `src/index.c` | DEsk Experience Index（1.0〜9.9 で採点するベンチマーク）。`--text` は端末向け、`--suggest` はインストーラが Graphics の段階を選ぶのに使います。 |
+| `aquade-preview` | `src/preview.c` | コンポジタなしで机・眺め・部品を PNG に描きます。描画の変更を確かめる主な道具です。 |
+| `aquade-gputest` | `src/gputest.c` | GPU の経路を確かめます。`aquade-gputest --room` はすべてのシートを GPU と CPU の両方で焼いて比べます。 |
+| `aquade-ctl` | `scripts/aquade-ctl`（sh） | 固まった机のための `reset` と `logout`。端末やほかの VT から使います。 |
+| `aquade-window` | `scripts/aquade-window`（sh） | 今のセッションの中に DEsk を窓として起動します。 |
+| `aquade-screenshot` | `scripts/aquade-screenshot`（sh） | Print / Alt+Print：grim で撮り、ピクチャに保存し、手紙で知らせます。 |
 
 ### セッションの始まり
 
-1. ログイン画面が `/usr/share/wayland-sessions/desk.desktop` から `desk-session` を起動します。
-2. `desk-session` が `XDG_CURRENT_DESKTOP=DEsk`、ツールキットのバックエンド、入力メソッドの選択、dconf のプロファイルを設定し、`desk` を起動します。
+1. ログイン画面が `/usr/share/wayland-sessions/aquade.desktop` から `aquade-session` を起動します。
+2. `aquade-session` が `XDG_CURRENT_DESKTOP=DEsk`、ツールキットのバックエンド、入力メソッドの選択、dconf のプロファイルを設定し、`desk` を起動します。
 3. `desk` は `$XDG_RUNTIME_DIR/desk.lock` に排他の `flock` を取り（ユーザーごとに一つ。`DESK_ALLOW_MULTIPLE=1` で解除）、wlroots を起動し、部屋をキャッシュから読むかトレースしている間に最初のフレームを出します。
 4. ディスプレイができると、`src/session.c` が D-Bus と systemd にその場所を伝え（`dbus-update-activation-environment --systemd`）、XDG の autostart エントリを起動します。DEsk とぶつかるもの（別の通知デーモン、X のスクリーンロッカー、ほかのデスクトップの polkit エージェント）は除きます。
-5. DEsk 自身の autostart エントリ（`session/autostart/*.desktop`、`OnlyShowIn=DEsk`）が、借りる部品ごとに `desk-session-helper` を起動します。
+5. DEsk 自身の autostart エントリ（`session/autostart/*.desktop`、`OnlyShowIn=DEsk`）が、借りる部品ごとに `aquade-session-helper` を起動します。
 
 ログアウト・再起動・電源オフは、まずすべての窓に閉じるよう頼み（`wm.c` の `end_begin`）、そのあと logind を通して行います（`src/power.c`）。
 
@@ -52,8 +52,8 @@ DEsk v0.1 (BETA) の技術的な全体像です。どんなプログラムがあ
 | `src/apps.c` | 約 2,000 | `.desktop` ファイルをワーカースレッドで走査し、8 つの棚に分け、アイコンを探し、標準の端末・ブラウザ・ファイル・エディタを選び、プログラムを起動します。 |
 | `src/i18n.c` | 約 1,700 | 言葉の表（7 か国語）と月・曜日の名前。仕組みは `include/i18n.h` に。 |
 | `src/fonts.c` | 約 280 | 役割ごとの書体（CJK は地域ごと）。 |
-| `src/settings.c` | 約 3,200 | `desk-settings`（Shell Settings）。 |
-| `src/index.c` | 約 4,500 | `desk-index`。 |
+| `src/settings.c` | 約 3,200 | `aquade-settings`（Shell Settings）。 |
+| `src/index.c` | 約 4,500 | `aquade-index`。 |
 | `src/post.c` | 約 440 | 通知デーモン（`org.freedesktop.Notifications`）。 |
 | `src/tray.c` | 約 1,350 | StatusNotifierItem のウォッチャーとホスト（トレイの紙片）。 |
 | `src/media.c` | 約 800 | MPRIS のクライアント（時計の MEDIA、メディアキー）。 |
@@ -63,7 +63,7 @@ DEsk v0.1 (BETA) の技術的な全体像です。どんなプログラムがあ
 | `src/power.c` | | logind を通したログアウト・再起動・電源オフ。 |
 | `src/panel.c` | 約 950 | Control Panel の計器が読む `/proc`・`/sys`・ミキサーの値。 |
 | `src/occasion.c` | 約 530 | 日付（誕生日、新年など）と玄関の天気（open-meteo.com。切れます）。 |
-| `src/agenda.c`、`src/memo.c` | | カレンダーの付箋とメモ帳の紙。`$XDG_DATA_HOME/desk` に保存。 |
+| `src/agenda.c`、`src/memo.c` | | カレンダーの付箋とメモ帳の紙。`$XDG_DATA_HOME/aquade` に保存。 |
 | `src/camera.c` | 約 260 | カメラやマイクが使われているか（時計の二つのランプ）。 |
 | `src/sfx.c`、`src/sound.c` | 約 2,750 | すべての音を起動時に合成し、ミキサーのスレッドで鳴らします（libpulse、または実行時に読み込む ALSA）。 |
 | `src/preview.c`、`src/gputest.c` | | 開発用の道具（§2）。 |
@@ -151,7 +151,7 @@ libsystemd がある（`-Dpost=enabled`）と、DEsk はイベントループの
 
 ## 5. 描画ライブラリ（`src/draw.c`）
 
-`draw.c` は `apps.c`・`panel.c`・`agenda.c`・`fonts.c`・`i18n.c`・`memo.c`・`user.c`・（EGL があれば）`gpu.c` と一緒に静的ライブラリ `desk-draw` になります。API は `include/desk.h` です。コンポジタ、Shell Settings、Experience Index、プレビューがみなこれをリンクするので、どこで描いても同じ見た目になります。
+`draw.c` は `apps.c`・`panel.c`・`agenda.c`・`fonts.c`・`i18n.c`・`memo.c`・`user.c`・（EGL があれば）`gpu.c` と一緒に静的ライブラリ `aquade-draw` になります。API は `include/desk.h` です。コンポジタ、Shell Settings、Experience Index、プレビューがみなこれをリンクするので、どこで描いても同じ見た目になります。
 
 ### 5.1 部屋
 
@@ -162,9 +162,9 @@ libsystemd がある（`-Dpost=enabled`）と、DEsk はイベントループの
 トレーサは二つあります。
 
 - **C**（`draw.c`）：基準。CPU のすべてのコアでタイルに分けて動きます。
-- **GLSL**（`room.glsl` を `gpu.c` で）：同じコードを移したもので、画面と同じレンダーノードの画面外の GLES 3.0 コンテキストで動きます。名前の付いた数値はすべて `draw.c` からシェーダに渡すので（`room_glsl_preamble`）、両者が形について食い違うことはありません。ドライバーはまず子プロセス（`desk-gpu-trial`）で試すので、落ちるドライバーが机を道連れにすることはありません。失敗すれば CPU で焼きます。
+- **GLSL**（`room.glsl` を `gpu.c` で）：同じコードを移したもので、画面と同じレンダーノードの画面外の GLES 3.0 コンテキストで動きます。名前の付いた数値はすべて `draw.c` からシェーダに渡すので（`room_glsl_preamble`）、両者が形について食い違うことはありません。ドライバーはまず子プロセス（`aquade-gpu-trial`）で試すので、落ちるドライバーが机を道連れにすることはありません。失敗すれば CPU で焼きます。
 
-`desk-gputest --room` が二つのトレーサをシートごとに比べます。
+`aquade-gputest --room` が二つのトレーサをシートごとに比べます。
 
 ### 5.2 段階とキャッシュ
 
@@ -175,7 +175,7 @@ libsystemd がある（`-Dpost=enabled`）と、DEsk はイベントループの
 | Medium、Low | 小さく焼き、重ね描きも小さく。動いている紙は粗く描きます。 |
 | 2D Fallback | 一度だけ小さく、1 画素 1 サンプル（ぼかして）。影・フェード・ぼかし・アニメーションなし。画面を CPU で描いているときは自動でこれになります。 |
 
-焼いたシートは `$XDG_CACHE_HOME/desk` に、シートの種類・大きさ・机の幅・段階・`ROOM_KEY` の付いた名前の PNG で置きます。`ROOM_KEY` はビルド時に `room.glsl` と `gpu.c` から作るハッシュです（`scripts/room-key.py`）。部屋のコードを変えれば古いシートは使われず、普通の更新では残ります。
+焼いたシートは `$XDG_CACHE_HOME/aquade` に、シートの種類・大きさ・机の幅・段階・`ROOM_KEY` の付いた名前の PNG で置きます。`ROOM_KEY` はビルド時に `room.glsl` と `gpu.c` から作るハッシュです（`scripts/room-key.py`）。部屋のコードを変えれば古いシートは使われず、普通の更新では残ります。
 
 ### 5.3 平らなもの
 
@@ -199,28 +199,28 @@ libsystemd がある（`-Dpost=enabled`）と、DEsk はイベントループの
 
 共有する状態はミューテックス（`g_room_lock`、`g_render_lock`、アプリ一覧の参照カウント）で守るか、アトミックにします（部屋の進み具合の数、部屋の形の数）。ワーカーは wlroots にもシーンにも触りません。結果はロックの中で連番か世代番号と一緒に公開し（新しい部屋、アプリ一覧の新しいスナップショット）、コンポジタが次の tick に自分のスレッドで拾います。あるいはイベントループが見ているパイプか eventfd で起こします（天気、トレイのアイコン、パスワードの確認）。v0.1 は ThreadSanitizer・AddressSanitizer・UndefinedBehaviorSanitizer で動かしています（§9）。
 
-シグナルは受け止め、塞ぎません。ハンドラはイベントループが見ているパイプに 1 バイト書くだけで（`cad_signals`）、ループがそれを読んで動きます。`desk-ctl` の USR1 と USR2 は机の立て直しとセッションの終わり、TERM・HUP・INT（logind がセッションを終えるとき、窓の中の机での ^C）はログアウトと同じ後片付けで机を終え、手にしているもの（メモ、カレンダーの付箋）を残します。塞いだシグナルは exec を越えて机が起動するすべてのプログラムに受け継がれますが、ハンドラは受け継がれません。
+シグナルは受け止め、塞ぎません。ハンドラはイベントループが見ているパイプに 1 バイト書くだけで（`cad_signals`）、ループがそれを読んで動きます。`aquade-ctl` の USR1 と USR2 は机の立て直しとセッションの終わり、TERM・HUP・INT（logind がセッションを終えるとき、窓の中の机での ^C）はログアウトと同じ後片付けで机を終え、手にしているもの（メモ、カレンダーの付箋）を残します。塞いだシグナルは exec を越えて机が起動するすべてのプログラムに受け継がれますが、ハンドラは受け継がれません。
 
 ## 7. ファイル
 
 | 何 | どこ |
 | --- | --- |
-| 設定 | `$XDG_CONFIG_HOME/desk/shell.conf`（機械の既定は `/etc/xdg/desk/shell.conf`） |
-| 画面の配置 | `$XDG_CONFIG_HOME/desk/displays.conf` |
-| 引き出しの中身 | `$XDG_CONFIG_HOME/desk/drawer` |
-| 棚の指定 | `$XDG_CONFIG_HOME/desk/shelves.conf` |
-| 既定のプログラム | `~/.config/desk-mimeapps.list`、それから freedesktop.org の一覧 |
-| カレンダーの付箋、メモ帳 | `$XDG_DATA_HOME/desk/calendar`、`$XDG_DATA_HOME/desk/memo` |
-| 焼いた部屋、アイコン、扉 | `$XDG_CACHE_HOME/desk/` |
-| 記録 | `$XDG_STATE_HOME/desk/session.log`（と `.old`）、`install.log` |
+| 設定 | `$XDG_CONFIG_HOME/aquade/shell.conf`（機械の既定は `/etc/xdg/aquade/shell.conf`） |
+| 画面の配置 | `$XDG_CONFIG_HOME/aquade/displays.conf` |
+| 引き出しの中身 | `$XDG_CONFIG_HOME/aquade/drawer` |
+| 棚の指定 | `$XDG_CONFIG_HOME/aquade/shelves.conf` |
+| 既定のプログラム | `~/.config/aquade-mimeapps.list`、それから freedesktop.org の一覧 |
+| カレンダーの付箋、メモ帳 | `$XDG_DATA_HOME/aquade/calendar`、`$XDG_DATA_HOME/aquade/memo` |
+| 焼いた部屋、アイコン、扉 | `$XDG_CACHE_HOME/aquade/` |
+| 記録 | `$XDG_STATE_HOME/aquade/session.log`（と `.old`）、`install.log` |
 | Shell Settings 用 | `$XDG_RUNTIME_DIR/<WAYLAND_DISPLAY>.render`（画面を CPU で描いているか） |
-| ユーザーごとに一つ | `$XDG_RUNTIME_DIR/desk.lock`（PID 入り。`desk-ctl` が読みます） |
+| ユーザーごとに一つ | `$XDG_RUNTIME_DIR/desk.lock`（PID 入り。`aquade-ctl` が読みます） |
 
 DEsk が書くファイルはすべて、別の名前に書いてから名前を付け替えます。形式は [CONFIGURATION.md](CONFIGURATION.md) にあります。
 
 ## 8. 言語・書体・音
 
-- **言葉**：`TR("English")` は英語で `WORDS`（`src/i18n.c`）を引きます。言語ごとに列がある表です（`enum desk_lang`：en、ja、zh、ko、es、fr、de）。訳の無い語は英語のまま出ます。キーには文脈を付けられます（`"clock|DAY"`）。`desk-index` は `index.c` に自分の表を持ちます。`meson test` が両方の表を確かめます（`scripts/check-words.py`）。
+- **言葉**：`TR("English")` は英語で `WORDS`（`src/i18n.c`）を引きます。言語ごとに列がある表です（`enum desk_lang`：en、ja、zh、ko、es、fr、de）。訳の無い語は英語のまま出ます。キーには文脈を付けられます（`"clock|DAY"`）。`aquade-index` は `index.c` に自分の表を持ちます。`meson test` が両方の表を確かめます（`scripts/check-words.py`）。
 - **書体**：役割（UI、印刷、見出し、刻印、タイプ、画面、手書き）ごとにラテン文字の一覧と CJK の一覧があり、CJK の一覧は中国語・日本語・韓国語ごとに選び直します（Noto CJK の SC・JP・KR）。同じ字でも国によって字形が違うためです。
 - **音**：録音は一つもありません。`sfx.c` が起動時に、固有振動、雑音、ぱりぱりという音、きしみからすべての音を合成し、`sound.c` が少しずつ違う版を、画面上のその物の位置の左右に振って鳴らします。
 
@@ -229,8 +229,8 @@ DEsk が書くファイルはすべて、別の名前に書いてから名前を
 ```sh
 meson setup build && meson compile -C build
 meson test -C build                       # 訳の表
-./build/desk-preview -o out.png --shelf   # コンポジタなしで描く
-./scripts/desk-window                     # 今のセッションの中で動かす
+./build/aquade-preview -o out.png --shelf   # コンポジタなしで描く
+./scripts/aquade-window                     # 今のセッションの中で動かす
 ```
 
 v0.1 では次を行いました。

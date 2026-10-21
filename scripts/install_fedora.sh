@@ -1,31 +1,31 @@
 #!/bin/sh
-# install_fedora.sh -- DEsk on Fedora, in one go.
+# install_fedora.sh -- AquaDE on Fedora, in one go.
 #
-# Run it as yourself from the folder you got DEsk in; it asks for sudo
+# Run it as yourself from the folder you got AquaDE in; it asks for sudo
 # when it needs to (run as root -- in a container, say -- it needs none).
-# It installs what DEsk is built from and what it runs with, the classic
-# programs that go with the desk (unless --no-apps), builds DEsk and
+# It installs what AquaDE is built from and what it runs with, the classic
+# programs that go with the desk (unless --no-apps), builds AquaDE and
 # installs it, puts it on the login screen, and clears away what was
 # installed under its old name (DeskWM). Run it again after an update to
 # rebuild and reinstall; what is there already is left alone.
 #
 #   --yes          do not ask; take the answers it would suggest
-#   --no-apps      only DEsk, what it needs and the programs its Shell Settings
+#   --no-apps      only AquaDE, what it needs and the programs its Shell Settings
 #                  opens, not the other recommended programs
-#   --bare         only DEsk and what it needs: no programs (for a container)
-#   --prefix DIR   where DEsk goes (default /usr/local)
+#   --bare         only AquaDE and what it needs: no programs (for a container)
+#   --prefix DIR   where AquaDE goes (default /usr/local)
 #   --help         this
 #
-# DEsk is built on wlroots 0.18. Fedora has moved on to newer ones and keeps
+# AquaDE is built on wlroots 0.18. Fedora has moved on to newer ones and keeps
 # 0.18 beside them as a package of its own (wlroots0.18, in Fedora 43 and
 # later), which is what is installed: whichever package the repositories
 # have that brings wlroots-0.18.pc. Where none does, wlroots 0.18 is built
-# here from its own release into /opt/desk-wlroots, where only DEsk looks
+# here from its own release into /opt/aquade-wlroots, where only AquaDE looks
 # for it (DESK_WLROOTS_PREFIX=... for another place).
 #
 # The build directory is build-install in the source folder (BUILD_DIR=...
 # for another), and wlroots, when it is built, in build-install-wlroots
-# beside it. When it is done, log out and pick "DEsk" on the login screen.
+# beside it. When it is done, log out and pick "AquaDE" on the login screen.
 set -eu
 
 yes=0 apps=1 sets=1 prefix=/usr/local
@@ -53,14 +53,14 @@ esac
 root="$(cd "$(dirname "$0")/.." && pwd)"
 build="${BUILD_DIR:-$root/build-install}"
 deps="$build-wlroots"
-wlr="${DESK_WLROOTS_PREFIX:-/opt/desk-wlroots}"
+wlr="${DESK_WLROOTS_PREFIX:-/opt/aquade-wlroots}"
 
 say() { printf '%s\n' "$*"; }
 step() { printf '\n== %s\n' "$*"; }
 die() { printf 'install_fedora.sh: %s\n' "$*" >&2; exit 1; }
 
-if ! grep -q "^project('desk'" "$root/meson.build" 2>/dev/null; then
-	die "$root does not look like DEsk's source folder (no meson.build for it)"
+if ! grep -q "^project('aquade'" "$root/meson.build" 2>/dev/null; then
+	die "$root does not look like AquaDE's source folder (no meson.build for it)"
 fi
 # A copy made for passing round carries SHA256SUMS, and every file is
 # checked against it first: a copy damaged on its way (a stick pulled out
@@ -70,18 +70,18 @@ fi
 if [ -z "${DESK_SUMS_CHECKED:-}" ] && [ -f "$root/SHA256SUMS" ] \
 	&& command -v sha256sum >/dev/null 2>&1; then
 	if ! damaged=$(cd "$root" && sha256sum --quiet -c SHA256SUMS 2>&1); then
-		printf '%s\n' "this copy of DEsk is damaged -- these files are not what they were" \
+		printf '%s\n' "this copy of AquaDE is damaged -- these files are not what they were" \
 			"when it was made:" >&2
 		printf '%s\n' "$damaged" | sed 's/^/  /' >&2
 		die "copy the folder again; if a fresh copy is damaged too, suspect the machine's memory or disk (memtest86+)"
 	fi
-	say "DEsk: every file of this copy checked against SHA256SUMS."
+	say "AquaDE: every file of this copy checked against SHA256SUMS."
 fi
 command -v dnf >/dev/null 2>&1 && command -v rpm >/dev/null 2>&1 \
 	|| die "there is no dnf here, so this is not Fedora (install_session.sh picks the right one)"
 case "$wlr" in
 /?*) wlr=${wlr%/} ;;
-*) die "DESK_WLROOTS_PREFIX has to be a whole path, like /opt/desk-wlroots" ;;
+*) die "DESK_WLROOTS_PREFIX has to be a whole path, like /opt/aquade-wlroots" ;;
 esac
 if [ "$yes" -eq 0 ] && [ ! -t 0 ]; then
 	die "there is nobody to answer its questions here; run it with --yes to take the suggested answers"
@@ -184,7 +184,7 @@ wlroots|wlroots-0.18|0.18.3|0.18.3|https://gitlab.freedesktop.org/wlroots/wlroot
 # programs need to work (the polkit agent, the keyring, printing, IBus), so
 # that every row of it opens something; "app" only without --no-apps. The
 # programs are the classic GTK ones of Xfce and MATE, as in the installers
-# for Debian, Ubuntu and Arch: they leave their frame to DEsk, so they lie on
+# for Debian, Ubuntu and Arch: they leave their frame to AquaDE, so they lie on
 # the desk as sheets of paper, and nothing else. What Fedora does not have
 # is left out, and said (the memo pad's Klee One, Mugshot, the battery and
 # update letters); nwg-look is not packaged, and GNOME's Tweaks sets the
@@ -289,7 +289,7 @@ set|Qt 6 programs dressed as the GTK ones|qt6-qtbase-gui
 set|Qt 5 programs dressed as the GTK ones|qt5-qtbase-gui
 '
 # IBus, for every desk: Shell Settings' Input method opens its setup, and
-# DEsk hands it the keys itself -- unless fcitx5 is here, which someone has
+# AquaDE hands it the keys itself -- unless fcitx5 is here, which someone has
 # chosen (and whose own setup that row opens then).
 if ! installed fcitx5; then
 	LIST="$LIST
@@ -297,9 +297,9 @@ set|input method (IBus)|ibus
 set|input method: IBus's own setup|ibus-setup
 "
 fi
-# and for a Japanese desktop, the Japanese converter: IBus, which DEsk
+# and for a Japanese desktop, the Japanese converter: IBus, which AquaDE
 # hands the keys to itself, with Mozc, else Anthy. Someone who has fcitx5
-# has chosen it, and desk-session-helper would pick IBus over it once that
+# has chosen it, and aquade-session-helper would pick IBus over it once that
 # is installed.
 case "${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}" in
 ja*)
@@ -311,7 +311,7 @@ app|input method: Japanese (Mozc, else Anthy)|ibus-mozc ibus-anthy
 	;;
 esac
 
-say "DEsk for Fedora -- $name"
+say "AquaDE for Fedora -- $name"
 case " $like " in
 *" fedora "*) ;;
 *) say "Note: this is for Fedora, and $name does not say it is built on Fedora."
@@ -332,25 +332,25 @@ else
 	if [ "$sets" -eq 1 ]; then
 		say "  programs  only what Shell Settings opens (--no-apps)"
 	else
-		say "  programs  none (--bare): only DEsk and what it needs"
+		say "  programs  none (--bare): only AquaDE and what it needs"
 	fi
 fi
 
 # -- 1. packages ------------------------------------------------------------
 if [ "$apps" -eq 1 ]; then
-	step "What DEsk needs, and the programs that go with it (dnf)"
+	step "What AquaDE needs, and the programs that go with it (dnf)"
 else
 	if [ "$sets" -eq 1 ]; then
-		step "What DEsk needs, and what its Shell Settings opens (dnf)"
+		step "What AquaDE needs, and what its Shell Settings opens (dnf)"
 	else
-		step "What DEsk needs (dnf)"
+		step "What AquaDE needs (dnf)"
 	fi
 fi
 
 # wlroots 0.18: the package that brings wlroots-0.18.pc where one is
 # installed or to be had (wlroots0.18-devel in Fedora 43 and later), built
 # here where none is. Built here before, it is used again.
-stamp="$wlr/share/desk-wlroots/built"
+stamp="$wlr/share/aquade-wlroots/built"
 # (rpm says "no package provides ..." on its output when none does: only
 # its exit says which)
 if wlrpkg=$(rpm -q --whatprovides 'pkgconfig(wlroots-0.18)' --queryformat '%{name}\n' 2>/dev/null); then
@@ -433,7 +433,7 @@ while IFS='|' read -r need what pkgs; do
 	fi
 done < "$tmp/wanted"
 if [ -n "$short" ]; then
-	die "dnf does not have$short, which DEsk cannot do without (are Fedora's own
+	die "dnf does not have$short, which AquaDE cannot do without (are Fedora's own
 repositories, fedora and updates, on? dnf repolist says)"
 fi
 if [ -s "$list" ]; then
@@ -447,7 +447,7 @@ if [ -s "$list" ]; then
 	fi
 	say "  $pkgs"
 	# Without the packages they only recommend (weak dependencies), as the
-	# other installers leave out what apt recommends: what DEsk wants is
+	# other installers leave out what apt recommends: what AquaDE wants is
 	# named above. With them, GNOME's Tweaks brought GNOME Shell, and that
 	# GDM, which went on to be the login screen.
 	# shellcheck disable=SC2086
@@ -461,20 +461,20 @@ if [ -s "$list" ]; then
 	fi
 	# and they are all there before anything is built on them
 	for pkg in $pkgs; do
-		installed "$pkg" || die "$pkg did not get installed, so DEsk is not installed either"
+		installed "$pkg" || die "$pkg did not get installed, so AquaDE is not installed either"
 	done
 else
 	say
 	say "Everything is installed already."
 fi
-# What DEsk counts on that was installed only for something else (a
+# What AquaDE counts on that was installed only for something else (a
 # desktop since taken away): marked as installed for itself, or
 # "dnf autoremove" after that something went would take it too. dnf 5
 # says "user", dnf 4 "install".
 dep=$(as_root dnf -q -C repoquery --installed --queryformat '%{name} %{reason}\n' 2>/dev/null \
 	| awk 'tolower($2) ~ /^dep|^weak/ { print $1 }' | grep -Fx -f "$tmp/keep" | tr '\n' ' ' || true)
 if [ -n "$dep" ]; then
-	say "Kept for DEsk (marked as installed by you):$(printf ' %s' $dep)"
+	say "Kept for AquaDE (marked as installed by you):$(printf ' %s' $dep)"
 	# shellcheck disable=SC2086
 	as_root dnf -q -y mark user $dep >/dev/null 2>&1 \
 		|| as_root dnf -q -y mark install $dep >/dev/null 2>&1 \
@@ -490,7 +490,7 @@ fi
 # -- 2. wlroots 0.18, when there is none to install -------------------------
 # Built as the builder in build-install-wlroots and installed under $wlr,
 # with its own library folder written into everything built against it
-# (the run path), so DEsk finds this wlroots and nothing else on the system
+# (the run path), so AquaDE finds this wlroots and nothing else on the system
 # does: the libraries are not on ld.so's list. (The same in
 # install_ubuntu.sh and install_arch.sh.)
 pcpath="$wlr/lib/pkgconfig:$wlr/share/pkgconfig"
@@ -558,9 +558,9 @@ if [ "$wlroots" = source ]; then
 fi
 
 # -- 3. build ---------------------------------------------------------------
-step "Building DEsk${builder:+ (as $builder, who owns the source)}"
+step "Building AquaDE${builder:+ (as $builder, who owns the source)}"
 # With wlroots built here, Meson looks there first and writes its folder
-# into DEsk's programs as their run path; with a package's, both are
+# into AquaDE's programs as their run path; with a package's, both are
 # emptied, which matters to a build directory set up the other way before.
 # ("[]" is an empty list to Meson; an empty pkg_config_path would be ".".)
 if [ "$wlroots" = source ]; then
@@ -593,9 +593,9 @@ else
 	setup || { cat "$tmp/setup.log"; die "Meson could not set up $build"; }
 fi
 # what Meson found, from its summary
-sed -n '/^desk [0-9]/,/^Found ninja/{/^Found ninja/d;p}' "$tmp/setup.log"
+sed -n '/^aquade [0-9]/,/^Found ninja/{/^Found ninja/d;p}' "$tmp/setup.log"
 as_builder env PATH="$path" ninja -C "$build" || die "the build failed; what went wrong is above"
-[ -x "$build/desk" ] || die "the build left no desk program in $build"
+[ -x "$build/aquade" ] || die "the build left no aquade program in $build"
 
 # -- 4. install -------------------------------------------------------------
 step "Installing into $prefix"
@@ -604,17 +604,17 @@ as_root meson install -C "$build" --no-rebuild --quiet \
 # Meson's note of what it installed belongs with the rest of the build
 as_root chown --reference="$build" "$build/meson-logs/install-log.txt" 2>/dev/null || true
 data="$prefix/share"
-for f in "$prefix/bin/desk" "$prefix/bin/desk-session" /etc/pam.d/desk; do
+for f in "$prefix/bin/aquade" "$prefix/bin/aquade-session" /etc/pam.d/aquade; do
 	[ -e "$f" ] || die "$f is not there after installing"
 done
-say "  $prefix/bin/desk and the programs that go with it (desk-session, desk-settings...)"
-say "  /etc/pam.d/desk (the screen lock checks the password as login does)"
+say "  $prefix/bin/aquade and the programs that go with it (aquade-session, aquade-settings...)"
+say "  /etc/pam.d/aquade (the screen lock checks the password as login does)"
 if [ "$wlroots" = source ]; then
 	# the run path is what finds wlroots; a program that cannot is no use
-	# (the helpers that are scripts have none to find). DEsk's own only:
+	# (the helpers that are scripts have none to find). AquaDE's own only:
 	# desk* would take in DeskWM's deskwm, cleared away further on, and in
 	# /usr desktop-file-install and the like.
-	for f in "$prefix/bin/desk" "$prefix"/bin/desk-*; do
+	for f in "$prefix/bin/aquade" "$prefix"/bin/aquade-*; do
 		if LC_ALL=C ldd "$f" 2>/dev/null | grep -q 'not found'; then
 			LC_ALL=C ldd "$f" | grep 'not found' >&2
 			die "$f cannot find all its libraries"
@@ -622,30 +622,30 @@ if [ "$wlroots" = source ]; then
 	done
 	say "  wlroots $wlrver for them in $wlr"
 fi
-# SELinux, where it is on: DEsk's files get the labels the policy gives
+# SELinux, where it is on: AquaDE's files get the labels the policy gives
 # their places (bin_t for the programs, etc_t for the PAM file), whatever
 # made them -- a copy keeps the label it had where it was made.
 if command -v restorecon >/dev/null 2>&1 && command -v selinuxenabled >/dev/null 2>&1 \
 	&& selinuxenabled; then
-	as_root restorecon -R "$prefix"/bin/desk* "$data/desk" /etc/pam.d/desk 2>/dev/null || true
+	as_root restorecon -R "$prefix"/bin/aquade* "$data/aquade" /etc/pam.d/aquade 2>/dev/null || true
 fi
 
 # The login screen. GDM, SDDM and LightDM all read /usr/share/wayland-sessions,
 # and LightDM nothing else, so the entry goes there, saying where
-# desk-session is. It stays in one place only: a login screen that reads
-# both would list DEsk twice.
+# aquade-session is. It stays in one place only: a login screen that reads
+# both would list AquaDE twice.
 sessions=/usr/share/wayland-sessions
 if [ "$data" != /usr/share ]; then
-	sed -e "s|^Exec=desk-session|Exec=$prefix/bin/desk-session|" \
-		-e "s|^TryExec=desk-session|TryExec=$prefix/bin/desk-session|" \
-		"$data/wayland-sessions/desk.desktop" > "$tmp/desk.desktop"
-	as_root install -D -m 644 "$tmp/desk.desktop" "$sessions/desk.desktop"
-	as_root rm -f "$data/wayland-sessions/desk.desktop"
+	sed -e "s|^Exec=aquade-session|Exec=$prefix/bin/aquade-session|" \
+		-e "s|^TryExec=aquade-session|TryExec=$prefix/bin/aquade-session|" \
+		"$data/wayland-sessions/aquade.desktop" > "$tmp/aquade.desktop"
+	as_root install -D -m 644 "$tmp/aquade.desktop" "$sessions/aquade.desktop"
+	as_root rm -f "$data/wayland-sessions/aquade.desktop"
 	as_root rmdir "$data/wayland-sessions" 2>/dev/null || true
 fi
-say "  $sessions/desk.desktop (\"DEsk\" on the login screen)"
+say "  $sessions/aquade.desktop (\"AquaDE\" on the login screen)"
 
-# The portals look for desk-portals.conf -- which portal does what on this
+# The portals look for aquade-portals.conf -- which portal does what on this
 # desktop -- in /etc, and in XDG_DATA_DIRS, which is /usr/local/share and
 # /usr/share when nothing says otherwise. D-Bus starts them in systemd's
 # user environment, where XDG_DATA_DIRS is unset or keeps those two: the
@@ -653,9 +653,9 @@ say "  $sessions/desk.desktop (\"DEsk\" on the login screen)"
 # gets one in /usr/share.
 case "$prefix" in
 /usr|/usr/local) ;;
-*) as_root install -D -m 644 "$data/xdg-desktop-portal/desk-portals.conf" \
-		/usr/share/xdg-desktop-portal/desk-portals.conf
-	say "  /usr/share/xdg-desktop-portal/desk-portals.conf (which portal does what)"
+*) as_root install -D -m 644 "$data/xdg-desktop-portal/aquade-portals.conf" \
+		/usr/share/xdg-desktop-portal/aquade-portals.conf
+	say "  /usr/share/xdg-desktop-portal/aquade-portals.conf (which portal does what)"
 	;;
 esac
 
@@ -669,25 +669,25 @@ if [ -f "$data/applications/mimeinfo.cache" ] && on_path update-desktop-database
 	as_root update-desktop-database -q "$data/applications" || true
 fi
 
-# install.sh used to put DEsk in /usr, and the installers put it in
+# install.sh used to put AquaDE in /usr, and the installers put it in
 # /usr/local: with one in each, the one first on the PATH is the one that runs
 for other in /usr /usr/local; do
-	if [ "$other" != "$prefix" ] && [ -x "$other/bin/desk" ]; then
+	if [ "$other" != "$prefix" ] && [ -x "$other/bin/aquade" ]; then
 		say
-		say "Note: there is another DEsk in $other ($other/bin/desk). With two, the"
+		say "Note: there is another AquaDE in $other ($other/bin/aquade). With two, the"
 		say "      one that runs is the one first on the PATH (usually /usr/local's)."
 		say "      \"sudo ninja uninstall\" in the build it came from takes it away."
 	fi
 done
 
-# desk-session puts its own folder on the PATH and the prefix's share first
-# in XDG_DATA_DIRS, so a DEsk session finds everything wherever it is;
+# aquade-session puts its own folder on the PATH and the prefix's share first
+# in XDG_DATA_DIRS, so a AquaDE session finds everything wherever it is;
 # other sessions find the prefix's share only if XDG_DATA_DIRS names it
 case "$prefix" in
 /usr|/usr/local) ;;
 *) say
-	say "Note: a DEsk session finds what is in $prefix/share by itself. For other"
-	say "      sessions to list DEsk's programs (Shell Settings, the Experience"
+	say "Note: a AquaDE session finds what is in $prefix/share by itself. For other"
+	say "      sessions to list AquaDE's programs (Shell Settings, the Experience"
 	say "      Index) too, add it to XDG_DATA_DIRS -- in /etc/environment, say:"
 	say "        XDG_DATA_DIRS=$prefix/share:/usr/local/share:/usr/share"
 	;;
@@ -729,10 +729,10 @@ if command -v systemctl >/dev/null 2>&1; then
 fi
 
 # -- 6. the old name --------------------------------------------------------
-# DEsk was DeskWM: deskwm, deskwm-session... The old installer put it in
+# AquaDE was DeskWM: deskwm, deskwm-session... The old installer put it in
 # /usr by default, so /usr and /usr/local are looked in as well as the
 # prefix. Only what is named deskwm* is touched; what you kept in
-# ~/.config/deskwm and the like is moved over by DEsk itself.
+# ~/.config/deskwm and the like is moved over by AquaDE itself.
 old=$tmp/old
 for p in "$prefix" /usr/local /usr; do
 	[ -d "$p/bin" ] && find "$p/bin" -maxdepth 1 -name 'deskwm*' 2>/dev/null
@@ -740,7 +740,7 @@ for p in "$prefix" /usr/local /usr; do
 done | sort -u > "$old"
 [ -e /etc/pam.d/deskwm ] && echo /etc/pam.d/deskwm >> "$old"
 if [ -s "$old" ]; then
-	step "Clearing away DeskWM, which is what DEsk was called before"
+	step "Clearing away DeskWM, which is what AquaDE was called before"
 	sed 's/^/  /' "$old"
 	if ask "Remove these?"; then
 		while IFS= read -r f; do
@@ -748,7 +748,7 @@ if [ -s "$old" ]; then
 		done < "$old"
 		say "Removed."
 		if grep -q 'wayland-sessions/deskwm' "$old"; then
-			say "\"DeskWM\" is gone from the login screen; pick \"DEsk\" instead."
+			say "\"DeskWM\" is gone from the login screen; pick \"AquaDE\" instead."
 		fi
 	else
 		say "Left as they are."
@@ -758,9 +758,9 @@ fi
 # -- what Shell Settings opens ---------------------------------------------
 # Each row of its System pad, and the program it opens now: a row with none
 # is printed faint there, and is said here with the package that brings it.
-if [ "$sets" -eq 1 ] && [ -x "$prefix/bin/desk-settings" ]; then
+if [ "$sets" -eq 1 ] && [ -x "$prefix/bin/aquade-settings" ]; then
 	step "Shell Settings: what each row of the System pad opens"
-	as_builder "$prefix/bin/desk-settings" --check > "$tmp/check" 2>&1 || true
+	as_builder "$prefix/bin/aquade-settings" --check > "$tmp/check" 2>&1 || true
 	sed 's/^/  /' "$tmp/check"
 	if grep -q MISSING "$tmp/check"; then
 		say "Note: the rows marked MISSING open nothing yet; the packages named bring them."
@@ -768,33 +768,33 @@ if [ "$sets" -eq 1 ] && [ -x "$prefix/bin/desk-settings" ]; then
 fi
 
 # -- the graphics this machine starts at -----------------------------------
-# A quick look -- desk-index --suggest: the graphics (or, with none, the
+# A quick look -- aquade-index --suggest: the graphics (or, with none, the
 # processor) for a couple of seconds, the threads and the memory -- chooses
 # the Graphics level the desk starts at here, for every user of the machine
-# (/etc/xdg/desk/shell.conf, under each user's own). Anyone changes their
+# (/etc/xdg/aquade/shell.conf, under each user's own). Anyone changes their
 # own in Shell Settings; DESK_GRAPHICS=<level> chooses in place of the look.
-if [ "$sets" -eq 1 ] && [ -x "$prefix/bin/desk-index" ]; then
+if [ "$sets" -eq 1 ] && [ -x "$prefix/bin/aquade-index" ]; then
 	step "The graphics this machine starts at"
 	level="${DESK_GRAPHICS:-}"
 	if [ -z "$level" ]; then
-		level=$(as_builder "$prefix/bin/desk-index" --suggest 2> "$tmp/suggest" | tail -n 1) \
+		level=$(as_builder "$prefix/bin/aquade-index" --suggest 2> "$tmp/suggest" | tail -n 1) \
 			|| level=""
-		sed -n 's/^desk-index: /  /p' "$tmp/suggest"
+		sed -n 's/^aquade-index: /  /p' "$tmp/suggest"
 	fi
 	case "$level" in
 	2d | low | medium | high | ultra)
-		sysconf=/etc/xdg/desk/shell.conf
+		sysconf=/etc/xdg/aquade/shell.conf
 		if [ -f "$sysconf" ]; then
 			grep -v '^[[:space:]]*graphics[[:space:]]*=' "$sysconf" > "$tmp/sysconf" || true
 		else
 			{
-				echo "# DEsk's settings for every user of this machine, under each user's own"
-				echo "# (~/.config/desk/shell.conf). The installer chose the graphics from a"
+				echo "# AquaDE's settings for every user of this machine, under each user's own"
+				echo "# (~/.config/aquade/shell.conf). The installer chose the graphics from a"
 				echo "# quick look at the machine; Shell Settings changes a user's own."
 			} > "$tmp/sysconf"
 		fi
 		echo "graphics = $level" >> "$tmp/sysconf"
-		as_root mkdir -p /etc/xdg/desk
+		as_root mkdir -p /etc/xdg/aquade
 		as_root install -m 644 "$tmp/sysconf" "$sysconf"
 		say "  graphics = $level, for every user (Shell Settings: Graphics, to change one's own)"
 		;;
@@ -805,20 +805,20 @@ if [ "$sets" -eq 1 ] && [ -x "$prefix/bin/desk-index" ]; then
 fi
 
 step "Done"
-say "DEsk is installed in $prefix."
+say "AquaDE is installed in $prefix."
 # a login screen is one systemd is told to start (display-manager.service);
 # Fedora Workstation has GDM, the KDE edition SDDM, Server and the minimal
 # installs none
 if [ -e /etc/systemd/system/display-manager.service ]; then
-	say "Log out, pick \"DEsk\" on the login screen (the session menu: often a gear"
+	say "Log out, pick \"AquaDE\" on the login screen (the session menu: often a gear"
 	say "by the password box, or a list at the bottom or top of the screen), and log in."
 else
 	say "There is no login screen here. Log in on the console and type"
 	case "$prefix" in
-	/usr|/usr/local) say "  desk-session" ;;
-	*) say "  $prefix/bin/desk-session" ;;
+	/usr|/usr/local) say "  aquade-session" ;;
+	*) say "  $prefix/bin/aquade-session" ;;
 	esac
-	say "or install a login screen, which lists DEsk by itself, and turn it on --"
+	say "or install a login screen, which lists AquaDE by itself, and turn it on --"
 	say "LightDM is a light one:"
 	say "  sudo dnf install lightdm lightdm-gtk && sudo systemctl enable lightdm"
 	say "  sudo systemctl set-default graphical.target"

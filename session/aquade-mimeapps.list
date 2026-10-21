@@ -4,7 +4,7 @@
 # file manager (inode/directory) and the text editor (text/plain).
 #
 # A list for each: the first one installed is used. It is looked for after
-# your own choices, in the freedesktop order: ~/.config/desk-mimeapps.list
+# your own choices, in the freedesktop order: ~/.config/aquade-mimeapps.list
 # (in AquaDE only), then ~/.config/mimeapps.list -- which Shell Settings'
 # Default programs (xfce4-mime-settings) and other desktops write -- and the
 # same two in the system's folders. shell.conf can also name the drawer's

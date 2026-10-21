@@ -4,7 +4,7 @@
 /* What is written on the desk calendar: notes stuck on days -- plans, at a
  * time or for the day, and things to do, ticked off or not -- each the
  * colour of the pad it was peeled from. Kept in
- * $XDG_DATA_HOME/desk/calendar, a line to a note, written again (whole,
+ * $XDG_DATA_HOME/aquade/calendar, a line to a note, written again (whole,
  * then put in place) on every change. */
 
 #include <stdbool.h>

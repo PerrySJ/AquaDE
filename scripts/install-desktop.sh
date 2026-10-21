@@ -1,13 +1,13 @@
 #!/bin/sh
-# install-desktop.sh -- the free programs that make DEsk a whole desktop.
+# install-desktop.sh -- the free programs that make AquaDE a whole desktop.
 #
-# DEsk draws the desk; what you do on it is done with free software that
+# AquaDE draws the desk; what you do on it is done with free software that
 # already exists, chosen to go with it: the classic GTK programs Xfce and
 # MATE are made of. They are plain windows -- a menu bar, a toolbar, the
-# work -- that ask DEsk for their frame, so each lies on the desk as one
+# work -- that ask AquaDE for their frame, so each lies on the desk as one
 # sheet of paper; a program that draws its own title bar into the window,
 # as GNOME's newer ones do, puts a second frame on the sheet. They run on
-# Wayland as they are, are light, and follow DEsk's default-applications
+# Wayland as they are, are light, and follow AquaDE's default-applications
 # list. (The few tools with no classic counterpart -- disks, displays,
 # sound levels -- draw their own.) The usual free parts of a Linux desktop
 # do the rest: networks, Bluetooth, sound, printing, passwords, the
@@ -26,7 +26,7 @@
 # are the ones scripts/install_debian.sh, install_ubuntu.sh, install_arch.sh
 # and install_fedora.sh install, and were tried there; the openSUSE ones are
 # what that distribution is known to call them, and were not. On Debian 13,
-# Ubuntu, Arch and Fedora, the same programs come with DEsk itself from
+# Ubuntu, Arch and Fedora, the same programs come with AquaDE itself from
 # scripts/install_session.sh.
 set -eu
 
@@ -124,10 +124,10 @@ extras|what the computer is doing (Xfce Task Manager)|xfce4-taskmanager
 extras|scanner (Simple Scan)|simple-scan
 '
 
-# and for a Japanese desktop: the Japanese converter -- IBus, which DEsk
+# and for a Japanese desktop: the Japanese converter -- IBus, which AquaDE
 # hands the keys to itself, with Mozc, else Anthy (Arch keeps Mozc in the
 # AUR) -- and the office suite's Japanese. As in the installers, someone
-# who has fcitx5 has chosen it, and desk-session-helper would pick IBus
+# who has fcitx5 has chosen it, and aquade-session-helper would pick IBus
 # over it once that is installed.
 case "${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}" in
 ja*)
@@ -173,7 +173,7 @@ fi
 
 list=$(mktemp)
 trap 'rm -f "$list"' EXIT
-echo "DEsk desktop: what goes with it ($pm)"
+echo "AquaDE desktop: what goes with it ($pm)"
 echo
 printf '%s\n' "$LIST" | while IFS='|' read -r group what names only; do
 	[ -n "$group" ] || continue

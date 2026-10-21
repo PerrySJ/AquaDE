@@ -840,7 +840,7 @@ static int write_lock(const char *path, int w, int h)
 	return 0;
 }
 
-#define PREVIEW_USAGE "usage: desk-preview [-o file.png] [-s 1600x1000] [--no-window] " \
+#define PREVIEW_USAGE "usage: aquade-preview [-o file.png] [-s 1600x1000] [--no-window] " \
 	"[--closed] [--apps] [--shelf] [--console] [--post] [--sounds DIR] [--calendar] " \
 	"[--memo] [--lock] [--shark] [--bubbles] [--boot[=u,u,...]] [--agenda] [--book] [--book-anim[=u,u,...]] " \
 	"[--lang en|ja|zh|ko|es|fr|de] [--binder-anim=N[:u,u,...]]\n"
@@ -848,7 +848,7 @@ static int write_lock(const char *path, int w, int h)
 int main(int argc, char **argv)
 {
 	desk_compat();
-	const char *path = "desk-preview.png";
+	const char *path = "aquade-preview.png";
 	int w = 1600, h = 1000;
 	bool demo = true;
 	bool shelf = false;

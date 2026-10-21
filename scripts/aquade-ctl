@@ -1,17 +1,17 @@
 #!/bin/sh
-# desk-ctl -- for when AquaDE's own parts get stuck.
+# aquade-ctl -- for when AquaDE's own parts get stuck.
 #
-#   desk-ctl reset          the desk set right again, as Ctrl+Alt+Del pressed
+#   aquade-ctl reset          the desk set right again, as Ctrl+Alt+Del pressed
 #                           twice: whatever it has open or in hand put away,
 #                           everything drawn again, its settings read again,
 #                           the keyboard and the pointer set up again. The
 #                           windows stay as they are; a locked desk stays
 #                           locked.
-#   desk-ctl logout         the session ends, as Ctrl+Alt+Del three times (or
+#   aquade-ctl logout         the session ends, as Ctrl+Alt+Del three times (or
 #                           LOG OUT on the Control Panel): the windows are
 #                           asked to close first, and one that will not holds
 #                           it up -- run it again within a minute to go ahead.
-#   desk-ctl logout --now   it ends at once, and the windows with it: what
+#   aquade-ctl logout --now   it ends at once, and the windows with it: what
 #                           they have not saved is lost (the desk's own memo
 #                           and calendar keep theirs).
 #
@@ -30,10 +30,10 @@ case "$pid" in
 '' | *[!0-9]*) pid="" ;;
 esac
 # the desk that holds the lock, and nothing else by that number
-if [ -z "$pid" ] || [ "$(cat "/proc/$pid/comm" 2>/dev/null)" != desk ]; then
+if [ -z "$pid" ] || [ "$(cat "/proc/$pid/comm" 2>/dev/null)" != aquade ]; then
 	case "${1:-}" in
 	reset | logout)
-		echo "desk-ctl: AquaDE is not running here (nothing in $lock)" >&2
+		echo "aquade-ctl: AquaDE is not running here (nothing in $lock)" >&2
 		exit 1
 		;;
 	esac
@@ -66,7 +66,7 @@ logout)
 	usage
 	;;
 *)
-	echo "desk-ctl: what is \"$1\"?" >&2
+	echo "aquade-ctl: what is \"$1\"?" >&2
 	usage >&2
 	exit 2
 	;;

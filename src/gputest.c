@@ -8,14 +8,14 @@
  * measuring, and which on a machine whose GL is software will honestly
  * come out slower than the C.
  *
- *   desk-gputest [width height [iterations]]
+ *   aquade-gputest [width height [iterations]]
  *
  * And a third, which is the one that matters on a machine nobody has run
  * this on before: does the room come out of the GPU the way it comes out
  * of the C? Every kind of sheet, traced both ways and compared; with a
  * directory, the pairs and their difference are written there.
  *
- *   desk-gputest --room [width height [dir]]
+ *   aquade-gputest --room [width height [dir]]
  */
 
 #include "compat.h"
@@ -269,7 +269,7 @@ int main(int argc, char **argv)
 		int rw = argc > 3 ? atoi(argv[2]) : 480;
 		int rh = argc > 3 ? atoi(argv[3]) : 300;
 		if (rw < 16 || rh < 16) {
-			fprintf(stderr, "usage: desk-gputest --room [width height [dir]]\n");
+			fprintf(stderr, "usage: aquade-gputest --room [width height [dir]]\n");
 			return 2;
 		}
 		return desk_room_selftest(rw, rh, argc > 4 ? argv[4] : NULL) ? 0 : 1;

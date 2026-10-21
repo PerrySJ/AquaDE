@@ -323,7 +323,7 @@ static void dbg_note(int l, int started, int frames, double ahead)
 		return;
 	}
 	if (!ln->w_known) {
-		fprintf(stderr, "desk: sound: (no timing yet for %d sound%s)\n", started,
+		fprintf(stderr, "aquade: sound: (no timing yet for %d sound%s)\n", started,
 			started == 1 ? "" : "s");
 		return;
 	}
@@ -425,7 +425,7 @@ static void st_latency(pa_stream *s, void *u)
 static void st_underflow(pa_stream *s, void *u)
 {
 	(void)s;
-	fprintf(stderr, "desk: sound: lane %d ran dry (underflow)\n", (int)(intptr_t)u);
+	fprintf(stderr, "aquade: sound: lane %d ran dry (underflow)\n", (int)(intptr_t)u);
 }
 
 /* (debug) the sounds waiting to be heard: heard when the server's clock of
@@ -442,7 +442,7 @@ static void dbg_poll(void)
 		ok[l] = g_pa_state == 1 && g_lane[l].st && pa_stream_get_time(g_lane[l].st, &t[l]) >= 0;
 		struct lane *ln = &g_lane[l];
 		if (ok[l] && ln->uncorked > 0.0 && t[l] > ln->t0) {
-			fprintf(stderr, "desk: sound: lane %d playing out %.0f ms after it was uncorked\n",
+			fprintf(stderr, "aquade: sound: lane %d playing out %.0f ms after it was uncorked\n",
 				l, (now_sec() - ln->uncorked) * 1000.0);
 			ln->uncorked = 0.0;
 		}
@@ -456,7 +456,7 @@ static void dbg_poll(void)
 				snprintf(due, sizeof due, ", %+.0f ms against when it was wanted, %.3f",
 					(now - w->due) * 1000.0, w->due);
 			}
-			fprintf(stderr, "desk: sound: %-16s heard %5.0f ms after it was played "
+			fprintf(stderr, "aquade: sound: %-16s heard %5.0f ms after it was played "
 				"(lane %d, %s%s)\n", desk_sound_name(w->sound),
 				(now - w->asked) * 1000.0, w->lane,
 				w->ahead ? "over the silence" : "behind what it held", due);
@@ -478,7 +478,7 @@ static void st_state(pa_stream *s, void *u)
 			atomic_store(&g_lat, 0.06);   /* until the server says */
 		}
 		if (g_debug && a && u == 0) {
-			fprintf(stderr, "desk: sound: %d lanes, each holding %.1f ms (asks for %.1f ms "
+			fprintf(stderr, "aquade: sound: %d lanes, each holding %.1f ms (asks for %.1f ms "
 				"at a time, prebuf %.1f ms)\n", LANES, a->tlength / 8 * 1000.0 / RATE,
 				a->minreq / 8 * 1000.0 / RATE, a->prebuf / 8 * 1000.0 / RATE);
 		}
@@ -853,7 +853,7 @@ static void file_run(void)
 {
 	FILE *f = fopen(g_file, "wbe");
 	if (!f) {
-		fprintf(stderr, "desk: sound: cannot write %s: %s\n", g_file, strerror(errno));
+		fprintf(stderr, "aquade: sound: cannot write %s: %s\n", g_file, strerror(errno));
 		return;
 	}
 	wav_header(f, 2, 0);
@@ -951,7 +951,7 @@ static void *sound_main(void *arg)
 		}
 	}
 	static const char *names[] = { "nowhere", "the sound server", "ALSA", "a file" };
-	fprintf(stderr, "desk: sound: %d sounds made; playing to %s\n", DESK_SND_COUNT,
+	fprintf(stderr, "aquade: sound: %d sounds made; playing to %s\n", DESK_SND_COUNT,
 		names[g_backend]);
 	atomic_store(&g_ready, true);
 	switch (g_backend) {
@@ -1021,7 +1021,7 @@ static void *sound_main(void *arg)
 				 * then, until it is back */
 				pulse_stop();
 				if (pulse_start()) {
-					fprintf(stderr, "desk: sound: the sound server is back\n");
+					fprintf(stderr, "aquade: sound: the sound server is back\n");
 				}
 			}
 			pthread_mutex_unlock(&g_pa_life);

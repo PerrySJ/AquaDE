@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-/* AquaDE as the whole desktop, started by desk-session (which sets
+/* AquaDE as the whole desktop, started by aquade-session (which sets
  * DESK_SESSION=1) from a display manager or a console -- not nested in
  * another desktop, in a window, or under test, where all of this is the
  * other desktop's business and none of it happens.

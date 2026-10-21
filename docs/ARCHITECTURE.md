@@ -46,22 +46,22 @@ These decide most questions about where code goes and what it does.
 
 | Program | Source | What it is |
 | --- | --- | --- |
-| `desk` | `src/wm.c` + the drawing library | The Wayland compositor: the whole desktop. Also the GPU trial child (`desk-gpu-trial`, the same executable run with `DESK_GPU_PROBE`). |
-| `desk-session` | `session/desk-session` (sh) | What a login manager starts. Sets up the session environment (Wayland-first toolkit variables, the input method, DEsk's dconf layer), keeps `~/.local/state/desk/session.log`, and runs `desk` with `DESK_SESSION=1`. |
-| `desk-session-helper` | `scripts/desk-session-helper` (sh) | Picks and starts the parts DEsk does not draw (polkit agent, keyring, IBus or fcitx, the network applet, udiskie, battery notices) from DEsk's own autostart entries. |
-| `desk-settings` | `src/settings.c` | Shell Settings. A normal Wayland client drawn with the same library, writing `shell.conf`. |
-| `desk-index` | `src/index.c` | The DEsk Experience Index (benchmarks scored 1.0 to 9.9). `--text` for a terminal, `--suggest` for the installer's choice of Graphics level. |
-| `desk-preview` | `src/preview.c` | Renders the desk, views and parts to a PNG with no compositor: the main tool for checking drawing changes. |
-| `desk-gputest` | `src/gputest.c` | Checks the GPU path. `desk-gputest --room` traces every sheet on the GPU and the CPU and compares them. |
-| `desk-ctl` | `scripts/desk-ctl` (sh) | `reset` and `logout` for a stuck desk, from a terminal or another VT. |
-| `desk-window` | `scripts/desk-window` (sh) | Runs DEsk as a window inside the current session. |
-| `desk-screenshot` | `scripts/desk-screenshot` (sh) | Print / Alt+Print: grim, a file in Pictures, and a letter. |
+| `desk` | `src/wm.c` + the drawing library | The Wayland compositor: the whole desktop. Also the GPU trial child (`aquade-gpu-trial`, the same executable run with `DESK_GPU_PROBE`). |
+| `aquade-session` | `session/aquade-session` (sh) | What a login manager starts. Sets up the session environment (Wayland-first toolkit variables, the input method, DEsk's dconf layer), keeps `~/.local/state/aquade/session.log`, and runs `desk` with `DESK_SESSION=1`. |
+| `aquade-session-helper` | `scripts/aquade-session-helper` (sh) | Picks and starts the parts DEsk does not draw (polkit agent, keyring, IBus or fcitx, the network applet, udiskie, battery notices) from DEsk's own autostart entries. |
+| `aquade-settings` | `src/settings.c` | Shell Settings. A normal Wayland client drawn with the same library, writing `shell.conf`. |
+| `aquade-index` | `src/index.c` | The DEsk Experience Index (benchmarks scored 1.0 to 9.9). `--text` for a terminal, `--suggest` for the installer's choice of Graphics level. |
+| `aquade-preview` | `src/preview.c` | Renders the desk, views and parts to a PNG with no compositor: the main tool for checking drawing changes. |
+| `aquade-gputest` | `src/gputest.c` | Checks the GPU path. `aquade-gputest --room` traces every sheet on the GPU and the CPU and compares them. |
+| `aquade-ctl` | `scripts/aquade-ctl` (sh) | `reset` and `logout` for a stuck desk, from a terminal or another VT. |
+| `aquade-window` | `scripts/aquade-window` (sh) | Runs DEsk as a window inside the current session. |
+| `aquade-screenshot` | `scripts/aquade-screenshot` (sh) | Print / Alt+Print: grim, a file in Pictures, and a letter. |
 
 ### How a session starts
 
-1. The login manager runs `desk-session` from
-   `/usr/share/wayland-sessions/desk.desktop`.
-2. `desk-session` sets `XDG_CURRENT_DESKTOP=DEsk`, the toolkit backends, the
+1. The login manager runs `aquade-session` from
+   `/usr/share/wayland-sessions/aquade.desktop`.
+2. `aquade-session` sets `XDG_CURRENT_DESKTOP=DEsk`, the toolkit backends, the
    input method choice and the dconf profile, then runs `desk`.
 3. `desk` takes an exclusive `flock` on `$XDG_RUNTIME_DIR/desk.lock` (one desk
    per user; `DESK_ALLOW_MULTIPLE=1` to override), starts wlroots, and
@@ -71,7 +71,7 @@ These decide most questions about where code goes and what it does.
    autostart entries, leaving out ones that would fight DEsk (another
    notification daemon, an X screen locker, other desktops' polkit agents).
 5. DEsk's own autostart entries (`session/autostart/*.desktop`,
-   `OnlyShowIn=DEsk`) run `desk-session-helper` for each borrowed part.
+   `OnlyShowIn=DEsk`) run `aquade-session-helper` for each borrowed part.
 
 Logging out, restarting and powering off ask every window to close first
 (`end_begin` in `wm.c`) and then go through logind (`src/power.c`).
@@ -87,8 +87,8 @@ Logging out, restarting and powering off ask every window to close first
 | `src/apps.c` | ~2,000 | Scans `.desktop` files on a worker thread, files them on eight shelves, finds icons, picks the standard terminal/browser/files/editor, launches programs. |
 | `src/i18n.c` | ~1,700 | The word table (seven languages) and month/day names. `include/i18n.h` explains the scheme. |
 | `src/fonts.c` | ~280 | Which typeface each role uses, per CJK region. |
-| `src/settings.c` | ~3,200 | `desk-settings` (Shell Settings). |
-| `src/index.c` | ~4,500 | `desk-index`. |
+| `src/settings.c` | ~3,200 | `aquade-settings` (Shell Settings). |
+| `src/index.c` | ~4,500 | `aquade-index`. |
 | `src/post.c` | ~440 | The notification daemon (`org.freedesktop.Notifications`). |
 | `src/tray.c` | ~1,350 | StatusNotifierItem watcher and host (the tray slips). |
 | `src/media.c` | ~800 | MPRIS client (the clock's MEDIA page, media keys). |
@@ -98,7 +98,7 @@ Logging out, restarting and powering off ask every window to close first
 | `src/power.c` | | Log out / restart / power off through logind. |
 | `src/panel.c` | ~950 | The Control Panel's readings from `/proc`, `/sys` and the mixer. |
 | `src/occasion.c` | ~530 | Dates (birthday, the new year...) and the weather at the door (open-meteo.com, opt-out). |
-| `src/agenda.c`, `src/memo.c` | | The calendar's notes and the memo pad's sheets, saved under `$XDG_DATA_HOME/desk`. |
+| `src/agenda.c`, `src/memo.c` | | The calendar's notes and the memo pad's sheets, saved under `$XDG_DATA_HOME/aquade`. |
 | `src/camera.c` | ~260 | Whether a camera or microphone is in use (the clock's two lamps). |
 | `src/sfx.c`, `src/sound.c` | ~2,750 | Every sound synthesised at start-up, and a mixer thread that plays them (libpulse, or ALSA loaded at run time). |
 | `src/preview.c`, `src/gputest.c` | | Developer tools (see §2). |
@@ -248,7 +248,7 @@ thread:
 
 ## 5. The drawing library (`src/draw.c`)
 
-`draw.c` builds into the static library `desk-draw` with `apps.c`,
+`draw.c` builds into the static library `aquade-draw` with `apps.c`,
 `panel.c`, `agenda.c`, `fonts.c`, `i18n.c`, `memo.c`, `user.c` and (with
 EGL) `gpu.c`. `include/desk.h` is its API. The compositor, Shell Settings,
 the Experience Index and the preview all link it, so a thing looks the same
@@ -276,10 +276,10 @@ There are two tracers:
   offscreen GLES 3.0 context on the render node the screen uses. Every
   named constant is passed from `draw.c` to the shader (`room_glsl_preamble`),
   so the two cannot disagree about geometry. A driver is first tried in a
-  child process (`desk-gpu-trial`) so a crashing driver cannot take the desk
+  child process (`aquade-gpu-trial`) so a crashing driver cannot take the desk
   down; if it fails, the CPU traces.
 
-`desk-gputest --room` compares the two tracers sheet by sheet.
+`aquade-gputest --room` compares the two tracers sheet by sheet.
 
 ### 5.2 Levels and the cache
 
@@ -290,7 +290,7 @@ There are two tracers:
 | Medium, Low | Smaller trace and overlays; paper in motion drawn coarser. |
 | 2D Fallback | Traced once, small, one sample a pixel (softened); no shadows, fades, blur or animation. Chosen automatically when the screen is rendered on the CPU. |
 
-Traced sheets are kept in `$XDG_CACHE_HOME/desk` as PNGs named by sheet,
+Traced sheets are kept in `$XDG_CACHE_HOME/aquade` as PNGs named by sheet,
 size, desk width, level and `ROOM_KEY`. `ROOM_KEY` is a hash of
 `room.glsl` and `gpu.c` made at build time (`scripts/room-key.py`), so a
 change to the room's code invalidates old sheets while ordinary updates keep
@@ -333,7 +333,7 @@ v0.1 was run under ThreadSanitizer, AddressSanitizer and
 UndefinedBehaviorSanitizer (§9).
 
 Signals are caught, never blocked: a handler writes one byte down a pipe the
-event loop watches (`cad_signals`), and the loop acts on it. `desk-ctl`'s
+event loop watches (`cad_signals`), and the loop acts on it. `aquade-ctl`'s
 USR1 and USR2 reset the desk and end the session; TERM, HUP and INT (logind
 ending the session, ^C on a desk in a window) end the desk through the same
 teardown as logging out, so what is in hand (the memo, a calendar note) is
@@ -344,16 +344,16 @@ the desk starts; a handler is not.
 
 | What | Where |
 | --- | --- |
-| Settings | `$XDG_CONFIG_HOME/desk/shell.conf` (the machine's defaults in `/etc/xdg/desk/shell.conf`) |
-| Screen arrangements | `$XDG_CONFIG_HOME/desk/displays.conf` |
-| Drawer contents | `$XDG_CONFIG_HOME/desk/drawer` |
-| Shelf overrides | `$XDG_CONFIG_HOME/desk/shelves.conf` |
-| Default programs | `~/.config/desk-mimeapps.list`, then the freedesktop.org lists |
-| Calendar notes, memo pad | `$XDG_DATA_HOME/desk/calendar`, `$XDG_DATA_HOME/desk/memo` |
-| Traced room, icons, door | `$XDG_CACHE_HOME/desk/` |
-| Logs | `$XDG_STATE_HOME/desk/session.log` (and `.old`), `install.log` |
+| Settings | `$XDG_CONFIG_HOME/aquade/shell.conf` (the machine's defaults in `/etc/xdg/aquade/shell.conf`) |
+| Screen arrangements | `$XDG_CONFIG_HOME/aquade/displays.conf` |
+| Drawer contents | `$XDG_CONFIG_HOME/aquade/drawer` |
+| Shelf overrides | `$XDG_CONFIG_HOME/aquade/shelves.conf` |
+| Default programs | `~/.config/aquade-mimeapps.list`, then the freedesktop.org lists |
+| Calendar notes, memo pad | `$XDG_DATA_HOME/aquade/calendar`, `$XDG_DATA_HOME/aquade/memo` |
+| Traced room, icons, door | `$XDG_CACHE_HOME/aquade/` |
+| Logs | `$XDG_STATE_HOME/aquade/session.log` (and `.old`), `install.log` |
 | For Shell Settings | `$XDG_RUNTIME_DIR/<WAYLAND_DISPLAY>.render` (whether the screen is drawn on the CPU) |
-| One desk per user | `$XDG_RUNTIME_DIR/desk.lock` (holds the PID; `desk-ctl` reads it) |
+| One desk per user | `$XDG_RUNTIME_DIR/desk.lock` (holds the PID; `aquade-ctl` reads it) |
 
 Every file DEsk writes is written to a temporary name and renamed into
 place. Formats are in [CONFIGURATION.md](CONFIGURATION.md).
@@ -363,7 +363,7 @@ place. Formats are in [CONFIGURATION.md](CONFIGURATION.md).
 - **Words**: `TR("English")` looks the English up in `WORDS` (`src/i18n.c`),
   a table with one column per language (`enum desk_lang`: en, ja, zh, ko,
   es, fr, de). A missing translation shows the English. Keys may carry a
-  context, `"clock|DAY"`. `desk-index` keeps its own table in `index.c`.
+  context, `"clock|DAY"`. `aquade-index` keeps its own table in `index.c`.
   `meson test` checks both tables (`scripts/check-words.py`).
 - **Fonts**: each role (UI, print, display, engrave, type, screen, hand) has
   a Latin list and a CJK list; the CJK list is chosen again for Chinese,
@@ -378,8 +378,8 @@ place. Formats are in [CONFIGURATION.md](CONFIGURATION.md).
 ```sh
 meson setup build && meson compile -C build
 meson test -C build                       # the translation tables
-./build/desk-preview -o out.png --shelf   # draw without a compositor
-./scripts/desk-window                     # run nested in the current session
+./build/aquade-preview -o out.png --shelf   # draw without a compositor
+./scripts/aquade-window                     # run nested in the current session
 ```
 
 For v0.1 the following were run:

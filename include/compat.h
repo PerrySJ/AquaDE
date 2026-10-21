@@ -64,7 +64,7 @@ static inline void desk_compat_move(const char *var, const char *fallback, const
 		return;
 	}
 	if (rename(from, to) == 0) {
-		fprintf(stderr, "desk: moved %s to %s (the name DEsk had before)\n", from, to);
+		fprintf(stderr, "aquade: moved %s to %s (the name DEsk had before)\n", from, to);
 	}
 }
 

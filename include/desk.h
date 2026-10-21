@@ -1230,7 +1230,7 @@ bool desk_desk_place(int w, int h, double open, int *ox, int *oy, double *clip);
 /* The shade's colour, and its alpha for a drawer position: 0 for none. */
 double desk_desk_shade(double open, float rgb[3]);
 
-/* desk-gputest --room: every kind of sheet the room is baked into, traced
+/* aquade-gputest --room: every kind of sheet the room is baked into, traced
  * on the GPU and by the C tracer at w x h, compared sample by sample and
  * pixel by pixel, and written into dir as PNGs when dir is not NULL. True
  * when the GPU path is there and agrees. */

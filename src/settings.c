@@ -1,4 +1,4 @@
-/* desk-settings: Shell Settings.
+/* aquade-settings: Shell Settings.
  *
  * The shell's own settings, on a sheet of the shell's paper. This is a
  * program like any other on the desk: it asks AquaDE for its frame, so it
@@ -6,7 +6,7 @@
  * away like the rest -- and on that paper, its own surface clear wherever
  * nothing is drawn, it draws a folder with a pad in each of its pockets,
  * and prints its form on the pads' sheets. What is chosen goes into
- * $XDG_CONFIG_HOME/desk/shell.conf, which AquaDE reads again as soon as
+ * $XDG_CONFIG_HOME/aquade/shell.conf, which AquaDE reads again as soon as
  * it changes; the lines it does not know about are kept as they were.
  *
  * It is also where the rest of the machine is set from, and this is where
@@ -34,7 +34,7 @@
  *                     and their resolution, printers, the look of other
  *                     programs, default programs, disks -- and the programs
  *                     themselves, the classic GTK ones of Xfce and MATE
- *                     first; and the AquaDE Experience Index, desk-index,
+ *                     first; and the AquaDE Experience Index, aquade-index,
  *                     which is a program of its own.
  *
  * Each job on the third line is a row on the System pad (the other tab), with
@@ -244,7 +244,7 @@ static const struct prog P_LOOK[] = { { "nwg-look" }, { "gnome-tweaks" }, { NULL
 static const struct prog P_DEFAULTS[] = { { "xfce4-mime-settings" },
 	{ "mate-default-applications-properties" }, { NULL } };
 static const struct prog P_DISKS[] = { { "gnome-disks" }, { NULL } };
-static const struct prog P_INDEX[] = { { "desk-index" }, { NULL } };
+static const struct prog P_INDEX[] = { { "aquade-index" }, { NULL } };
 static const struct prog P_COLOUR[] = { { "xfce4-color-settings" }, { NULL } };
 static const struct prog P_USAGE[] = { { "qdirstat" }, { "baobab" }, { NULL } };
 static const struct prog P_INPUT[] = { { "ibus-setup" }, { "fcitx5-config-qt" }, { NULL } };
@@ -981,7 +981,7 @@ static bool conf_write(const char *path, const char *key, const char *value)
 		if (in) {
 			fclose(in);
 		}
-		fprintf(stderr, "desk-settings: cannot write %s: %s\n", tmp, strerror(errno));
+		fprintf(stderr, "aquade-settings: cannot write %s: %s\n", tmp, strerror(errno));
 		return false;
 	}
 	bool done = false;
@@ -1043,7 +1043,7 @@ static bool conf_write(const char *path, const char *key, const char *value)
 	bool ok = fflush(out) == 0 && !ferror(out);
 	ok = fclose(out) == 0 && ok;
 	if (!ok || rename(tmp, path) != 0) {
-		fprintf(stderr, "desk-settings: cannot write %s\n", path);
+		fprintf(stderr, "aquade-settings: cannot write %s\n", path);
 		unlink(tmp);
 		return false;
 	}
@@ -1071,7 +1071,7 @@ static bool conf_changed(const char *path, struct timespec *seen, off_t *size, b
 /* ---- the rest of the machine ---- */
 
 /* the directory this program is in: a AquaDE run from where it was built
- * keeps its own programs there, desk-index among them, off the PATH */
+ * keeps its own programs there, aquade-index among them, off the PATH */
 static char g_exe_dir[512];
 
 static void exe_dir_read(void)
@@ -1340,11 +1340,11 @@ static int shm_file(size_t size)
 {
 	int fd = -1;
 #ifdef MFD_CLOEXEC
-	fd = memfd_create("desk-settings", MFD_CLOEXEC);
+	fd = memfd_create("aquade-settings", MFD_CLOEXEC);
 #endif
 	if (fd < 0) {
 		char name[64];
-		snprintf(name, sizeof name, "/desk-settings-%ld-%ld", (long)getpid(),
+		snprintf(name, sizeof name, "/aquade-settings-%ld-%ld", (long)getpid(),
 			(long)time(NULL));
 		fd = shm_open(name, O_RDWR | O_CREAT | O_EXCL, 0600);
 		if (fd >= 0) {
@@ -2504,7 +2504,7 @@ static void open_row(struct app *a, int i)
 	if (k >= 0) {
 		const struct prog *p = &SETTINGS[i].opens->progs[k];
 		if (find_program(p->bin, path, sizeof path) && launch(path)) {
-			fprintf(stderr, "desk-settings: opened %s\n", path);
+			fprintf(stderr, "aquade-settings: opened %s\n", path);
 			/* one "Opening…" at a time: the last one used */
 			int was = a->opening;
 			a->opening = i;
@@ -2941,7 +2941,7 @@ static const struct wl_registry_listener reg_listener = {
 	.global_remove = reg_remove,
 };
 
-/* desk-settings --check: the rows of the System pad, each with the program
+/* aquade-settings --check: the rows of the System pad, each with the program
  * it opens here -- or, with none, the package that would bring one, by
  * this system's name -- for the installers to show at the end, and for
  * anyone who wants to know, without a display. The compositor's part of a
@@ -2993,7 +2993,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	if (argc > 1 && !check) {
-		fprintf(stderr, "usage: desk-settings [--check | --version]\n");
+		fprintf(stderr, "usage: aquade-settings [--check | --version]\n");
 		return strcmp(argv[1], "--help") && strcmp(argv[1], "-h") ? 2 : 0;
 	}
 	const char *slow = getenv("DESK_SLOW");
@@ -3071,14 +3071,14 @@ int main(int argc, char **argv)
 
 	a.dpy = wl_display_connect(NULL);
 	if (!a.dpy) {
-		fprintf(stderr, "desk-settings: no Wayland display to open on\n");
+		fprintf(stderr, "aquade-settings: no Wayland display to open on\n");
 		return 1;
 	}
 	a.reg = wl_display_get_registry(a.dpy);
 	wl_registry_add_listener(a.reg, &reg_listener, &a);
 	wl_display_roundtrip(a.dpy);
 	if (!a.comp || !a.shm || !a.wm) {
-		fprintf(stderr, "desk-settings: the compositor lacks what a window needs\n");
+		fprintf(stderr, "aquade-settings: the compositor lacks what a window needs\n");
 		return 1;
 	}
 	/* what there is to open, now that it is known what the compositor offers */
@@ -3107,7 +3107,7 @@ int main(int argc, char **argv)
 	a.top = xdg_surface_get_toplevel(a.xsurf);
 	xdg_toplevel_add_listener(a.top, &top_listener, &a);
 	xdg_toplevel_set_title(a.top, TR("Shell Settings"));
-	xdg_toplevel_set_app_id(a.top, "desk-settings");
+	xdg_toplevel_set_app_id(a.top, "aquade-settings");
 	xdg_toplevel_set_min_size(a.top, 320, 180);
 	if (a.decoman) {
 		/* the shell's frame: this is one of its sheets */
