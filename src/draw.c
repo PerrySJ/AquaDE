@@ -8055,16 +8055,6 @@ static void fill_wood(cairo_t *cr, double x, double y, double w, double h)
 	cairo_restore(cr);
 }
 
-static void fill_wood_scaled(cairo_t *cr, double x, double y, double w, double h,
-	double sx, double sy)
-{
-	cairo_save(cr);
-	cairo_rectangle(cr, x, y, w, h);
-	cairo_clip(cr);
-	fill_tile(cr, wood_tile(), sx, sy);
-	cairo_restore(cr);
-}
-
 /* ================================================================
  * Paper that has been in the room a while
  *
@@ -31038,22 +31028,25 @@ void desk_draw_forget_words(void)
 #define LK_SWING 1.45       /* how far it goes */
 
 /* on the door, from its hinge edge and the step; its face is at z = LK_DT */
-#define LK_STILE 0.125
-#define LK_MID 0.020        /* half the stile between the lower panels */
-#define LK_PANEL0 0.240
-#define LK_RAIL0 0.960      /* the lock rail, up to the glass */
-#define LK_GLASS0 1.360
-#define LK_GLASS1 1.890
-#define LK_MUNTIN 1.630
+#define LK_RIM_IN 0.035     /* the rim: in from the edge, wide, its corners round */
+#define LK_RIM_W 0.055
+#define LK_RIM_R 0.150
+#define LK_RIV_P 0.072      /* rivets along it, about this far apart */
+#define LK_PORT_X 0.475     /* the porthole: its glass, the brass ring round it */
+#define LK_PORT_Y 1.725
+#define LK_PORT_R 0.165
+#define LK_RING_R 0.218
+#define LK_PAN_X0 0.150     /* the panel pressed into the steel below */
+#define LK_PAN_X1 0.640
+#define LK_PAN_Y0 0.200
+#define LK_PAN_Y1 0.900
 
-#define LK_SIGN_X 0.475     /* the board: hung from a nail, its back resting */
-#define LK_SIGN_Y 1.505     /* on the door along its bottom edge, its top */
-#define LK_SIGN_W 0.440     /* leaning out */
-#define LK_SIGN_H 0.300
-#define LK_SIGN_T 0.018
-#define LK_SIGN_TILT 0.070
-#define LK_CORD_X 0.180     /* where its cords go in, from its middle */
-#define LK_NAIL_Y 1.935
+#define LK_SIGN_X 0.475     /* the name plate, bolted flat under the porthole: */
+#define LK_SIGN_Y 1.248     /* its middle, its foot */
+#define LK_SIGN_W 0.290
+#define LK_SIGN_H 0.165
+#define LK_SIGN_T 0.006
+#define LK_SIGN_TILT 0.0
 
 #define LK_PL_X0 0.225      /* the brass plate */
 #define LK_PL_X1 0.690
@@ -31067,8 +31060,9 @@ void desk_draw_forget_words(void)
 
 #define LK_KEY_X 0.800      /* the lock, the key in it */
 #define LK_KEY_Y 1.162
-#define LK_KNOB_X 0.812
-#define LK_KNOB_Y 0.985
+#define LK_KNOB_X 0.800     /* the wheel that dogs the hatch shut */
+#define LK_KNOB_Y 0.930
+#define LK_WHEEL_R 0.074
 
 #define LK_ROOM_Z (-2.70)   /* the far wall inside, the picture of the room on it */
 #define LK_EXPOSURE 1.15
@@ -31081,7 +31075,7 @@ enum {
 };
 
 /* what on the door throws a shadow, softly */
-enum { LK_OC_SIGN, LK_OC_PLATE, LK_OC_LOCK, LK_OC_KNOB, LK_OC_NAIL, LK_OC_N };
+enum { LK_OC_SIGN, LK_OC_PLATE, LK_OC_LOCK, LK_OC_KNOB, LK_OC_N };
 
 struct lk_tex {
 	const unsigned char *px;    /* a cairo ARGB32 or A8 picture */
@@ -31470,25 +31464,22 @@ static double lk_sd_lock(double key, vec3 q, int *id)
 	return fmin(keyd, lock);
 }
 
-static double lk_sd_knob(vec3 q, int *id)
+/* the wheel that dogs the hatch: a rim on four spokes, a hub, an axle
+ * out from the door; it turns as the key does, a good deal further */
+static double lk_sd_knob(double key, vec3 q, int *id)
 {
 	vec3 p = vsub(q, v3(LK_KNOB_X, LK_KNOB_Y, LK_DT));
-	double ros = sd_cyl_z(vsub(p, v3(0, 0, 0.0035)), 0.0245, 0.0012) - 0.0025;
-	double neck = sd_cyl_z(vsub(p, v3(0, 0, 0.0230)), 0.0082, 0.0190);
-	vec3 b = vsub(p, v3(0, 0, 0.0600));
-	b.z *= 1.30;
-	double ball = (vlen(b) - 0.0285) / 1.30;
+	double boss = sd_cyl_z(vsub(p, v3(0, 0, 0.0040)), 0.0240, 0.0028) - 0.0020;
+	double axle = sd_cyl_z(vsub(p, v3(0, 0, 0.0230)), 0.0080, 0.0200);
+	vec3 w = rot_z(vsub(p, v3(0, 0, 0.0460)), key * 2.5);
+	double hub = sd_cyl_z(w, 0.0150, 0.0060) - 0.0030;
+	double rim = hypot(hypot(w.x, w.y) - LK_WHEEL_R, w.z) - 0.0075;
+	double ax = fabs(w.x), ay = fabs(w.y);
+	vec3 sp = ax > ay ? v3(ay, ax, w.z) : v3(ax, ay, w.z);   /* fold to the nearest spoke */
+	double spoke = hypot(sp.x, sp.z) - 0.0042;
+	spoke = fmax(spoke, sp.y - LK_WHEEL_R);
 	*id = LK_BRASS;
-	return fmin(ros, lk_smin(neck, ball, 0.008));
-}
-
-static double lk_sd_nail(vec3 q, int *id)
-{
-	vec3 p = vsub(q, v3(LK_SIGN_X, LK_NAIL_Y, LK_DT));
-	double head = sd_cyl_z(vsub(p, v3(0, 0, 0.0076)), 0.0042, 0.0006) - 0.0009;
-	double shank = sd_cyl_z(vsub(p, v3(0, 0, 0.0036)), 0.0016, 0.0036);
-	*id = LK_BRASS;
-	return fmin(head, shank);
+	return fmin(fmin(boss, lk_smin(axle, hub, 0.006)), fmin(rim, lk_smin(spoke, hub, 0.004)));
 }
 
 static double lk_occ_sd(const struct lk_scene *sc, int j, vec3 q)
@@ -31506,10 +31497,8 @@ static double lk_occ_sd(const struct lk_scene *sc, int j, vec3 q)
 			(LK_PL_Y1 - LK_PL_Y0) * 0.5, LK_PL_T * 0.5));
 	case LK_OC_LOCK:
 		return lk_sd_lock(sc->key, q, &id);
-	case LK_OC_KNOB:
-		return lk_sd_knob(q, &id);
 	default:
-		return lk_sd_nail(q, &id);
+		return lk_sd_knob(sc->key, q, &id);
 	}
 }
 
@@ -31528,13 +31517,9 @@ static void lk_occ_bound(int j, vec3 *c, double *r)
 		*c = v3(LK_KEY_X, LK_KEY_Y, LK_DT + 0.057);
 		*r = 0.072;
 		break;
-	case LK_OC_KNOB:
-		*c = v3(LK_KNOB_X, LK_KNOB_Y, LK_DT + 0.042);
-		*r = 0.056;
-		break;
 	default:
-		*c = v3(LK_SIGN_X, LK_NAIL_Y, LK_DT + 0.005);
-		*r = 0.009;
+		*c = v3(LK_KNOB_X, LK_KNOB_Y, LK_DT + 0.030);
+		*r = LK_WHEEL_R + 0.040;
 		break;
 	}
 }
@@ -31576,7 +31561,7 @@ static void lk_march(const struct lk_scene *sc, int j, vec3 o, vec3 d, struct lk
 		vec3 p = vadd(o, vmul(d, t));
 		int id = LK_BRASS;
 		double dist = j == LK_OC_LOCK ? lk_sd_lock(sc->key, p, &id)
-			: j == LK_OC_KNOB ? lk_sd_knob(p, &id) : lk_sd_nail(p, &id);
+			: lk_sd_knob(sc->key, p, &id);
 		if (dist < 0.00010) {
 			h->t = t;
 			h->id = id;
@@ -31592,9 +31577,9 @@ static void lk_march(const struct lk_scene *sc, int j, vec3 o, vec3 d, struct lk
 /* ---- dressed for the day: the shapes ---- */
 
 /* the wreath: a ring round the board's middle, standing off the door */
-#define LKD_CX LK_SIGN_X
-#define LKD_CY (LK_SIGN_Y + LK_SIGN_H * 0.5)
-#define LKD_R 0.355
+#define LKD_CX LK_PORT_X
+#define LKD_CY LK_PORT_Y
+#define LKD_R 0.268
 #define LKD_Z (LK_DT + 0.050)
 #define LKD_KNOT_A (M_PI * 1.27)   /* the bow, or the orange: low on the left */
 #define LKD_SLOTS 12               /* what is tucked in round it */
@@ -32176,7 +32161,6 @@ static void lk_door_hit(const struct lk_scene *sc, vec3 ro, vec3 rd, struct lk_h
 	}
 	lk_march(sc, LK_OC_LOCK, o, d, h);
 	lk_march(sc, LK_OC_KNOB, o, d, h);
-	lk_march(sc, LK_OC_NAIL, o, d, h);
 	if (sc->ndeco) {
 		lkd_hit(sc, true, o, d, h);
 	}
@@ -32715,28 +32699,6 @@ static vec3 lk_tex_at(const struct lk_tex *t, double u, double v, bool disp, dou
 	return al > 1e-6 && !t->a8 ? vmul(c, 1.0 / al) : c;
 }
 
-/* Walnut, cheaply: growth rings across the grain (u, metres), their line
- * wandering slowly along it (v), broad figure over them and open pores in
- * them; piece says which board, so that no two are cut alike. */
-static vec3 lk_wood(double u, double v, int piece, double *rough)
-{
-	double s = room_seed(piece, 11);
-	double x = u + (room_noise(v * 2.2 + s * 31.0, u * 6.0 + s * 5.0) - 0.5) * 0.034
-		+ (room_noise(v * 11.0 + s * 3.0, u * 40.0) - 0.5) * 0.006;
-	double ring = x * (95.0 + s * 45.0) + room_noise(x * 22.0 + s * 4.0, v * 0.9 + s * 9.0) * 3.2;
-	double g = 0.5 + 0.5 * sin(ring * 2.0 * M_PI);
-	g = g * g * g;
-	double fig = room_noise(x * 13.0 + s * 3.0, v * 1.1 + s);
-	double tone = 0.88 + s * 0.24;
-	vec3 c = vmix(vmul(v3(0.215, 0.112, 0.054), tone), vmul(v3(0.082, 0.038, 0.017), tone),
-		clampf(g * 0.62 + fig * 0.42, 0.0, 1.0));
-	double pore = room_noise(u * 640.0 + s * 17.0, v * 30.0);
-	pore = pore * pore * pore * pore;
-	c = vmul(c, 1.0 - pore * 0.28);
-	*rough = 0.34 + g * 0.10 + pore * 0.16;
-	return c;
-}
-
 /* Painted steel on the sea floor: a dark green-grey paint, a little
  * different on each piece, gone thin and rusty in patches and streaked
  * with rust run down from above (v up, metres); piece says which plate. */
@@ -32780,65 +32742,93 @@ static double lk_rect_d(double x, double y, double x0, double y0, double x1, dou
 	return d;
 }
 
-/* The face of the door as relief: how far each point stands proud of the
- * stiles and rails (or sinks below them), what it is, and the nearest
- * edge of what it is in, which way its grain runs. */
-enum { LK_DF_FRAME, LK_DF_PANEL, LK_DF_MOULD, LK_DF_GLASS, LK_DF_BEAD, LK_DF_MUNTIN };
+/* The face of the hatch as relief: how far each point stands proud of the
+ * plate (or sinks below it), what it is, and how far it is from the edge
+ * of what it is in. A rim with round corners in from the edge, riveted;
+ * the porthole up top in a bolted brass ring; a panel pressed in below. */
+enum { LK_DF_FRAME, LK_DF_PANEL, LK_DF_RIM, LK_DF_GLASS, LK_DF_RING, LK_DF_RIVET };
+
+/* a dome of radius r and height k, at distance d from its middle */
+static double lk_dome(double d, double r, double k)
+{
+	return d < r ? k * sqrt(1.0 - lk_sq(d / r)) : 0.0;
+}
 
 static double lk_relief(double x, double y, int *what, int *edge, double *dist)
 {
-	int e;
 	*what = LK_DF_FRAME;
 	*edge = -1;
 	*dist = 1.0;
-	double d = lk_rect_d(x, y, LK_STILE, LK_GLASS0, LK_DW - LK_STILE, LK_GLASS1, &e);
-	if (d >= 0.0) {
-		*edge = e;
-		*dist = d;
-		if (d < 0.008) {
-			*what = LK_DF_BEAD;
-			return 0.0032 * sin(M_PI * d / 0.008);
-		}
-		if (d < 0.016) {
-			*what = LK_DF_BEAD;
-			double s = (d - 0.008) / 0.008;
-			return -0.016 + 0.016 * sqrt(fmax(0.0, 1.0 - s * s));
-		}
-		double dv = fabs(x - LK_DW * 0.5), dh = fabs(y - LK_MUNTIN);
-		double dm = fmin(dv, dh);
-		if (dm < 0.013) {
-			*what = LK_DF_MUNTIN;
-			*edge = dv < dh ? 0 : 2;
-			return -0.016 + 0.015 * sqrt(fmax(0.0, 1.0 - lk_sq(dm / 0.013)));
-		}
+	/* the porthole */
+	double pd = hypot(x - LK_PORT_X, y - LK_PORT_Y);
+	if (pd < LK_PORT_R) {
 		*what = LK_DF_GLASS;
-		*dist = fmin(d, dm);
-		return -0.016;
+		*dist = LK_PORT_R - pd;
+		return -0.010;
 	}
-	for (int i = 0; i < 2; i++) {
-		double x0 = i ? LK_DW * 0.5 + LK_MID : LK_STILE;
-		double x1 = i ? LK_DW - LK_STILE : LK_DW * 0.5 - LK_MID;
-		d = lk_rect_d(x, y, x0, LK_PANEL0, x1, LK_RAIL0, &e);
-		if (d < 0.0) {
-			continue;
+	if (pd < LK_RING_R + 0.004) {
+		/* the ring: rounded, eight bolts round it */
+		double s = (pd - LK_PORT_R) / (LK_RING_R - LK_PORT_R);
+		double h = 0.016 * sqrt(fmax(0.0, 1.0 - lk_sq(2.0 * s - 1.0)));
+		double a = atan2(y - LK_PORT_Y, x - LK_PORT_X);
+		double ak = (floor(a / (M_PI / 4.0)) + 0.5) * (M_PI / 4.0);
+		double rb = (LK_PORT_R + LK_RING_R) * 0.5;
+		double bd = hypot(x - LK_PORT_X - rb * cos(ak), y - LK_PORT_Y - rb * sin(ak));
+		*what = LK_DF_RING;
+		*dist = pd - LK_PORT_R;
+		if (bd < 0.011) {
+			*what = LK_DF_RIVET;
+			return h + lk_dome(bd, 0.011, 0.006);
 		}
+		return h;
+	}
+	/* the rim: the distance to its middle line, a rectangle with round
+	 * corners; where along it the nearest rivet is */
+	double cx = LK_DW * 0.5, cy = LK_DY + LK_DH * 0.5;
+	double ax = LK_DW * 0.5 - LK_RIM_IN - LK_RIM_W * 0.5;
+	double ay = LK_DH * 0.5 - LK_RIM_IN - LK_RIM_W * 0.5;
+	double qx = fabs(x - cx), qy = fabs(y - cy);
+	double kx = ax - LK_RIM_R, ky = ay - LK_RIM_R;
+	double sd, rx, ry;
+	if (qx > kx && qy > ky) {
+		double a = atan2(qy - ky, qx - kx);
+		int n = (int)fmax(1.0, round(M_PI * 0.5 * LK_RIM_R / LK_RIV_P));
+		double ak = (floor(a / (M_PI * 0.5 / n)) + 0.5) * (M_PI * 0.5 / n);
+		ak = clampf(ak, 0.0, M_PI * 0.5);
+		sd = hypot(qx - kx, qy - ky) - LK_RIM_R;
+		rx = kx + LK_RIM_R * cos(ak);
+		ry = ky + LK_RIM_R * sin(ak);
+	} else if (qx - kx > qy - ky) {
+		int n = (int)fmax(1.0, round(ky / LK_RIV_P));
+		sd = qx - ax;
+		rx = ax;
+		ry = clampf((floor(qy / (ky / n)) + 0.5) * (ky / n), 0.0, ky);
+	} else {
+		int n = (int)fmax(1.0, round(kx / LK_RIV_P));
+		sd = qy - ay;
+		ry = ay;
+		rx = clampf((floor(qx / (kx / n)) + 0.5) * (kx / n), 0.0, kx);
+	}
+	if (fabs(sd) < LK_RIM_W * 0.5) {
+		double s = sd / (LK_RIM_W * 0.5);
+		double h = 0.009 * sqrt(fmax(0.0, 1.0 - s * s * s * s));
+		double rd = hypot(qx - rx, qy - ry);
+		*what = LK_DF_RIM;
+		*dist = LK_RIM_W * 0.5 - fabs(sd);
+		if (rd < 0.010) {
+			*what = LK_DF_RIVET;
+			return h + lk_dome(rd, 0.010, 0.005);
+		}
+		return h;
+	}
+	/* the pressed panel: sunk a little, its edges soft */
+	int e;
+	double d = lk_rect_d(x, y, LK_PAN_X0, LK_PAN_Y0, LK_PAN_X1, LK_PAN_Y1, &e);
+	if (d >= 0.0) {
+		*what = LK_DF_PANEL;
 		*edge = e;
 		*dist = d;
-		if (d < 0.010) {
-			*what = LK_DF_MOULD;
-			return -0.010 + sqrt(fmax(0.0, 0.0001 - d * d));
-		}
-		*what = LK_DF_PANEL;
-		if (d < 0.016) {
-			return -0.010;
-		}
-		if (d < 0.060) {
-			return -0.010 + 0.007 * (d - 0.016) / 0.044;
-		}
-		if (d < 0.064) {
-			return -0.003 + 0.003 * smoothstepf(0.060, 0.064, d);
-		}
-		return 0.0;
+		return -0.006 * smoothstepf(0.0, 0.030, d);
 	}
 	return 0.0;
 }
@@ -32856,60 +32846,43 @@ static void lk_door_face(const struct lk_scene *sc, vec3 q, struct lk_mat *m)
 	vec3 nl = vnorm(v3(-(hx - h0) / e, -(hy - h0) / e, 1.0));
 	m->n = lk_door_dir_out(sc, nl);
 	m->sub = what;
-	/* which board, and which way its grain goes */
-	bool along_y;
-	int piece;
-	switch (what) {
-	case LK_DF_PANEL:
-		along_y = true;
-		piece = x < LK_DW * 0.5 ? 7 : 8;
-		break;
-	case LK_DF_MOULD:
-	case LK_DF_BEAD:
-		along_y = edge < 2;
-		piece = 20 + edge;
-		break;
-	case LK_DF_MUNTIN:
-		along_y = edge == 0;
-		piece = 12 + edge;
-		break;
-	default:
-		if (x < LK_STILE || x > LK_DW - LK_STILE || (fabs(x - LK_DW * 0.5) < LK_MID + 0.001
-			&& y > LK_PANEL0 && y < LK_RAIL0)) {
-			along_y = true;
-			piece = x < LK_STILE ? 1 : x > LK_DW - LK_STILE ? 2 : 6;
-		} else {
-			along_y = false;
-			piece = y > LK_GLASS1 ? 3 : y > LK_PANEL0 ? 4 : 5;
-		}
-		break;
-	}
 	double rough;
-	(void)along_y;
-	m->albedo = lk_steel(x + 3.1, y, 90 + (piece == 7 || piece == 8 ? piece : 0), &rough);
+	m->albedo = lk_steel(x + 3.1, y, what == LK_DF_RIM ? 91 : 90, &rough);
 	m->rough = rough;
 	m->coat = 0.20;
 	m->metal = 0.0;
-	/* shut in: the grooves, and round the frame while it is shut */
 	double ao = 1.0;
-	if (what == LK_DF_PANEL && dist < 0.016) {
-		ao = 0.60;
-	} else if (what == LK_DF_PANEL && dist < 0.060) {
-		ao = 0.60 + 0.40 * smoothstepf(0.016, 0.060, dist);
-	} else if (what == LK_DF_MOULD) {
-		ao = 0.70 + 0.30 * (1.0 - dist / 0.010);
+	if (what == LK_DF_PANEL) {
+		ao = 0.70 + 0.30 * smoothstepf(0.0, 0.030, dist);
+	} else if (what == LK_DF_RIVET) {
+		m->albedo = vmul(m->albedo, 0.85);
+	} else if (what == LK_DF_FRAME) {
+		/* at the foot of the rim and the ring */
+		double pd = hypot(x - LK_PORT_X, y - LK_PORT_Y) - LK_RING_R;
+		ao = 0.75 + 0.25 * smoothstepf(0.0, 0.020, pd);
+	}
+	if (what == LK_DF_RING || (what == LK_DF_RIVET
+		&& hypot(x - LK_PORT_X, y - LK_PORT_Y) < LK_RING_R + 0.01)) {
+		/* brass, gone dull and green in the water */
+		double nz = room_noise(x * 300.0, y * 300.0);
+		double vg = smoothstepf(0.62, 0.85, room_noise(x * 40.0 + 7.0, y * 40.0));
+		m->albedo = vmix(vmul(v3(0.80, 0.60, 0.30), 0.85 + 0.15 * nz), v3(0.10, 0.20, 0.15),
+			vg * 0.5);
+		m->metal = 1.0 - 0.8 * vg;
+		m->rough = 0.30 + 0.35 * vg;
+		m->coat = 0.0;
 	}
 	double rim = fmin(fmin(x, LK_DW - x), LK_DY + LK_DH - y);
 	ao *= 1.0 - 0.55 * exp(-rim / 0.030) * (1.0 - sc->open);
 	if (what == LK_DF_GLASS) {
-		/* frosted, and the room's light coming through it */
-		double fr = room_noise(x * 380.0, y * 380.0) * 0.6 + room_noise(x * 90.0, y * 90.0) * 0.4;
-		double lamp = exp(-(lk_sq(x - 0.30) + lk_sq(y - 1.50) * 0.6) / 0.10);
-		vec3 warm = vmul(v3(0.30, 0.78, 0.82), (0.16 + 0.34 * lamp) * (0.70 + 0.55 * fr));
-		double shut = smoothstepf(0.0, 0.035, dist);
-		m->emit = vmul(warm, sc->lamp * sc->rig.glass * (0.35 + 0.65 * shut));
+		/* thick glass, the room's light through it, bright to the middle */
+		double fr = room_noise(x * 160.0, y * 160.0);
+		double mid = 1.0 - pow(dist / LK_PORT_R - 1.0, 2.0);
+		vec3 sea = vmul(v3(0.30, 0.78, 0.82), (0.20 + 0.40 * mid) * (0.85 + 0.25 * fr));
+		double shut = smoothstepf(0.0, 0.030, dist);
+		m->emit = vmul(sea, sc->lamp * sc->rig.glass * (0.35 + 0.65 * shut));
 		m->albedo = v3(0.015, 0.012, 0.010);
-		m->rough = 0.16 + fr * 0.10;
+		m->rough = 0.06;
 		m->coat = 0.0;
 		ao *= 0.55 + 0.45 * shut;
 	}
@@ -33042,8 +33015,8 @@ static void lk_sign_face(const struct lk_scene *sc, const struct lk_hit *h, stru
 	m->n = lk_door_dir_out(sc, lk_sign_dir_out(nl));
 	m->albedo = vmix(m->albedo, v3(0.98, 0.74, 0.34), ga);
 	m->metal = ga;
-	m->rough = 0.42 - 0.20 * ga;
-	m->coat = 0.45 * (1.0 - ga);
+	m->rough = 0.38 - 0.18 * ga;
+	m->coat = 0.55 * (1.0 - ga);
 	m->ao = 1.0;
 	m->sub = ga > 0.5 ? 1 : 0;
 }
@@ -33393,14 +33366,11 @@ static void lk_material(const struct lk_scene *sc, const struct lk_hit *h, vec3 
 	case LK_SIGN:
 		lk_sign_face(sc, h, m);
 		break;
-	case LK_SIGN_EDGE: {
-		double rough;
-		m->albedo = vmul(lk_wood(h->q.z * 4.0 + h->q.x, h->q.y + h->q.x, 40 + h->face, &rough),
-			1.30);
-		m->rough = rough;
-		m->coat = 0.2;
+	case LK_SIGN_EDGE:
+		m->albedo = v3(0.80, 0.60, 0.30);
+		m->metal = 1.0;
+		m->rough = 0.35;
 		break;
-	}
 	case LK_PLATE:
 		lk_plate_face(sc, h, m);
 		break;
@@ -34050,9 +34020,23 @@ static void lk_paint_sash(cairo_t *c, cairo_t *gold, double tw, double th)
 static void lk_paint_sign(cairo_t *c, cairo_t *gold, double tw, double th, const char *name,
 	cairo_surface_t *picture, bool birthday)
 {
-	fill_wood_scaled(c, 0, 0, tw, th, tw / 300.0, tw / 300.0);
-	cairo_set_source_rgba(c, 1.0, 0.88, 0.66, 0.50);
+	/* brass, brushed, gone green in patches in the water */
+	cairo_set_source_rgb(c, 0.66, 0.50, 0.25);
 	cairo_paint(c);
+	for (int i = 0; i < (int)th; i += 2) {
+		cairo_set_source_rgba(c, 1, 1, 1, 0.05 * room_noise(i * 0.37, 3.0));
+		cairo_rectangle(c, 0, i, tw, 1);
+		cairo_fill(c);
+	}
+	for (int i = 0; i < 9; i++) {
+		double gx = room_seed(i, 31) * tw, gy = room_seed(i, 32) * th, gr = th * (0.06 + 0.10 * room_seed(i, 33));
+		cairo_pattern_t *vg = cairo_pattern_create_radial(gx, gy, 0, gx, gy, gr);
+		cairo_pattern_add_color_stop_rgba(vg, 0.0, 0.22, 0.40, 0.32, 0.45);
+		cairo_pattern_add_color_stop_rgba(vg, 1.0, 0.22, 0.40, 0.32, 0.0);
+		cairo_set_source(c, vg);
+		cairo_paint(c);
+		cairo_pattern_destroy(vg);
+	}
 	cairo_pattern_t *sh = cairo_pattern_create_radial(tw * 0.5, th * 0.45, th * 0.2, tw * 0.5,
 		th * 0.45, tw * 0.62);
 	cairo_pattern_add_color_stop_rgba(sh, 0.0, 0, 0, 0, 0.0);
@@ -34066,20 +34050,18 @@ static void lk_paint_sign(cairo_t *c, cairo_t *gold, double tw, double th, const
 	cairo_set_source_rgba(gold, 1, 1, 1, 1);
 	desk_rounded(gold, u * 0.045, u * 0.045, tw - u * 0.09, th - u * 0.09, u * 0.03);
 	cairo_stroke(gold);
-	/* the eyelets the cords go in */
-	for (int s = -1; s <= 1; s += 2) {
-		double ex = tw * 0.5 + s * LK_CORD_X / LK_SIGN_W * tw, ey = u * 0.075;
-		cairo_set_source_rgb(c, 0.06, 0.03, 0.01);
-		cairo_arc(c, ex, ey, u * 0.012, 0, 2 * M_PI);
+	/* the bolts it is held on by, in its corners */
+	for (int i = 0; i < 4; i++) {
+		double ex = i & 1 ? tw - u * 0.10 : u * 0.10, ey = i & 2 ? th - u * 0.10 : u * 0.10;
+		cairo_set_source_rgb(c, 0.10, 0.07, 0.03);
+		cairo_arc(c, ex, ey, u * 0.034, 0, 2 * M_PI);
 		cairo_fill(c);
 		cairo_new_sub_path(gold);
-		cairo_arc(gold, ex, ey, u * 0.026, 0, 2 * M_PI);
-		cairo_new_sub_path(gold);
-		cairo_arc_negative(gold, ex, ey, u * 0.012, 2 * M_PI, 0);
+		cairo_arc(gold, ex, ey, u * 0.028, 0, 2 * M_PI);
 		cairo_fill(gold);
 	}
 	/* the picture, in a brass ring */
-	double pcx = tw * 0.5, pcy = th * 0.41, pr = th * 0.235;
+	double pcx = tw * 0.5, pcy = th * 0.38, pr = th * 0.20;
 	cairo_save(c);
 	cairo_arc(c, pcx, pcy, pr, 0, 2 * M_PI);
 	cairo_clip(c);
@@ -34126,7 +34108,7 @@ static void lk_paint_sign(cairo_t *c, cairo_t *gold, double tw, double th, const
 	cairo_stroke(gold);
 	/* the name, in gold, as large as fits */
 	const char *nm = name && *name ? name : "";
-	double size = u * 0.150;
+	double size = u * 0.200;
 	cairo_save(c);
 	desk_font_select(c, DESK_FONT_DISPLAY, nm, true, false);
 	cairo_set_font_size(c, size);
@@ -34136,7 +34118,7 @@ static void lk_paint_sign(cairo_t *c, cairo_t *gold, double tw, double th, const
 		size *= tw * 0.80 / te.x_advance;
 	}
 	cairo_restore(c);
-	double ny = th * 0.865;
+	double ny = th * 0.835;
 	show_text_as(c, DESK_FONT_DISPLAY, nm, pcx, ny, size, true, 0.17, 0.09, 0.04, 0.96, 0);
 	if (birthday) {
 		lk_paint_sash(c, gold, tw, th);
@@ -34487,72 +34469,6 @@ static bool lk_face_matrix(const struct lk_scene *sc, const struct lk_cam *cam, 
 	return true;
 }
 
-/* the cords the board hangs by, from its eyelets up to the nail, and their
- * shadows on the door under the porch lamp */
-static void lk_cords(cairo_t *cr, const struct lk_scene *sc, const struct lk_cam *cam)
-{
-	vec3 nail = v3(LK_SIGN_X, LK_NAIL_Y - 0.0015, LK_DT + 0.0040);
-	vec3 lamp = lk_to_door(sc, LK_LIGHTS[0].pos);
-	/* the board, as it is on the screen: the shadows are behind it */
-	double bq[4][2];
-	bool board = true;
-	for (int i = 0; i < 4; i++) {
-		vec3 c = v3((i == 1 || i == 2 ? 0.5 : -0.5) * LK_SIGN_W, i >= 2 ? 0.0 : LK_SIGN_H, LK_SIGN_T);
-		board = board && lk_project(cam, lk_from_door(sc, lk_from_sign(c)), &bq[i][0], &bq[i][1]);
-	}
-	for (int pass = 0; pass < 2; pass++) {
-		cairo_save(cr);
-		if (pass == 0 && board) {
-			cairo_rectangle(cr, -1e5, -1e5, 2e5, 2e5);
-			cairo_move_to(cr, bq[0][0], bq[0][1]);
-			for (int i = 1; i < 4; i++) {
-				cairo_line_to(cr, bq[i][0], bq[i][1]);
-			}
-			cairo_close_path(cr);
-			cairo_set_fill_rule(cr, CAIRO_FILL_RULE_EVEN_ODD);
-			cairo_clip(cr);
-			cairo_set_fill_rule(cr, CAIRO_FILL_RULE_WINDING);
-		}
-		for (int s = -1; s <= 1; s += 2) {
-			vec3 a = lk_from_sign(v3(s * LK_CORD_X, LK_SIGN_H - 0.022, LK_SIGN_T));
-			vec3 pts[2] = { a, nail };
-			double sx[2], sy[2];
-			bool ok = true;
-			for (int i = 0; i < 2; i++) {
-				vec3 p = pts[i];
-				if (pass == 0) {
-					/* along the light, onto the face of the door */
-					vec3 d = vsub(p, lamp);
-					double t = (LK_DT - p.z) / (fabs(d.z) > 1e-6 ? d.z : -1e-6);
-					p = vadd(p, vmul(d, fmax(t, 0.0)));
-				}
-				ok = ok && lk_project(cam, lk_from_door(sc, p), &sx[i], &sy[i]);
-			}
-			if (!ok) {
-				continue;
-			}
-			double depth = vlen(vsub(lk_from_door(sc, nail), cam->eye));
-			double lw = 0.0030 * cam->f / fmax(depth, 0.05);
-			cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
-			cairo_move_to(cr, sx[0], sy[0]);
-			cairo_line_to(cr, sx[1], sy[1]);
-			if (pass == 0) {
-				cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.30);
-				cairo_set_line_width(cr, lw * 2.2);
-				cairo_stroke(cr);
-				continue;
-			}
-			cairo_set_source_rgb(cr, 0.16, 0.11, 0.06);
-			cairo_set_line_width(cr, lw * 1.25);
-			cairo_stroke_preserve(cr);
-			cairo_set_source_rgb(cr, 0.62, 0.48, 0.30);
-			cairo_set_line_width(cr, lw * 0.55);
-			cairo_stroke(cr);
-		}
-		cairo_restore(cr);
-	}
-}
-
 /* The slot: a light for each letter in, the caret after them; a light
  * running along them while it is checked; red, and what was wrong, when
  * told no. Under the plate, what it has to say. */
@@ -34743,7 +34659,6 @@ void desk_draw_lock(cairo_t *cr, int w, int h, const struct desk_lock_look *lk)
 		cairo_paint(cr);
 		cairo_restore(cr);
 	}
-	lk_cords(cr, &sc, &cam);
 	g_lk_view.have = true;
 	g_lk_view.cam = cam;
 	g_lk_view.w = w;
