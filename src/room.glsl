@@ -1577,6 +1577,44 @@ void slate_at(vec3 w, inout mtl m, float seed)
 	m.bump_amp = 0.060;
 }
 
+void gravel_at(vec3 w, inout mtl m)
+{
+	const float S = 0.36;
+	float gx = w.x / S, gz = w.z / S;
+	int ix = int(floor(gx)), iz = int(floor(gz));
+	float best = 9.0, second = 9.0;
+	int bi = 0, bj = 0;
+	for (int j = -1; j <= 1; j++) {
+		for (int i = -1; i <= 1; i++) {
+			int cx = ix + i, cz = iz + j;
+			float px = float(cx) + 0.15 + 0.70 * room_hash(cx, cz * 3 + 1);
+			float pz = float(cz) + 0.15 + 0.70 * room_hash(cx * 5 + 2, cz);
+			float d = length(vec2(gx - px, gz - pz));
+			if (d < best) {
+				second = best;
+				best = d;
+				bi = cx;
+				bj = cz;
+			} else if (d < second) {
+				second = d;
+			}
+		}
+	}
+	float s = room_hash(bi * 7 + 3, bj * 11 + 5);
+	vec3 c = s < 0.50 ? vec3(0.040, 0.040, 0.042) : s < 0.80 ? vec3(0.075, 0.065, 0.052)
+		: s < 0.95 ? vec3(0.110, 0.104, 0.092) : vec3(0.180, 0.170, 0.150);
+	c *= 0.85 + 0.30 * room_hash(bi * 13, bj * 17 + 7);
+	float edge = smoothstepf(0.0, 0.40, second - best);
+	float crown = 1.0 - smoothstepf(0.05, 0.60, best);
+	m.albedo = c * ((0.20 + 0.80 * edge) * (0.70 + 0.45 * crown));
+	m.rough = 0.55 + 0.30 * (1.0 - edge);
+	m.coat = 0.25 * edge;
+	m.coat_rough = 0.30;
+	m.bump_freq = 60.0;
+	m.bump_amp = 0.050;
+	m.dust = 0.1;
+}
+
 void chest_at(vec3 w, inout mtl m)
 {
 	walnut_at(w, w.y + w.z, w.x, m, 0.78, 0.90);
@@ -1820,26 +1858,15 @@ mtl icon_material(int id, vec3 pw)
 		break;
 	}
 
-	case MID_FELT: {
-		float fib = room_fbm(w.x * 34.0, w.z * 34.0);
-		float nap = room_fbm(w.x * 7.0 + 13.0, w.z * 7.0);
-		m.albedo = mix(vec3(0.036, 0.082, 0.048), vec3(0.072, 0.134, 0.078), fib);
-		m.albedo *= 0.86 + nap * 0.30;
-		float bare = clampf(room_fbm2(w.x * 0.95 + 21.0, w.z * 0.95) * 1.6 - 0.42, 0.0, 1.0);
-		m.albedo = mix(m.albedo, vec3(0.062, 0.078, 0.058), bare * 0.55);
-		m.rough = 0.94 - bare * 0.14;
-		m.bump_freq = 52.0;
-		m.bump_amp = 0.075;
-		m.dust = 0.4;
+	case MID_FELT:
+		gravel_at(w, m);
 		break;
-	}
-	case MID_DRAWER_WOOD: {
-		bool vert = abs(w.x) > RM_DR_HX - 1.0;
-		wood = vec4(vert ? w.z : w.x, vert ? w.y * 3.0 : w.z, 0.0, 0.60);
+	case MID_DRAWER_WOOD:
+		slate_at(w, m, 2.2);
+		m.albedo *= 0.85;
 		break;
-	}
 	case MID_DRAWER_FACE:
-		wood = vec4(w.x, w.y * 2.6, 0.0, 1.10);
+		slate_at(w, m, 6.7);
 		break;
 	case MID_DESK_TOP:
 		sand_at(w, m);
@@ -2132,11 +2159,7 @@ mtl icon_material(int id, vec3 pw)
 	}
 	if (wood.w >= 0.0) {
 		walnut_at(w, wood.x, wood.y, m, wood.z, wood.w);
-		if (id == MID_DRAWER_WOOD) {
-			m.coat = 0.0;
-			m.albedo *= 0.78;
-			m.rough = clampf(m.rough + 0.22, 0.2, 1.0);
-		} else if (id == MID_CC_CHEEK) {
+		if (id == MID_CC_CHEEK) {
 			m.albedo *= 0.92;
 			m.coat *= 0.84;
 		}

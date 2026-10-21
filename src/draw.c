@@ -3063,6 +3063,48 @@ static void slate_at(vec3 w, struct mtl *m, double seed)
 	m->bump_amp = 0.060;
 }
 
+/* Gravel: what the drawer is lined with. Pebbles about two centimetres
+ * across (a jittered grid, the nearest point is the pebble), dark stone
+ * mostly, some brown, a few pale; wet on top and dark in the gaps. */
+static void gravel_at(vec3 w, struct mtl *m)
+{
+	const double S = 0.36;
+	double gx = w.x / S, gz = w.z / S;
+	int ix = (int)floor(gx), iz = (int)floor(gz);
+	double best = 9.0, second = 9.0;
+	int bi = 0, bj = 0;
+	for (int j = -1; j <= 1; j++) {
+		for (int i = -1; i <= 1; i++) {
+			int cx = ix + i, cz = iz + j;
+			double px = cx + 0.15 + 0.70 * room_hash(cx, cz * 3 + 1);
+			double pz = cz + 0.15 + 0.70 * room_hash(cx * 5 + 2, cz);
+			double d = hypot(gx - px, gz - pz);
+			if (d < best) {
+				second = best;
+				best = d;
+				bi = cx;
+				bj = cz;
+			} else if (d < second) {
+				second = d;
+			}
+		}
+	}
+	double s = room_hash(bi * 7 + 3, bj * 11 + 5);
+	vec3 c = s < 0.50 ? v3(0.040, 0.040, 0.042) : s < 0.80 ? v3(0.075, 0.065, 0.052)
+		: s < 0.95 ? v3(0.110, 0.104, 0.092) : v3(0.180, 0.170, 0.150);
+	c = vmul(c, 0.85 + 0.30 * room_hash(bi * 13, bj * 17 + 7));
+	/* round on top: lit at the crown, falling away into the gaps */
+	double edge = smoothstepf(0.0, 0.40, second - best);
+	double crown = 1.0 - smoothstepf(0.05, 0.60, best);
+	m->albedo = vmul(c, (0.20 + 0.80 * edge) * (0.70 + 0.45 * crown));
+	m->rough = 0.55 + 0.30 * (1.0 - edge);
+	m->coat = 0.25 * edge;
+	m->coat_rough = 0.30;
+	m->bump_freq = 60.0;
+	m->bump_amp = 0.050;
+	m->dust = 0.1;
+}
+
 /* The treasure chest the post comes in: oak boards gone dark and soft
  * with the water, bound with two iron straps that have rusted, and green
  * where the algae has found the grain. */
@@ -3319,38 +3361,17 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 	}
 
 	/* ---- the drawer and the room ---- */
-	case MID_FELT: {
-		/* Baize: short fibres lying every which way, dusty in the corners,
-		 * and a little lighter where something has been standing on it. */
-		double fib = room_fbm(w.x * 34.0, w.z * 34.0);
-		double nap = room_fbm(w.x * 7.0 + 13.0, w.z * 7.0);
-		m->albedo = vmix(v3(0.036, 0.082, 0.048), v3(0.072, 0.134, 0.078), fib);
-		m->albedo = vmul(m->albedo, 0.86 + nap * 0.30);
-		/* Baize goes grey where the nap has been rubbed off it and dusty
-		 * where it has not been touched at all, and the two are never in
-		 * the same place. */
-		double bare = clampf(room_fbm2(w.x * 0.95 + 21.0, w.z * 0.95) * 1.6 - 0.42,
-			0.0, 1.0);
-		m->albedo = vmix(m->albedo, v3(0.062, 0.078, 0.058), bare * 0.55);
-		m->rough = 0.94 - bare * 0.14;
-		m->bump_freq = 52.0;
-		m->bump_amp = 0.075;
-		m->dust = 0.4;
+	case MID_FELT:
+		/* the drawer's bed of gravel */
+		gravel_at(w, m);
 		break;
-	}
-	case MID_DRAWER_WOOD: {
-		/* Inside faces are unfinished: same timber, no polish. */
-		double vert = fabs(w.x) > RM_DR_HX - 1.0;
-		/* never polished, and everything in here slides about */
-		walnut_at(w, vert ? w.z : w.x, vert ? w.y * 3.0 : w.z, m, 0.0, 0.60);
-		m->coat = 0.0;
-		m->albedo = vmul(m->albedo, 0.78);
-		m->rough = clampf(m->rough + 0.22, 0.2, 1.0);
+	case MID_DRAWER_WOOD:
+		/* a tray of slate, slid out of the stone */
+		slate_at(w, m, 2.2);
+		m->albedo = vmul(m->albedo, 0.85);
 		break;
-	}
 	case MID_DRAWER_FACE:
-		/* the one board in the room that gets pulled every day */
-		walnut_at(w, w.x, w.y * 2.6, m, 0.0, 1.10);
+		slate_at(w, m, 6.7);
 		break;
 	case MID_DESK_TOP:
 		/* the floor of the tank */
