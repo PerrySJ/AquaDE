@@ -14629,6 +14629,8 @@ struct op_kind {
 	double leather[3];        /* the boards' edges and the spine, in full light */
 	double edge[3];           /* the block's edges: gilt, or the paper */
 	bool lit_faces;           /* the lamps laid over its faces (else they are in its pictures) */
+	bool shell;               /* a shell, not boards: no edges, no block, its pictures
+	                           * its own shape */
 	/* what lies on the block as it is so far opened, if that changes (a
 	 * binder's sheets swing down off the stack): else pages */
 	const struct book_pic *(*pages_at)(const struct op_kind *K, const struct book_pose *P);
@@ -14956,22 +14958,23 @@ static void op_right(cairo_t *cr, const struct op_kind *K, const struct book_pos
 	double WRo = K->bx + K->bw - K->gx;
 	double xs = P->WR / WRo, cy = K->by + K->bh * 0.5;
 	double W = P->WR, b = P->b, T = P->T, y0 = -P->H * 0.5, y1 = P->H * 0.5;
-	/* the board: its back, its edges, its inside */
-	{
+	/* the board: its back, its edges, its inside (a shell's valve is its
+	 * picture, and has no square edges) */
+	if (!K->shell) {
 		const double q[4][3] = { { 0, y0, b }, { 0, y1, b }, { W, y1, b }, { W, y0, b } };
 		const double n[3] = { 0, 0, 1 };
 		if (bp_facing(P, q, n)) {
 			bp_leather(cr, P, q, n, 0.95, K->leather);
 		}
 	}
-	{
+	if (!K->shell) {
 		const double q[4][3] = { { W, y0, 0 }, { W, y1, 0 }, { W, y1, b }, { W, y0, b } };
 		const double n[3] = { 1, 0, 0 };
 		if (bp_facing(P, q, n)) {
 			bp_leather(cr, P, q, n, 1.15, K->leather);
 		}
 	}
-	for (int e = 0; e < 2; e++) {
+	for (int e = 0; e < 2 && !K->shell; e++) {
 		double y = e ? y1 : y0;
 		const double q[4][3] = { { 0, y, 0 }, { W, y, 0 }, { W, y, b }, { 0, y, b } };
 		const double n[3] = { 0, e ? 1.0 : -1.0, 0 };
@@ -14985,8 +14988,8 @@ static void op_right(cairo_t *cr, const struct op_kind *K, const struct book_pos
 	if (inside) {
 		bp_warp_flat(cr, P, K->board, K->k, K->gx, cy, xs, 0.0, false, 1.0);
 	}
-	/* the block: its edges, and what lies on top */
-	if (T > 0.5) {
+	/* the block: its edges, and what lies on top (in a shell, hidden) */
+	if (T > 0.5 && !K->shell) {
 		double xp = P->Wp, yt = P->yt, yb = P->yb;
 		const double qf[4][3] = { { xp, yt, -T }, { xp, yb, -T }, { xp, yb, 0 }, { xp, yt, 0 } };
 		const double nf[3] = { 1, 0, 0 };
@@ -15045,7 +15048,9 @@ static void op_spine(cairo_t *cr, const struct op_kind *K, const struct book_pos
 		if (!bp_facing(P, q, n)) {
 			continue;
 		}
-		bp_leather(cr, P, q, n, 1.05, K->leather);
+		if (!K->shell) {
+			bp_leather(cr, P, q, n, 1.05, K->leather);
+		}
 		if (K->spine) {
 			bp_warp(cr, P, K->spine[i], K->k, sw, P->H, q, 1.0);
 		}
@@ -15072,10 +15077,10 @@ static void op_flap(cairo_t *cr, const struct op_kind *K, const struct book_pose
 	FLAP(W, y1, 0, q[1]);
 	FLAP(W, y1, 1, q[2]);
 	FLAP(W, y0, 1, q[3]);
-	if (bp_facing(P, (const double (*)[3])q, nd)) {
+	if (!K->shell && bp_facing(P, (const double (*)[3])q, nd)) {
 		bp_leather(cr, P, (const double (*)[3])q, nd, 1.15, K->leather);
 	}
-	for (int e = 0; e < 2; e++) {
+	for (int e = 0; e < 2 && !K->shell; e++) {
 		double y = e ? y1 : y0;
 		const double n[3] = { 0, e ? 1.0 : -1.0, 0 };
 		FLAP(0, y, 0, q[0]);
@@ -15093,7 +15098,10 @@ static void op_flap(cairo_t *cr, const struct op_kind *K, const struct book_pose
 	FLAP(0, y1, 1, q[3]);
 	if (bp_facing(P, (const double (*)[3])q, no)) {
 		bp_warp(cr, P, K->cover, K->k, fmax(WLo, WRo), P->H, (const double (*)[3])q, 1.0);
-		bp_face_light(cr, P, (const double (*)[3])q, no, 0.06);
+		if (!K->shell) {
+			/* (over the whole board: a shell's light is in its picture) */
+			bp_face_light(cr, P, (const double (*)[3])q, no, 0.06);
+		}
 	}
 	FLAP(W, y0, 0, q[0]);
 	FLAP(0, y0, 0, q[1]);
@@ -15185,6 +15193,9 @@ static void op_draw(cairo_t *cr, const struct op_kind *K, double u)
 /* The boards' edges, round it held open. */
 static void op_board_edges(cairo_t *cr, const struct op_kind *K)
 {
+	if (K->shell) {
+		return;
+	}
 	struct book_pose P;
 	op_pose_at(K, 1.0, &P);
 	double L = P.WL, R = P.WR, b = P.b, y0 = -P.H * 0.5, y1 = P.H * 0.5;
@@ -15574,13 +15585,224 @@ static cairo_surface_t *binder_sheet(const struct desk_app_list *apps, int app,
 /* The colour of binder shelf's boards: what its spine is on the shelf --
  * the oxblood calf or the green buckram (shelf_binder_map) -- as it looks
  * under the lamps it is held up to, which are brighter than the room's. */
+/* ---- the binders are shells ----------------------------------------
+ *
+ * Under water the binders are clams: shut, standing on the shelf with
+ * their hinges out; taken down, they open on the hinge as a binder did,
+ * the left valve over to the left with the slip in it, the right with
+ * the sheets hanging off a pearl. A valve is drawn in a W x H box with
+ * its hinge at the middle of its left side (or of its right, mirrored):
+ * ribs fanning out from the hinge, the rings it grew in, its lip round. */
+
+/* the outline of a valve, hinge at the left (mirror: at the right) */
+static void shell_path(cairo_t *cr, double x, double y, double W, double H, bool mirror)
+{
+	cairo_save(cr);
+	cairo_translate(cr, mirror ? x + W : x, y);
+	cairo_scale(cr, mirror ? -1.0 : 1.0, 1.0);
+	cairo_move_to(cr, 0.0, H * 0.40);
+	cairo_curve_to(cr, W * 0.10, H * 0.08, W * 0.52, H * -0.01, W * 0.80, H * 0.07);
+	cairo_curve_to(cr, W * 1.01, H * 0.17, W * 1.01, H * 0.83, W * 0.80, H * 0.93);
+	cairo_curve_to(cr, W * 0.52, H * 1.01, W * 0.10, H * 0.92, 0.0, H * 0.60);
+	cairo_close_path(cr);
+	cairo_restore(cr);
+}
+
+/* each shelf's shell its own colour */
+static const double SHELL_COL[DESK_SHELF_COUNT][3] = {
+	{ 0.86, 0.52, 0.42 }, { 0.88, 0.82, 0.68 }, { 0.90, 0.64, 0.46 }, { 0.70, 0.58, 0.72 },
+	{ 0.80, 0.70, 0.54 }, { 0.88, 0.60, 0.64 }, { 0.82, 0.60, 0.34 }, { 0.56, 0.64, 0.72 },
+};
+
+/* The outside of a valve: its colour, the ribs from the hinge as stripes
+ * of light and shade, the rings it grew in, darker toward the hinge. */
+static void shell_outside(cairo_t *cr, double x, double y, double W, double H, bool mirror,
+	const double col[3])
+{
+	cairo_save(cr);
+	shell_path(cr, x, y, W, H, mirror);
+	cairo_clip(cr);
+	cairo_translate(cr, mirror ? x + W : x, y);
+	cairo_scale(cr, mirror ? -1.0 : 1.0, 1.0);
+	cairo_set_source_rgb(cr, col[0], col[1], col[2]);
+	cairo_paint(cr);
+	double hx = 0.0, hy = H * 0.5, R = hypot(W, H);
+	const int ribs = 15;
+	for (int i = 0; i < ribs; i++) {
+		double a0 = -1.45 + 2.9 * i / ribs, a1 = -1.45 + 2.9 * (i + 0.5) / ribs;
+		cairo_move_to(cr, hx, hy);
+		cairo_line_to(cr, hx + R * cos(a0), hy + R * sin(a0));
+		cairo_line_to(cr, hx + R * cos(a1), hy + R * sin(a1));
+		cairo_close_path(cr);
+	}
+	cairo_set_source_rgba(cr, 1.0, 0.97, 0.92, 0.16);
+	cairo_fill(cr);
+	for (int i = 0; i < ribs; i++) {
+		double a = -1.45 + 2.9 * (i + 0.5) / ribs;
+		cairo_move_to(cr, hx, hy);
+		cairo_line_to(cr, hx + R * cos(a), hy + R * sin(a));
+	}
+	cairo_set_line_width(cr, fmax(0.8, W * 0.006));
+	cairo_set_source_rgba(cr, 0.25, 0.12, 0.06, 0.22);
+	cairo_stroke(cr);
+	/* the rings it grew in */
+	for (int k = 1; k <= 7; k++) {
+		double r = W * (0.10 + 0.13 * k);
+		cairo_save(cr);
+		cairo_translate(cr, hx, hy);
+		cairo_scale(cr, 1.0, H / (W * 1.55));
+		cairo_new_sub_path(cr);
+		cairo_arc(cr, 0, 0, r, -1.6, 1.6);
+		cairo_restore(cr);
+		cairo_set_line_width(cr, fmax(0.6, W * (k & 1 ? 0.004 : 0.008)));
+		cairo_set_source_rgba(cr, 0.30, 0.16, 0.08, k & 1 ? 0.12 : 0.20);
+		cairo_stroke(cr);
+	}
+	/* older, and worn, toward the hinge; the light from above */
+	cairo_pattern_t *g = cairo_pattern_create_radial(hx, hy, 0, hx, hy, W * 0.55);
+	cairo_pattern_add_color_stop_rgba(g, 0.0, 0.25, 0.14, 0.08, 0.35);
+	cairo_pattern_add_color_stop_rgba(g, 1.0, 0.25, 0.14, 0.08, 0.0);
+	cairo_set_source(cr, g);
+	cairo_paint(cr);
+	cairo_pattern_destroy(g);
+	cairo_pattern_t *lg = cairo_pattern_create_linear(0, 0, 0, H);
+	cairo_pattern_add_color_stop_rgba(lg, 0.0, 1, 1, 1, 0.14);
+	cairo_pattern_add_color_stop_rgba(lg, 0.5, 0, 0, 0, 0.0);
+	cairo_pattern_add_color_stop_rgba(lg, 1.0, 0, 0, 0, 0.22);
+	cairo_set_source(cr, lg);
+	cairo_paint(cr);
+	cairo_pattern_destroy(lg);
+	cairo_restore(cr);
+	shell_path(cr, x, y, W, H, mirror);
+	cairo_set_line_width(cr, fmax(1.0, W * 0.010));
+	cairo_set_source_rgba(cr, 0.22, 0.10, 0.05, 0.45);
+	cairo_stroke(cr);
+}
+
+/* The inside of a valve: mother of pearl -- white, its colours shifting
+ * as the light does -- with the lip in the shell's own colour round it. */
+static void shell_inside(cairo_t *cr, double x, double y, double W, double H, bool mirror,
+	const double col[3])
+{
+	cairo_save(cr);
+	shell_path(cr, x, y, W, H, mirror);
+	cairo_clip(cr);
+	cairo_translate(cr, mirror ? x + W : x, y);
+	cairo_scale(cr, mirror ? -1.0 : 1.0, 1.0);
+	cairo_set_source_rgb(cr, 0.90, 0.89, 0.88);
+	cairo_paint(cr);
+	static const double sheen[3][4] = {
+		{ 0.30, 0.25, 0.95, 0.72 }, { 0.65, 0.70, 0.75, 0.92 }, { 0.45, 0.80, 0.80, 0.70 },
+	};
+	for (int i = 0; i < 3; i++) {
+		double cx = W * sheen[i][0], cy = H * sheen[i][1];
+		cairo_pattern_t *g = cairo_pattern_create_radial(cx, cy, 0, cx, cy, W * 0.55);
+		double r = i == 0 ? 0.92 : i == 1 ? 0.70 : 0.72;
+		double gg = i == 0 ? 0.80 : i == 1 ? 0.80 : 0.92;
+		double b = i == 0 ? 0.86 : i == 1 ? 0.95 : 0.84;
+		cairo_pattern_add_color_stop_rgba(g, 0.0, r, gg, b, 0.55);
+		cairo_pattern_add_color_stop_rgba(g, 1.0, r, gg, b, 0.0);
+		cairo_set_source(cr, g);
+		cairo_paint(cr);
+		cairo_pattern_destroy(g);
+	}
+	/* deeper toward the hinge */
+	cairo_pattern_t *g = cairo_pattern_create_radial(0, H * 0.5, 0, 0, H * 0.5, W * 0.45);
+	cairo_pattern_add_color_stop_rgba(g, 0.0, 0.30, 0.25, 0.28, 0.30);
+	cairo_pattern_add_color_stop_rgba(g, 1.0, 0.30, 0.25, 0.28, 0.0);
+	cairo_set_source(cr, g);
+	cairo_paint(cr);
+	cairo_pattern_destroy(g);
+	cairo_restore(cr);
+	/* the lip */
+	shell_path(cr, x, y, W, H, mirror);
+	cairo_set_line_width(cr, fmax(2.0, W * 0.05));
+	cairo_set_source_rgba(cr, col[0], col[1], col[2], 0.95);
+	cairo_stroke_preserve(cr);
+	cairo_set_line_width(cr, fmax(1.0, W * 0.010));
+	cairo_set_source_rgba(cr, 0.22, 0.10, 0.05, 0.45);
+	cairo_stroke(cr);
+}
+
+/* A shut shell seen at its hinge, ts across and H high: the two valves
+ * meeting, round, narrowing to the top and bottom, the line between them
+ * down the middle. */
+static void shell_hinge(cairo_t *cr, double ts, double H, const double col[3])
+{
+	const int n = 24;
+	cairo_save(cr);
+	for (int side = 0; side < 2; side++) {
+		for (int i = 0; i <= n; i++) {
+			double t = (double)i / n, y = H * (side ? 1.0 - t : t);
+			double w = ts * 0.5 * pow(sin(M_PI * (side ? 1.0 - t : t)), 0.55);
+			double xx = ts * 0.5 + (side ? -w : w);
+			if (i == 0 && side == 0) {
+				cairo_move_to(cr, xx, y);
+			} else {
+				cairo_line_to(cr, xx, y);
+			}
+		}
+	}
+	cairo_close_path(cr);
+	cairo_clip_preserve(cr);
+	cairo_set_source_rgb(cr, col[0], col[1], col[2]);
+	cairo_fill(cr);
+	/* round: lit in the middle, falling off to the sides */
+	cairo_pattern_t *g = cairo_pattern_create_linear(0, 0, ts, 0);
+	cairo_pattern_add_color_stop_rgba(g, 0.0, 0, 0, 0, 0.45);
+	cairo_pattern_add_color_stop_rgba(g, 0.35, 1, 1, 1, 0.10);
+	cairo_pattern_add_color_stop_rgba(g, 0.5, 0, 0, 0, 0.05);
+	cairo_pattern_add_color_stop_rgba(g, 0.65, 1, 1, 1, 0.10);
+	cairo_pattern_add_color_stop_rgba(g, 1.0, 0, 0, 0, 0.45);
+	cairo_set_source(cr, g);
+	cairo_paint(cr);
+	cairo_pattern_destroy(g);
+	/* the rings, edge on, and the line where the valves meet */
+	for (int k = 1; k < 12; k++) {
+		double y = H * k / 12.0;
+		cairo_move_to(cr, 0, y);
+		cairo_line_to(cr, ts, y + H * 0.01);
+	}
+	cairo_set_line_width(cr, fmax(0.6, ts * 0.012));
+	cairo_set_source_rgba(cr, 0.30, 0.16, 0.08, 0.20);
+	cairo_stroke(cr);
+	cairo_move_to(cr, ts * 0.5, 0);
+	cairo_line_to(cr, ts * 0.5, H);
+	cairo_set_line_width(cr, fmax(1.0, ts * 0.03));
+	cairo_set_source_rgba(cr, 0.18, 0.08, 0.04, 0.55);
+	cairo_stroke(cr);
+	cairo_restore(cr);
+}
+
+/* the pearl the sheets hang from, r across, at (x, y) */
+static void shell_pearl(cairo_t *cr, double x, double y, double r)
+{
+	cairo_save(cr);
+	cairo_new_sub_path(cr);
+	cairo_arc(cr, x + r * 0.15, y + r * 0.25, r, 0, 2 * M_PI);
+	cairo_set_source_rgba(cr, 0.10, 0.08, 0.10, 0.30);
+	cairo_fill(cr);
+	cairo_pattern_t *g = cairo_pattern_create_radial(x - r * 0.35, y - r * 0.35, r * 0.05,
+		x, y, r);
+	cairo_pattern_add_color_stop_rgb(g, 0.0, 1.0, 1.0, 1.0);
+	cairo_pattern_add_color_stop_rgb(g, 0.45, 0.93, 0.91, 0.90);
+	cairo_pattern_add_color_stop_rgb(g, 0.85, 0.80, 0.78, 0.82);
+	cairo_pattern_add_color_stop_rgb(g, 1.0, 0.62, 0.60, 0.66);
+	cairo_new_sub_path(cr);
+	cairo_arc(cr, x, y, r, 0, 2 * M_PI);
+	cairo_set_source(cr, g);
+	cairo_fill(cr);
+	cairo_pattern_destroy(g);
+	cairo_restore(cr);
+}
+
 static void binder_dye(int shelf, double rgb[3])
 {
-	bool calf = shelf < 0 || shelf >= DESK_SHELF_COUNT
-		|| SHELF_BINDERS[shelf].mid == MID_BINDER_A;
-	rgb[0] = calf ? 0.34 : 0.13;
-	rgb[1] = calf ? 0.12 : 0.19;
-	rgb[2] = calf ? 0.095 : 0.13;
+	/* a shell now: its own colour (SHELL_COL) */
+	int i = shelf < 0 || shelf >= DESK_SHELF_COUNT ? 0 : shelf;
+	rgb[0] = SHELL_COL[i][0];
+	rgb[1] = SHELL_COL[i][1];
+	rgb[2] = SHELL_COL[i][2];
 }
 
 static void binder_boards_paint(cairo_t *cr, const struct binder_geom *g,
@@ -15591,38 +15813,23 @@ static void binder_boards_paint(cairo_t *cr, const struct binder_geom *g,
 	contact_shadow(cr, g->bx + g->bw * 0.10, g->by + g->bh * 0.90,
 		g->bw * 0.80, g->bh * 0.22, 0.42);
 
-	/* the boards, dyed the colour of the spine it came off */
+	/* the two valves open on their hinge: their insides, each in the
+	 * shell's own colour at the lip */
 	double dye[3];
 	binder_dye(shelf, dye);
-	double br = dye[0], bg = dye[1], bb = dye[2];
-	cairo_save(cr);
-	desk_rounded_path(cr, g->bx, g->by, g->bw, g->bh, g->bw * 0.012);
-	cairo_clip(cr);
-	cairo_set_source_rgb(cr, br, bg, bb);
-	cairo_paint(cr);
-	cairo_pattern_t *lg = cairo_pattern_create_linear(g->bx, g->by, g->bx, g->by + g->bh);
-	cairo_pattern_add_color_stop_rgba(lg, 0.00, 1, 0.94, 0.86, 0.15);
-	cairo_pattern_add_color_stop_rgba(lg, 0.42, 0, 0, 0, 0.00);
-	cairo_pattern_add_color_stop_rgba(lg, 1.00, 0, 0, 0, 0.30);
-	cairo_set_source(cr, lg);
-	cairo_paint(cr);
-	cairo_pattern_destroy(lg);
-	overlay_grain(cr, g->bx, g->by, g->bw, g->bh, 1.6);
-	cairo_restore(cr);
-	/* the hinge crease down the middle, and the stitching round the edge */
-	wobble_line(cr, g->bx + g->bw * 0.475, g->by, g->bx + g->bw * 0.475, g->by + g->bh,
-		(unsigned)shelf * 7 + 3, 1, 1.4, 2.0, 0.02, 0.01, 0.01, 0.42);
-	stitch_rect(cr, g->bx, g->by, g->bw, g->bh, g->bw * 0.020);
+	double gx = g->bx + g->bw * 0.475;
+	shell_inside(cr, g->bx, g->by, gx - g->bx, g->bh, true, dye);
+	shell_inside(cr, gx, g->by, g->bx + g->bw - gx, g->bh, false, dye);
 
-	/* the contents slip in the left board's pocket */
+	/* what it holds, written on the inside of the left valve */
 	char head[160];
 	snprintf(head, sizeof head, "%s", shelf_label(si));
 	show_text_fit_as(cr, DESK_FONT_PRINT, head, g->bx + g->bw * 0.225, g->by + g->bh * 0.26,
-		g->bh * 0.058, true, 0.92, 0.88, 0.80, 0.80, 0, g->bw * 0.38);
+		g->bh * 0.058, true, 0.30, 0.24, 0.28, 0.85, 0, g->bw * 0.34);
 	char cnt[64];
 	snprintf(cnt, sizeof cnt, "%d", si->count);
 	show_text_as(cr, DESK_FONT_PRINT, cnt, g->bx + g->bw * 0.225, g->by + g->bh * 0.44,
-		g->bh * 0.12, true, 0.92, 0.88, 0.80, 0.55, 0);
+		g->bh * 0.12, true, 0.30, 0.24, 0.28, 0.55, 0);
 }
 
 static struct {
@@ -15801,7 +16008,7 @@ static void binder_draw_flat(cairo_t *cr, int w, int h, int shelf, double first,
 			int last = base + BINDER_FAN < si->count ? base + BINDER_FAN : si->count;
 			snprintf(more, sizeof more, "%d\xe2\x80\x93%d", base + 1, last);
 			show_text(cr, more, g.bx + g.bw * 0.225, g.by + g.bh * 0.56,
-				g.bh * 0.048, false, 0.92, 0.88, 0.80, 0.45, 0);
+				g.bh * 0.048, false, 0.30, 0.24, 0.28, 0.55, 0);
 		}
 		cairo_pop_group_to_source(cr);
 		cairo_paint_with_alpha(cr, e);
@@ -15816,7 +16023,7 @@ static void binder_draw_flat(cairo_t *cr, int w, int h, int shelf, double first,
 		int last = base + BINDER_FAN < si->count ? base + BINDER_FAN : si->count;
 		snprintf(more, sizeof more, "%d\xe2\x80\x93%d", base + 1, last);
 		show_text(cr, more, g.bx + g.bw * 0.225, g.by + g.bh * 0.56,
-			g.bh * 0.048, false, 0.92, 0.88, 0.80, 0.45, 0);
+			g.bh * 0.048, false, 0.30, 0.24, 0.28, 0.55, 0);
 	}
 
 	/* Most of every sheet in the fan is under the one in front of it all,
@@ -15919,23 +16126,8 @@ static void binder_draw_flat(cairo_t *cr, int w, int h, int shelf, double first,
 		cairo_restore(cr);
 	}
 
-	/* the ring they all hang from */
-	double rr = g.sw * 0.052;
-	cairo_save(cr);
-	cairo_set_line_width(cr, rr * 0.42);
-	cairo_set_source_rgba(cr, 0.20, 0.16, 0.10, 0.45);
-	cairo_arc(cr, g.rx, g.ry + rr * 0.18, rr, 0, 2 * M_PI);
-	cairo_stroke(cr);
-	cairo_pattern_t *mg = cairo_pattern_create_linear(g.rx - rr, g.ry - rr,
-		g.rx + rr, g.ry + rr);
-	cairo_pattern_add_color_stop_rgb(mg, 0.0, 0.92, 0.88, 0.78);
-	cairo_pattern_add_color_stop_rgb(mg, 0.5, 0.58, 0.54, 0.48);
-	cairo_pattern_add_color_stop_rgb(mg, 1.0, 0.82, 0.78, 0.70);
-	cairo_set_source(cr, mg);
-	cairo_arc(cr, g.rx, g.ry, rr, 0, 2 * M_PI);
-	cairo_stroke(cr);
-	cairo_pattern_destroy(mg);
-	cairo_restore(cr);
+	/* the pearl they all hang from */
+	shell_pearl(cr, g.rx, g.ry, g.sw * 0.062);
 
 	cairo_pop_group_to_source(cr);
 	cairo_paint_with_alpha(cr, e);
@@ -16054,25 +16246,12 @@ static void binder_darken(cairo_t *cr, int w, int h)
 static void binder_cover_face(cairo_t *cr, double W, double H, double r,
 	const struct desk_shelf_info *si, unsigned seed)
 {
+	(void)r;
 	double dye[3];
 	binder_dye((int)seed, dye);
-	cairo_save(cr);
-	desk_rounded_path(cr, 0.0, 0.0, W, H, r);
-	cairo_clip(cr);
-	cairo_set_source_rgb(cr, dye[0], dye[1], dye[2]);
-	cairo_paint(cr);
-	cairo_pattern_t *lg = cairo_pattern_create_linear(0, 0, 0, H);
-	cairo_pattern_add_color_stop_rgba(lg, 0.00, 1, 0.94, 0.86, 0.15);
-	cairo_pattern_add_color_stop_rgba(lg, 0.42, 0, 0, 0, 0.00);
-	cairo_pattern_add_color_stop_rgba(lg, 1.00, 0, 0, 0, 0.30);
-	cairo_set_source(cr, lg);
-	cairo_paint(cr);
-	cairo_pattern_destroy(lg);
-	overlay_grain(cr, 0.0, 0.0, W, H, 1.6);
-	cairo_restore(cr);
-	stitch_rect(cr, 0.0, 0.0, W, H, W * 0.040);
-	/* what is in it, pressed into the cloth: a shade darker, and a hair
-	 * of light along the bottom of the letters where the edge catches it */
+	shell_outside(cr, 0.0, 0.0, W, H, false, dye);
+	/* what is in it, cut into the shell: a shade darker, and a hair of
+	 * light along the bottom of the letters where the edge catches it */
 	const char *name = shelf_label(si);
 	show_text_fit_as(cr, DESK_FONT_DISPLAY, name, W * 0.5, H * 0.215 + 1.2, H * 0.064, true,
 		1.0, 0.95, 0.85, 0.22, 0, W * 0.70);
@@ -16086,6 +16265,9 @@ static void binder_spine_face(cairo_t *cr, int i, double ts, double H,
 	const struct desk_shelf_info *si)
 {
 	const struct shelf_binder *b = &SHELF_BINDERS[i];
+	double dye[3];
+	binder_dye(i, dye);
+	shell_hinge(cr, ts, H, dye);
 	double k = H / b->h;
 	double cy = H - b->label_y * k;
 	/* the pocket, and the label in it */
@@ -16217,6 +16399,7 @@ static void binder_kind(int w, int h, int shelf, const struct binder_pics *pics,
 	K->edge[1] = 0.91;
 	K->edge[2] = 0.86;
 	K->lit_faces = false;
+	K->shell = true;
 	K->shelf = shelf;
 	if (pics) {
 		K->k = pics->k;
