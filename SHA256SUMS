@@ -2,11 +2,11 @@
 623438575034a47c80797e911940bd20235ae69bedbd5ee507a25db4eda5aa24  ./Dockerfile
 8f56e4ad837b4931a888cfbef8c6fb7641ca8f37c450501ee6657be2d91a3777  ./.dockerignore
 10d4d76ae00f43dbf79f90dd31a65bc291a1940c1ab5b333c1b05ec61fbc0e40  ./docs/ARCHITECTURE.ja.md
-0a8a1261d819feb7ba578231a3ef1c585c98e5cd60c2b5ed384cdeee49b858f6  ./docs/ARCHITECTURE.md
-cd31d48c589011d40e2a3106c702a98ede72ab042dd1d778e320a662ed2feffe  ./docs/CONFIGURATION.md
+bfe89d8c5e5d3413d6fcb59bf5c2a773979e51354122d11b7900da92854a0ee6  ./docs/ARCHITECTURE.md
+3e9b44ca6ff021b129a1d2263b2cc69abab5ae69b30cc5eaaea50f924a960dda  ./docs/CONFIGURATION.md
 122a4de7a1f5ea8f8dfb4c1d408e895968fb41c9e60b2a1500788fed59fab685  ./docs/design.md
 076ae54aa4de4f2f81e801825a2b28239a5113aed2481e88b53b7c37f6a2c92b  ./docs/MODDING.ja.md
-09de5237140efcf261a8e337bab2dd6a0d1922edf54d0bad3839b0b352e4a05f  ./docs/MODDING.md
+2841c1ee21204c1a4889a56955ee2669dac275e5bfbea88c1ae7428fb2e6d60f  ./docs/MODDING.md
 04f5779b9b3643c329c2ec5ad29385a2ef45e5e3b965bc633cf4bb000b7d7d6b  ./docs/screenshots/aquade-console.jpg
 742bfab8c41dc2194634ed39c2584c410831408801b89455664494b86e5b31bb  ./docs/screenshots/aquade-drawer.jpg
 aa9958e00323dc01f37c7635e1b2ae42140c347868fcb8f0de5dfe3ca8bb62e2  ./docs/screenshots/aquade-life.jpg
@@ -40,7 +40,7 @@ d71a97f44854ceed9b3c1c68506b083ce22099977388599e1eabaed37002deed  ./meson_option
 4be7e0edd3a74ec4646f6f46d810e3e1df49707a010fff0d2d2f34cef6226a9e  ./packaging/debian/aquade-desktop.equivs
 65b0f82a6cf129bf1a1c31a2428795abd33886c15ddd5f3ad97e5922d7bdc3a7  ./protocols/wlr-output-management-unstable-v1.xml
 7ebd98f3449d246a57829e4b4dd9fbc3ef98e3dd42fa94ea102f14f490eb20de  ./protocols/wlr-output-power-management-unstable-v1.xml
-a5aabb187190f92eda630f0b4c813d98d07db51e87784ef77c964b305c4f233a  ./README.md
+2681a4c099611e59cf1fd0154b73fa141887b2165a73119428e3bb936d96ccf6  ./README.md
 c24fc25f965f81999c25c758b42bea91a1ce0fbee29ee175367d891755df736e  ./RELEASE-NOTES.ja.md
 8529dcacf90ff20d029425b780d9ff8f18b38fba5a9e66c61dc059c9ac408fbd  ./RELEASE-NOTES.md
 d700030a565f7b1ff63810cacf19285ddb1dccf27ff9a0ed09c033fb72bd4ae2  ./scripts/aquade-ctl

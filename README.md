@@ -86,8 +86,8 @@ fyzugx for making DEsk and releasing it under the MIT licence.
 
 ## Still to come
 
-- Updating the documentation in `docs/`, which still describes DEsk's desk
-  in places.
+- Testing a real install, logged in as a full AquaDE session.
+- Icons of its own: the icon theme is still DEsk's.
 
 ## Requirements
 
@@ -181,13 +181,12 @@ AquaDE's own settings, including the shark, the bubbles and the fish, and opens 
 usual programs for networks, sound, displays and so on. Settings are kept in
 `~/.config/aquade/shell.conf`.
 
-These docs come from DEsk. They still describe a desk in places, but the
-technical detail is still accurate:
+More detail:
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how it's built (the
-  compositor, the ray-traced room, threads, files)
+  compositor, the ray-traced tank, threads, files)
 - [docs/MODDING.md](docs/MODDING.md): changing it (words, settings, sounds,
-  the room)
+  the tank, new creatures)
 - [docs/CONFIGURATION.md](docs/CONFIGURATION.md): every setting, file and
   environment variable
 

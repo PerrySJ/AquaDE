@@ -1,15 +1,13 @@
-**English** | [日本語](MODDING.ja.md)
+# Changing AquaDE
 
-# Changing DEsk
-
-DEsk v0.1 has no plugin API: a mod is a change to the source, built and
-installed like DEsk itself. This page tells you how to set up for that,
+AquaDE v0.0.1 has no plugin API: a mod is a change to the source, built and
+installed like AquaDE itself. This page tells you how to set up for that,
 what the house rules are, and walks through the changes people make most
 often. Read [ARCHITECTURE.md](ARCHITECTURE.md) first for the map of the
 code.
 
-DEsk is MIT-licensed. Keep the `LICENSE` file with your copy and say in your
-README what you changed.
+AquaDE is MIT-licensed, like DEsk, which it is forked from. Keep the
+`LICENSE` file with your copy and say in your README what you changed.
 
 ## 1. Setting up
 
@@ -28,21 +26,22 @@ Three ways to see a change, from cheapest to closest to real:
 1. **The preview** draws without a compositor, into a PNG:
 
    ```sh
-   ./build/aquade-preview -o out.png -s 1440x900            # the desk
+   ./build/aquade-preview -o out.png -s 1440x900            # the tank floor
    ./build/aquade-preview -o out.png --shelf --lang de       # the bookcase, in German
+   ./build/aquade-preview -o out.png --life                  # the fish and the crabs
    ./build/aquade-preview --help                             # every view it can draw
    ```
 
-2. **Nested**: `scripts/aquade-window` runs DEsk as a window in the session you
+2. **Nested**: `scripts/aquade-window` runs AquaDE as a window in the session you
    are in (`DESK_SIZE=1600x900` for another size). It shares your real
    settings; to keep them apart, set `XDG_CONFIG_HOME`, `XDG_DATA_HOME`,
    `XDG_STATE_HOME` and `XDG_CACHE_HOME` to directories of their own.
-   `DESK_ALLOW_MULTIPLE=1` lets it start while another DEsk is running.
+   `DESK_ALLOW_MULTIPLE=1` lets it start while another AquaDE is running.
    `WLR_X11_OUTPUTS=2` (nested in X11) gives it two screens.
 3. **Installed**: `scripts/install_session.sh` again replaces the installed
    copy; log out and in.
 
-What DEsk says as it runs is in `~/.local/state/aquade/session.log` (or on
+What AquaDE says as it runs is in `~/.local/state/aquade/session.log` (or on
 stderr when nested). `DESK_PROFILE=1` adds frame timings.
 
 ## 2. House rules
@@ -121,7 +120,7 @@ piece at a time.
 
 ## 4. A new setting
 
-A setting is a line in `shell.conf` that DEsk reads, and usually a row in
+A setting is a line in `shell.conf` that AquaDE reads, and usually a row in
 Shell Settings.
 
 1. **`src/wm.c`**: add a field to `struct shell_conf`, its default in
@@ -136,10 +135,9 @@ Shell Settings.
    `conf_write`.
 3. **Words**: the label, the note under it, and each choice's word, in
    `WORDS` (§3).
-4. **Documentation**: the key in [CONFIGURATION.md](CONFIGURATION.md) and in
-   the Japanese README's Shell Settings table.
+4. **Documentation**: the key in [CONFIGURATION.md](CONFIGURATION.md).
 
-Keys DEsk does not know are reported in the log and kept in the file, so
+Keys AquaDE does not know are reported in the log and kept in the file, so
 older and newer versions can share one `shell.conf`.
 
 ## 5. Borrowed programs
@@ -169,7 +167,7 @@ one installed, and says which package to install when none is.
 The drawer's terminal, browser, file manager and text editor are chosen in
 `src/apps.c` ("the standard programs"): `shell.conf`'s `app.terminal` etc.,
 then the default-applications lists, then `STD_TERMINAL`, `STD_BROWSER`,
-`STD_FILES` and `STD_EDITOR` in order. To change DEsk's own preference,
+`STD_FILES` and `STD_EDITOR` in order. To change AquaDE's own preference,
 reorder those lists; a user can override them with `app.*` in `shell.conf`
 without rebuilding.
 
@@ -200,9 +198,9 @@ All sounds are synthesised (`src/sfx.c`). To add one:
 `DESK_SOUND=file:/tmp/desk-%p.wav` writes the mix to a file instead of the
 speakers, which is how sounds are checked without disturbing anyone.
 
-## 7. The room
+## 7. The tank
 
-The room is traced twice over: by the C in `src/draw.c` (the reference) and
+The tank (the room, in the code) is traced twice over: by the C in `src/draw.c` (the reference) and
 by `src/room.glsl` on the GPU. **Change both, the same way.**
 
 - The scene is `scene_map(vec3 p, int kind)` in `draw.c` and `scene_map` in
@@ -216,16 +214,16 @@ by `src/room.glsl` on the GPU. **Change both, the same way.**
 - Check that the two agree: `./build/aquade-gputest --room`. It traces every
   sheet both ways and reports coverage, owner and colour differences.
 - Check the cost on the CPU: `DESK_NO_GPU=1` traces on the processor, and
-  the log's `desk: room:` lines say how long each sheet took. The 2D
+  the log's `aquade: room:` lines say how long each sheet took. The 2D
   Fallback level (`graphics = 2d`) must stay cheap.
 - Hit testing (what is under the pointer on the bookcase, the Control
-  Panel, the post box) uses the owner ids the trace records, so a new
+  Panel, the treasure chest) uses the owner ids the trace records, so a new
   clickable object needs an id (`room_owner`, the `*_owner` functions).
 
-## 8. Things on the desk
+## 8. Things in the tank
 
-Live parts over the room (the clock's display, the Control Panel's lamps,
-letters, slips) are sprites (`struct desk_sprite`, `sprite_paint` in
+Live parts over the traced tank (the clock's display, the Control Panel's
+lamps and sonar, letters, slips) are sprites (`struct desk_sprite`, `sprite_paint` in
 `wm.c`) drawn by functions in `draw.c` that take a cairo context and a
 screen size. Their positions come from the room's camera (`room_project`)
 so they stay attached to the traced objects at every screen shape. To add
@@ -242,21 +240,31 @@ one:
    §4.4).
 5. Draw it in `aquade-preview` too, so it can be checked without a compositor.
 
+What moves on its own -- the bubbles, the fish and the crab -- works another
+way: it needs no state at all. `desk_bubble_box`/`desk_draw_bubbles` and
+`desk_life_box`/`desk_draw_life` in `draw.c` work out what is in the water
+from the time alone, and `bubbles_cb` in `wm.c` draws each into a sprite of
+its own a few times a second, only while the tank is in view and somebody is
+at the machine. A new creature is a new kind in that schedule (a fish can
+reuse the shark's body, `desk_swim`, with a kind of its own). Check it with
+`aquade-preview --life` and `--life=SECONDS`.
+
 ## 9. Icons and theme
 
-- The DEsk icon theme is generated: `python3 themes/make-icons.py` writes
-  `themes/icons/DEsk`. Shapes and light are gradients; texture is SVG
-  filters, and each icon must still read without filters (Qt ignores them).
+- The icon theme is generated: `python3 themes/make-icons.py` writes
+  `themes/icons/AquaDE`. The icons are still DEsk's, drawn as things on a
+  desk. Shapes and light are gradients; texture is SVG filters, and each
+  icon must still read without filters (Qt ignores them).
   `themes/contact-sheet.py` makes a sheet of all of them to look at.
-- The GTK theme is `themes/gtk/DEsk/gtk-3.0/gtk.css`, on top of Adwaita.
-- Both are installed into DEsk's own dconf layer, so they never change
+- The GTK theme is `themes/gtk/AquaDE/gtk-3.0/gtk.css`, on top of Adwaita.
+- Both are installed into AquaDE's own dconf layer, so they never change
   another desktop's look.
 
 ## 10. Before you share a change
 
 ```sh
 meson test -C build
-# the build configurations DEsk is checked in (each in its own directory)
+# the build configurations to check in (each in its own directory)
 meson setup b-min -Dpost=disabled -Dsound=disabled -Dxwayland=disabled
 meson setup b-werror -Dbuildtype=debug -Dwerror=true
 meson setup b-asan -Dbuildtype=debug -Db_sanitize=address,undefined
@@ -266,5 +274,5 @@ meson setup b-tsan -Dbuildtype=debug -Db_sanitize=thread
 Build each (`meson compile -C b-...`), run the sanitizer builds nested
 through what you changed, look at your change in the preview at Ultra and
 2D and in a long language and a CJK one, and check the log for
-`[ERROR]` lines. The development log ([design.md](design.md), in Japanese)
-shows how earlier changes were checked.
+`[ERROR]` lines. DEsk's development log ([design.md](design.md), in
+Japanese) shows how its changes were checked.
