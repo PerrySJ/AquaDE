@@ -23800,11 +23800,42 @@ bool desk_post_view_hit(int screen_w, int screen_h, double px, double py)
 	return rr->post_ids[(size_t)sy * rr->w + sx] != 0;
 }
 
+/* A bottle lying on its side, seen from above, in a face w across and h
+ * along: the bottom end at y = 0 (in the slot, out of sight), the cork at
+ * y = h. Everything is in widths of w, so a longer face is a longer body. */
+#define BOT_BODY 0.46   /* half-widths, of w */
+#define BOT_NECK 0.17
+#define BOT_LIP 0.21
+#define BOT_CORK 0.15
+static void bottle_ends(double w, double h, double *yb, double *ys, double *yk)
+{
+	*yk = h - 0.30 * w;     /* where the cork goes into the neck */
+	*ys = *yk - 0.40 * w;   /* the neck starts */
+	*yb = *ys - 0.42 * w;   /* the shoulder starts */
+}
+
+static void bottle_path(cairo_t *cr, double w, double h)
+{
+	double yb, ys, yk, cx = w * 0.5;
+	bottle_ends(w, h, &yb, &ys, &yk);
+	double bw = BOT_BODY * w, nw = BOT_NECK * w;
+	cairo_new_path(cr);
+	cairo_move_to(cr, cx - bw, 0);
+	cairo_line_to(cr, cx + bw, 0);
+	cairo_line_to(cr, cx + bw, yb);
+	cairo_curve_to(cr, cx + bw, yb + 0.26 * w, cx + nw, ys - 0.16 * w, cx + nw, ys);
+	cairo_line_to(cr, cx + nw, yk + 0.02 * w);
+	cairo_line_to(cr, cx - nw, yk + 0.02 * w);
+	cairo_line_to(cr, cx - nw, ys);
+	cairo_curve_to(cr, cx - nw, ys - 0.16 * w, cx - bw, yb + 0.26 * w, cx - bw, yb);
+	cairo_close_path(cr);
+}
+
 /* What the desk sees of it: the nameplate on the cap, and -- when there is
- * something in the box that has not been read -- the corner of an envelope
+ * something in the box that has not been read -- the neck of a bottle
  * that did not go all the way in. A flag would be the obvious signal and
- * the wrong one: raised, it is a line seen from straight above. A letter
- * standing in the slot is unmistakable from up there. */
+ * the wrong one: raised, it is a line seen from straight above. A bottle
+ * lying out of the slot is unmistakable from up there. */
 void desk_draw_post_idle(cairo_t *cr, int screen_w, int screen_h,
 	double drawer_open, int unread)
 {
@@ -23846,10 +23877,11 @@ void desk_draw_post_idle(cairo_t *cr, int screen_w, int screen_h,
 
 	if (unread > 0) {
 		/* What has come and not been read is sticking out of the slot:
-		 * envelopes, pushed in as far as they would go and left, lying out
-		 * over the desk, drooping a little, each at its own slant -- a
-		 * slot is wider than a letter, and nobody posts one square. Up to
-		 * three, the newest on top and furthest out. */
+		 * bottles, each with a note rolled up in it, pushed in bottom
+		 * first as far as they would go and left lying out over the
+		 * chest's front, each at its own slant -- the slot is wider than
+		 * a bottle, and nobody posts one square. Up to three, the newest
+		 * on top and furthest out. */
 		int n = unread < 3 ? unread : 3;
 		double more = clampf((unread - 1) / 4.0, 0.0, 1.0);
 		double hz = RM_PB_CZ + RM_PB_HZ + 0.10;           /* the door's face */
@@ -23857,8 +23889,14 @@ void desk_draw_post_idle(cairo_t *cr, int screen_w, int screen_h,
 		/* it shows from under the front edge of the hood, and a little of
 		 * it under the hood, in its shadow */
 		double in = hood_z - hz - 0.03;
-		static const double TURN[3] = { -0.07, 0.13, -0.19 };
-		static const double SLIDE[3] = { 0.10, -0.30, 0.34 };
+		static const double TURN[3] = { -0.10, 0.30, -0.36 };
+		static const double SLIDE[3] = { 0.08, -0.70, 0.76 };
+		/* the glass: clear sea-glass, green, brown */
+		static const double GLASS[3][4] = {
+			{ 0.62, 0.84, 0.80, 0.40 },
+			{ 0.16, 0.44, 0.20, 0.62 },
+			{ 0.48, 0.27, 0.08, 0.64 },
+		};
 		/* nothing of them above the front edge of the hood: they are
 		 * under it there */
 		double hu, hv;
@@ -23869,12 +23907,13 @@ void desk_draw_post_idle(cairo_t *cr, int screen_w, int screen_h,
 			cairo_clip(cr);
 		}
 		for (int k = n - 1; k >= 0; k--) {
-			double out = 0.74 + 0.16 * more - k * 0.10;
-			double hw = 0.92 - k * 0.05;
+			double out = 1.50 + 0.16 * more - k * 0.16;
+			double hw = 0.31 - k * 0.02;
 			double slide = SLIDE[k], turn = TURN[k];
-			double y = y0 + (n - 1 - k) * 0.015;
-			double droop = 0.12 + 0.03 * k;
-			/* a sheet turns about where it goes into the slot */
+			double y = y0 + (n - 1 - k) * 0.03;
+			/* glass does not droop; it lies tipped, its neck on the desk */
+			double droop = 0.08 + 0.02 * k;
+			/* it turns about where it goes into the slot */
 			vec3 q[4];
 			for (int c = 0; c < 4; c++) {
 				bool tip = (c & 2) != 0;
@@ -23885,18 +23924,28 @@ void desk_draw_post_idle(cairo_t *cr, int screen_w, int screen_h,
 				q[c] = v3(RM_PB_CX + slide + rx, y - (tip ? droop : 0.0), hz + rz);
 			}
 			cairo_matrix_t mt;
-			const double EW = 240.0, EH = 120.0;
+			const double EW = 100.0, EH = EW * (out - in) / (2.0 * hw);
 			if (!quad_matrix(&rr->cam, q, EW, EH, xf.ox, xf.oy, sw, sh, &mt)) {
 				continue;
 			}
-			/* its shadow, on the door and the desk under it */
+			double yb, ys, yk, cx = EW * 0.5;
+			bottle_ends(EW, EH, &yb, &ys, &yk);
+			const double *gl = GLASS[k];
+
+			/* its shadow, on the chest and the sand under it; glass lets
+			 * some light through, so it is lighter than a sheet's */
 			cairo_save(cr);
 			cairo_transform(cr, &mt);
 			for (int b = 3; b >= 1; b--) {
-				cairo_set_source_rgba(cr, 0.05, 0.03, 0.02, 0.10);
-				desk_rounded_path(cr, -6.0 * b + 10.0, 14.0 + 4.0 * b,
-					EW + 12.0 * b - 20.0, EH - 10.0 + 4.0 * b, 6.0 * b);
-				cairo_fill(cr);
+				cairo_save(cr);
+				cairo_translate(cr, 3.0 * b, 6.0 + 3.0 * b);
+				bottle_path(cr, EW, EH);
+				cairo_set_source_rgba(cr, 0.02, 0.05, 0.05, 0.08);
+				cairo_set_line_width(cr, 5.0 * b);
+				cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+				cairo_fill_preserve(cr);
+				cairo_stroke(cr);
+				cairo_restore(cr);
 			}
 			cairo_restore(cr);
 
@@ -23905,87 +23954,105 @@ void desk_draw_post_idle(cairo_t *cr, int screen_w, int screen_h,
 				continue;
 			}
 			cairo_t *ec = fe.fc;
-			unsigned seed = 17u + (unsigned)k * 11u;
-			/* the envelope: square where it went into the slot, and at
-			 * the end that is out a little lifted at the corners, the way
-			 * paper that has been handled lies */
-			cairo_new_path(ec);
-			cairo_move_to(ec, 0, 0);
-			cairo_line_to(ec, EW, 0);
-			cairo_line_to(ec, EW, EH - 7.0);
-			cairo_curve_to(ec, EW - 2.0, EH - 1.0, EW * 0.70, EH + 1.5, EW * 0.5, EH);
-			cairo_curve_to(ec, EW * 0.30, EH + 1.5, 2.0, EH - 1.0, 0, EH - 7.0);
-			cairo_close_path(ec);
+			bottle_path(ec, EW, EH);
 			cairo_save(ec);
-			cairo_clip_preserve(ec);
-			double tone = (k == 1) ? 0.955 : 1.0;
-			cairo_set_source_rgb(ec, 0.95 * tone, 0.93 * tone, 0.87 * tone);
+			cairo_clip(ec);
+			/* the note inside, rolled and lying along the bottom of the
+			 * bottle, the glass's colour over it */
+			double rw = 0.27 * EW, rend = yb + 0.08 * EW;
+			cairo_pattern_t *rg = cairo_pattern_create_linear(cx - rw, 0, cx + rw, 0);
+			cairo_pattern_add_color_stop_rgb(rg, 0.0, 0.62, 0.56, 0.44);
+			cairo_pattern_add_color_stop_rgb(rg, 0.35, 0.95, 0.91, 0.80);
+			cairo_pattern_add_color_stop_rgb(rg, 1.0, 0.70, 0.64, 0.50);
+			cairo_set_source(ec, rg);
+			desk_rounded_path(ec, cx - rw, -10.0, 2.0 * rw, rend + 10.0, 0.10 * EW);
 			cairo_fill(ec);
-			paper_age(ec, EW, EH, seed, 0.30);
-			if (k == 1) {
-				/* by air: the red and blue down its edges */
-				for (double x = -EH; x < EW + EH; x += 26.0) {
-					for (int e = 0; e < 2; e++) {
-						double ey = e ? EH - 9.0 : 0.0;
-						cairo_set_source_rgba(ec, ((int)(x / 26.0) & 1) ? 0.18 : 0.72,
-							0.16, ((int)(x / 26.0) & 1) ? 0.56 : 0.16, 0.75);
-						cairo_move_to(ec, x, ey);
-						cairo_line_to(ec, x + 13.0, ey);
-						cairo_line_to(ec, x + 22.0, ey + 9.0);
-						cairo_line_to(ec, x + 9.0, ey + 9.0);
-						cairo_close_path(ec);
-						cairo_fill(ec);
-					}
-				}
-			}
-			if (k == 0) {
-				/* the stamp, and the name and address */
-				double sx = EW * 0.80, sy = EH * 0.40, ssz = EH * 0.36;
-				cairo_set_source_rgba(ec, 0.96, 0.95, 0.90, 1.0);
-				cairo_rectangle(ec, sx - 3.0, sy - 3.0, ssz * 0.8 + 6.0, ssz + 6.0);
-				cairo_fill(ec);
-				cairo_set_source_rgba(ec, 0.66, 0.16, 0.12, 0.92);
-				cairo_rectangle(ec, sx, sy, ssz * 0.8, ssz);
-				cairo_fill(ec);
-				cairo_set_source_rgba(ec, 0.95, 0.90, 0.78, 0.9);
-				cairo_arc(ec, sx + ssz * 0.4, sy + ssz * 0.5, ssz * 0.20, 0, 2 * M_PI);
-				cairo_fill(ec);
-				cairo_set_source_rgba(ec, 0.22, 0.20, 0.30, 0.55);
-				cairo_set_line_width(ec, 3.0);
-				for (int l = 0; l < 3; l++) {
-					double ly = EH * (0.52 + l * 0.15);
-					cairo_move_to(ec, EW * 0.24, ly);
-					cairo_line_to(ec, EW * (0.62 - (l == 2) * 0.12), ly);
-				}
-				cairo_stroke(ec);
-			}
-			/* the hood's shadow across the end still in the slot, and the
-			 * slot's own darkness at the very edge */
-			cairo_pattern_t *g = cairo_pattern_create_linear(0, 0, 0, EH);
-			cairo_pattern_add_color_stop_rgba(g, 0.0, 0.06, 0.03, 0.02, 0.85);
-			cairo_pattern_add_color_stop_rgba(g, 0.10, 0.06, 0.03, 0.02, 0.45);
-			cairo_pattern_add_color_stop_rgba(g, 0.32, 0.06, 0.03, 0.02, 0.08);
-			cairo_pattern_add_color_stop_rgba(g, 0.60, 0.06, 0.03, 0.02, 0.0);
-			/* the sag: a little light where it bends, a little dark past it */
-			cairo_pattern_add_color_stop_rgba(g, 0.86, 0.06, 0.03, 0.02, 0.07);
-			cairo_pattern_add_color_stop_rgba(g, 1.0, 0.06, 0.03, 0.02, 0.0);
+			cairo_pattern_destroy(rg);
+			/* the edge of the sheet, wound round */
+			cairo_set_source_rgba(ec, 0.40, 0.34, 0.24, 0.55);
+			cairo_set_line_width(ec, 1.4);
+			cairo_move_to(ec, cx + rw * 0.55, -10.0);
+			cairo_line_to(ec, cx + rw * 0.55, rend - 2.0);
+			cairo_stroke(ec);
+			/* tied round the middle */
+			static const double TIE[3][3] = {
+				{ 0.70, 0.16, 0.12 }, { 0.80, 0.66, 0.30 }, { 0.20, 0.30, 0.55 },
+			};
+			cairo_set_source_rgb(ec, TIE[k][0], TIE[k][1], TIE[k][2]);
+			cairo_rectangle(ec, cx - rw, rend * 0.55, 2.0 * rw, 0.08 * EW);
+			cairo_fill(ec);
+			/* the glass */
+			cairo_set_source_rgba(ec, gl[0], gl[1], gl[2], gl[3]);
+			cairo_paint(ec);
+			/* round: dark at the sides where it is seen through most of
+			 * itself, a bright stripe where the light from above catches */
+			cairo_pattern_t *g = cairo_pattern_create_linear(0, 0, EW, 0);
+			cairo_pattern_add_color_stop_rgba(g, 0.04, gl[0] * 0.3, gl[1] * 0.3, gl[2] * 0.3, 0.60);
+			cairo_pattern_add_color_stop_rgba(g, 0.18, gl[0] * 0.5, gl[1] * 0.5, gl[2] * 0.5, 0.0);
+			cairo_pattern_add_color_stop_rgba(g, 0.78, gl[0] * 0.5, gl[1] * 0.5, gl[2] * 0.5, 0.0);
+			cairo_pattern_add_color_stop_rgba(g, 0.96, gl[0] * 0.3, gl[1] * 0.3, gl[2] * 0.3, 0.65);
+			cairo_set_source(ec, g);
+			cairo_paint(ec);
+			cairo_pattern_destroy(g);
+			cairo_set_line_cap(ec, CAIRO_LINE_CAP_ROUND);
+			cairo_set_source_rgba(ec, 0.95, 1.0, 0.98, 0.70);
+			cairo_set_line_width(ec, 0.07 * EW);
+			cairo_move_to(ec, cx - 0.27 * EW, 0.0);
+			cairo_line_to(ec, cx - 0.27 * EW, yb - 0.04 * EW);
+			cairo_stroke(ec);
+			cairo_set_line_width(ec, 0.04 * EW);
+			cairo_move_to(ec, cx - 0.09 * EW, ys + 0.03 * EW);
+			cairo_line_to(ec, cx - 0.09 * EW, yk - 0.04 * EW);
+			cairo_stroke(ec);
+			/* the hood's shadow across the end still in the slot */
+			g = cairo_pattern_create_linear(0, 0, 0, EH);
+			cairo_pattern_add_color_stop_rgba(g, 0.0, 0.02, 0.04, 0.04, 0.85);
+			cairo_pattern_add_color_stop_rgba(g, 0.10, 0.02, 0.04, 0.04, 0.40);
+			cairo_pattern_add_color_stop_rgba(g, 0.30, 0.02, 0.04, 0.04, 0.0);
 			cairo_set_source(ec, g);
 			cairo_paint(ec);
 			cairo_pattern_destroy(g);
 			if (k > 0) {
-				cairo_set_source_rgba(ec, 0.08, 0.05, 0.03, 0.10 * k);
+				cairo_set_source_rgba(ec, 0.02, 0.04, 0.04, 0.10 * k);
 				cairo_paint(ec);
 			}
 			cairo_restore(ec);
-			/* its edge: a sheet has one */
-			cairo_new_path(ec);
-			cairo_move_to(ec, 0.5, 8.0);
-			cairo_line_to(ec, 0.5, EH - 7.0);
-			cairo_curve_to(ec, 2.0, EH - 1.0, EW * 0.30, EH + 1.0, EW * 0.5, EH - 0.5);
-			cairo_curve_to(ec, EW * 0.70, EH + 1.0, EW - 2.0, EH - 1.0, EW - 0.5, EH - 7.0);
-			cairo_line_to(ec, EW - 0.5, 8.0);
-			cairo_set_source_rgba(ec, 0.30, 0.25, 0.18, 0.45);
-			cairo_set_line_width(ec, 1.6);
+			/* its outline, where the glass is thickest */
+			bottle_path(ec, EW, EH);
+			cairo_set_source_rgba(ec, gl[0] * 0.35, gl[1] * 0.35, gl[2] * 0.35, 0.80);
+			cairo_set_line_width(ec, 2.0);
+			cairo_stroke(ec);
+			/* the lip, a ring of thicker glass round the mouth */
+			cairo_set_source_rgba(ec, gl[0] * 0.75, gl[1] * 0.75, gl[2] * 0.75, 0.92);
+			desk_rounded_path(ec, cx - BOT_LIP * EW, yk - 0.05 * EW,
+				2.0 * BOT_LIP * EW, 0.09 * EW, 0.03 * EW);
+			cairo_fill_preserve(ec);
+			cairo_set_source_rgba(ec, gl[0] * 0.30, gl[1] * 0.30, gl[2] * 0.30, 0.85);
+			cairo_set_line_width(ec, 1.2);
+			cairo_stroke(ec);
+			/* the cork */
+			double kw = BOT_CORK * EW, k0 = yk + 0.04 * EW;
+			cairo_pattern_t *cg = cairo_pattern_create_linear(cx - kw, 0, cx + kw, 0);
+			cairo_pattern_add_color_stop_rgb(cg, 0.0, 0.42, 0.29, 0.16);
+			cairo_pattern_add_color_stop_rgb(cg, 0.35, 0.72, 0.55, 0.36);
+			cairo_pattern_add_color_stop_rgb(cg, 1.0, 0.46, 0.32, 0.18);
+			cairo_set_source(ec, cg);
+			desk_rounded_path(ec, cx - kw, k0, 2.0 * kw, EH - k0 - 1.0, 0.05 * EW);
+			cairo_fill_preserve(ec);
+			cairo_pattern_destroy(cg);
+			cairo_save(ec);
+			cairo_clip_preserve(ec);
+			unsigned seed = 17u + (unsigned)k * 11u;
+			cairo_set_source_rgba(ec, 0.25, 0.16, 0.08, 0.55);
+			for (int d = 0; d < 14; d++) {
+				double px = cx - kw + 2.0 * kw * hash21(seed + d, 1.3);
+				double py = k0 + (EH - k0) * hash21(seed + d, 7.1);
+				cairo_arc(ec, px, py, 0.6 + 0.9 * hash21(seed + d, 3.7), 0, 2 * M_PI);
+				cairo_fill(ec);
+			}
+			cairo_restore(ec);
+			cairo_set_source_rgba(ec, 0.22, 0.14, 0.07, 0.75);
+			cairo_set_line_width(ec, 1.2);
 			cairo_stroke(ec);
 			face_end(&fe, cr, 1.0);
 		}
