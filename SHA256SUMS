@@ -1,11 +1,9 @@
 51fbec3daeabe0d6c4d5c2880e15a72c5f8a3c643e4c6d472552ba6e8fa7448a  ./applications/meson.build
 623438575034a47c80797e911940bd20235ae69bedbd5ee507a25db4eda5aa24  ./Dockerfile
 8f56e4ad837b4931a888cfbef8c6fb7641ca8f37c450501ee6657be2d91a3777  ./.dockerignore
-10d4d76ae00f43dbf79f90dd31a65bc291a1940c1ab5b333c1b05ec61fbc0e40  ./docs/ARCHITECTURE.ja.md
 bfe89d8c5e5d3413d6fcb59bf5c2a773979e51354122d11b7900da92854a0ee6  ./docs/ARCHITECTURE.md
 3e9b44ca6ff021b129a1d2263b2cc69abab5ae69b30cc5eaaea50f924a960dda  ./docs/CONFIGURATION.md
 122a4de7a1f5ea8f8dfb4c1d408e895968fb41c9e60b2a1500788fed59fab685  ./docs/design.md
-076ae54aa4de4f2f81e801825a2b28239a5113aed2481e88b53b7c37f6a2c92b  ./docs/MODDING.ja.md
 2841c1ee21204c1a4889a56955ee2669dac275e5bfbea88c1ae7428fb2e6d60f  ./docs/MODDING.md
 04f5779b9b3643c329c2ec5ad29385a2ef45e5e3b965bc633cf4bb000b7d7d6b  ./docs/screenshots/aquade-console.jpg
 742bfab8c41dc2194634ed39c2584c410831408801b89455664494b86e5b31bb  ./docs/screenshots/aquade-drawer.jpg
