@@ -457,17 +457,17 @@ static double room_sun(vec3 w)
 
 /* The lamp: direction, colour, radiance, and the angular radius that makes
  * it an area light instead of a point. */
-static const vec3 LIT_KEY_DIR = { 0.05, 0.90, 0.43 };
-static const vec3 LIT_KEY_COL = { 1.00, 0.89, 0.69 };
+static const vec3 LIT_KEY_DIR = { 0.00, 0.95, 0.30 };
+static const vec3 LIT_KEY_COL = { 0.88, 0.96, 1.00 };
 #define LIT_KEY_IRRADIANCE 5.6   /* E on a surface square to the lamp */
 #define LIT_KEY_ANGLE 0.16       /* angular radius of the softbox, radians */
 
 /* Daylight leaking across the desk from the front left, and a cold rim off
  * the back wall that separates silhouettes from the felt. */
 static const vec3 LIT_FILL_DIR = { -0.66, 0.30, 0.69 };
-static const vec3 LIT_FILL_COL = { 0.36, 0.45, 0.60 };
+static const vec3 LIT_FILL_COL = { 0.12, 0.42, 0.50 };
 static const vec3 LIT_RIM_DIR = { -0.10, 0.16, -0.98 };
-static const vec3 LIT_RIM_COL = { 0.96, 0.90, 0.80 };
+static const vec3 LIT_RIM_COL = { 0.55, 0.85, 0.95 };
 
 /* The two composite scenes. Object kinds 0..4 are the drawer objects on
  * their own; these two are whole rooms and get their own lamp rig. */
@@ -478,12 +478,12 @@ static const vec3 LIT_RIM_COL = { 0.96, 0.90, 0.80 };
 static vec3 env_ambient(vec3 d)
 {
 	/* felt floor -> walnut side walls -> the lit room above */
-	vec3 c = vmix(v3(0.026, 0.044, 0.024), v3(0.150, 0.098, 0.052),
+	vec3 c = vmix(v3(0.010, 0.045, 0.055), v3(0.025, 0.120, 0.140),
 		smoothstepf(-0.80, -0.04, d.y));
 	/* The ceiling is a ceiling with one lamp under it, not a white dome.
 	 * A bright even sky was most of what made the room read as a studio:
 	 * it filled every shadow and left nothing for the lamp to do. */
-	c = vmix(c, v3(0.128, 0.116, 0.106), smoothstepf(0.02, 0.88, d.y));
+	c = vmix(c, v3(0.050, 0.170, 0.190), smoothstepf(0.02, 0.88, d.y));
 	double k = fmax(vdot(d, vnorm(LIT_KEY_DIR)), 0.0);
 	c = vadd(c, vmul(LIT_KEY_COL, 0.30 * k * k * k));
 	double f = fmax(vdot(d, vnorm(LIT_FILL_DIR)), 0.0);
@@ -614,17 +614,17 @@ static const vec3 LAMP_POS = { 1.30, 7.60, 5.40 };
  * in points -- has the lamp moved out and up with it, about the middle of
  * the near edge, and its brightness and size with it: the same pool on
  * more desk, and the machines in the corners lit as they were designed. */
-static const vec3 ROOM_LAMP_POS0 = { 8.0, 12.5, 3.5 };
-static const vec3 ROOM_LAMP_AIM = { -0.16, -0.97, -0.18 };
+static const vec3 ROOM_LAMP_POS0 = { 0.0, 16.0, 1.5 };
+static const vec3 ROOM_LAMP_AIM = { 0.0, -0.99, -0.12 };
 #define ROOM_LAMP_REF0 16.4
-#define ROOM_LAMP_RADIUS0 2.30
+#define ROOM_LAMP_RADIUS0 3.20
 #define ROOM_LAMP_K (RM_HX / RM_HX_MIN)
 #define ROOM_LAMP_POS vadd(v3(0.0, 0.0, RM_ZN), \
 	vmul(vsub(ROOM_LAMP_POS0, v3(0.0, 0.0, RM_ZN)), ROOM_LAMP_K))
 #define ROOM_LAMP_REF (ROOM_LAMP_REF0 * ROOM_LAMP_K)
 #define ROOM_LAMP_RADIUS (ROOM_LAMP_RADIUS0 * ROOM_LAMP_K)
-#define ROOM_LAMP_CONE_IN 0.22    /* cos where the shade has cut it off */
-#define ROOM_LAMP_CONE_OUT 0.80   /* cos where it is still the full beam */
+#define ROOM_LAMP_CONE_IN 0.10    /* cos where the shade has cut it off */
+#define ROOM_LAMP_CONE_OUT 0.70   /* cos where it is still the full beam */
 
 struct key_light {
 	vec3 dir;        /* from the surface towards the lamp */
@@ -673,7 +673,7 @@ static struct key_light key_at(vec3 p, int kind)
  * rays and this is not it -- these are here to make what is under them
  * legible, and a second shadow ray per sample would put forty per cent on
  * every bake for a thing nobody would be able to point at. */
-static const vec3 SHELF_LAMP_COL = { 1.00, 0.86, 0.62 };
+static const vec3 SHELF_LAMP_COL = { 0.75, 0.92, 1.00 };
 static const vec3 SHELF_LAMP_AIM = { 0.0, -0.94, 0.34 };
 #define SHELF_LAMP_Y 7.85
 #define SHELF_LAMP_IRR 26.0
@@ -2895,39 +2895,28 @@ static void walnut_at(vec3 q, double u, double v, struct mtl *m, double plank,
 	m->rough = clampf(m->rough + grime * 0.16, 0.05, 1.0);
 }
 
-/* Somebody has been putting a cup down on this desk for years and not
- * always on a mat. What is left is a ring, because the edge of the puddle
- * is what dried last and darkest -- and it is never a whole ring, because
- * it got wiped at while it was still wet. */
-static void desk_stains(vec3 w, struct mtl *m)
+/* The floor of the tank: sand the water has combed into ripples. The
+ * ripples run across the tank, a hand's width apart, and they wander,
+ * because the current that laid them was never quite straight. Crests
+ * catch the light and are paler; the troughs keep what sinks, so they are
+ * darker and flecked with grit. Sand has no finish, so no coat. */
+static void sand_at(vec3 w, struct mtl *m)
 {
-	static const struct { double x, z, r, a; } RING[3] = {
-		{ -2.10,  3.40, 1.30, 1.00 },
-		{  5.70,  0.90, 1.14, 0.72 },
-		{ -6.90, -1.10, 1.46, 0.46 },
-	};
-	for (int i = 0; i < 3; i++) {
-		double dx = w.x - RING[i].x, dz = w.z - RING[i].z;
-		double d = sqrt(dx * dx + dz * dz);
-		double edge = smoothstepf(0.17, 0.02, fabs(d - RING[i].r));
-		double inside = smoothstepf(RING[i].r, RING[i].r - 0.55, d);
-		double a = atan2(dz, dx);
-		double keep = smoothstepf(0.28, 0.64,
-			room_fbm2(cos(a) * 1.7 + i * 7.3, sin(a) * 1.7 + i * 2.9));
-		double ring = edge * keep * RING[i].a;
-		m->albedo = vmix(m->albedo, vmul(m->albedo, 0.58), ring * 0.60);
-		m->albedo = vmix(m->albedo, vmul(m->albedo, 1.12),
-			inside * keep * RING[i].a * 0.14);
-		m->rough = clampf(m->rough + ring * 0.26, 0.05, 1.0);
-		m->coat = clampf(m->coat * (1.0 - ring * 0.60), 0.0, 1.0);
-	}
-	/* and one spill nobody got to in time */
-	double sx = (w.x - 8.60) / 2.30, sz = (w.z + 4.10) / 1.70;
-	double sd = sqrt(sx * sx + sz * sz) * (0.75 + room_fbm2(w.x * 0.8 + 3.0, w.z * 0.8) * 0.6);
-	double spill = smoothstepf(1.05, 0.45, sd);
-	m->albedo = vmix(m->albedo, vmul(m->albedo, 0.68), spill * 0.40);
-	m->coat = clampf(m->coat * (1.0 - spill * 0.50), 0.0, 1.0);
-	m->rough = clampf(m->rough + spill * 0.14, 0.05, 1.0);
+	double warp = room_fbm(w.x * 0.21 + 4.0, w.z * 0.21) * 3.2;
+	double ph = (w.z * 0.92 + w.x * 0.18 + warp) / 1.15;
+	double crest = pow(0.5 + 0.5 * sin(ph * 2.0 * M_PI), 1.6);
+	double grain = room_noise(w.x * 61.0, w.z * 61.0);
+	double grit = pow(room_noise(w.x * 23.0 + 7.0, w.z * 23.0), 9.0);
+	double drift = room_fbm2(w.x * 0.27 + 13.0, w.z * 0.27 + 5.0);
+
+	double tone = clampf(0.25 + crest * 0.60 + (drift - 0.5) * 0.40, 0.0, 1.0);
+	m->albedo = vmix(v3(0.46, 0.34, 0.18), v3(0.74, 0.60, 0.36), tone);
+	m->albedo = vmul(m->albedo, 0.88 + grain * 0.24);
+	m->albedo = vmix(m->albedo, v3(0.20, 0.17, 0.13), grit * (1.0 - crest) * 0.80);
+	m->rough = 0.88 + grain * 0.08;
+	m->coat = 0.0;
+	m->bump_freq = 70.0;
+	m->bump_amp = 0.050;
 }
 
 static void icon_material(int kind, int id, vec3 p, struct mtl *m)
@@ -3171,9 +3160,8 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		walnut_at(w, w.x, w.y * 2.6, m, 0.0, 1.10);
 		break;
 	case MID_DESK_TOP:
-		/* the top is made of boards running front to back */
-		walnut_at(w, w.x, w.z, m, 5.4, 1.00);
-		desk_stains(w, m);
+		/* the floor of the tank */
+		sand_at(w, m);
 		break;
 	case MID_DESK_BODY:
 		/* the ends and the back rail: knees and shoes, not hands */
@@ -3801,6 +3789,12 @@ static double aces_ch(double x)
 	const double a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
 	return clampf((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
+
+/* Everything in the room is seen through water: it takes the red out first
+ * and leaves a blue-green cast over whatever is lit. Applied once, to the
+ * resolved linear colour, so both tracers get it the same. */
+static const vec3 WATER_TINT = { 0.80, 0.97, 1.04 };
+static const vec3 WATER_HAZE = { 0.000, 0.012, 0.018 };
 
 static vec3 tonemap(vec3 c)
 {
@@ -5489,6 +5483,8 @@ static cairo_surface_t *room_resolve(const float *hi, const unsigned char *idhi,
 			size_t i = (size_t)y * w + x;
 			vec3 c = v3(lin[i * 4 + 0], lin[i * 4 + 1], lin[i * 4 + 2]);
 			c = vadd(c, vmul(v3(glow[i * 3 + 0], glow[i * 3 + 1], glow[i * 3 + 2]), 0.48));
+			c = vadd(v3(c.x * WATER_TINT.x, c.y * WATER_TINT.y, c.z * WATER_TINT.z),
+				WATER_HAZE);
 			c = tonemap(c);
 			double dth = (((x * 7 + y * 13) & 15) / 15.0 - 0.5) / 255.0;
 			double al = clampf(lin[i * 4 + 3], 0.0, 1.0);

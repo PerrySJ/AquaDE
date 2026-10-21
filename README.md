@@ -13,8 +13,12 @@ What has changed from DEsk so far:
   `~/.local/state/aquade`, `~/.cache/aquade`, and the lock
   `$XDG_RUNTIME_DIR/aquade.lock`, so it never shares files with a DEsk.
 - Built against wlroots 0.18.3 kept in `deps/` (not committed).
+- The room is under water: the desk top is rippled sand (`sand_at`), the
+  lamp is a cool light straight overhead, the ambient light is blue-green,
+  and the resolved room is tinted as if seen through water (`WATER_TINT`).
+  The coffee rings are gone.
 
-The aquarium itself is still to come. Below is DEsk's own README.
+The rest of the aquarium (tank, plants, fish) is still to come. Below is DEsk's own README.
 
 ```sh
 W=$PWD/deps/wlroots

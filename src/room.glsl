@@ -218,9 +218,9 @@ float room_sun(vec3 w)
 
 vec3 env_ambient(vec3 d)
 {
-	vec3 c = mix(vec3(0.026, 0.044, 0.024), vec3(0.150, 0.098, 0.052),
+	vec3 c = mix(vec3(0.010, 0.045, 0.055), vec3(0.025, 0.120, 0.140),
 		smoothstepf(-0.80, -0.04, d.y));
-	c = mix(c, vec3(0.128, 0.116, 0.106), smoothstepf(0.02, 0.88, d.y));
+	c = mix(c, vec3(0.050, 0.170, 0.190), smoothstepf(0.02, 0.88, d.y));
 	float k = max(dot(d, vnorm(LIT_KEY_DIR)), 0.0);
 	c += LIT_KEY_COL * (0.30 * k * k * k);
 	float f = max(dot(d, vnorm(LIT_FILL_DIR)), 0.0);
@@ -1443,32 +1443,23 @@ void walnut_at(vec3 q, float u, float v, inout mtl m, float plank, float use)
 	m.rough = clampf(m.rough + grime * 0.16, 0.05, 1.0);
 }
 
-void desk_stains(vec3 w, inout mtl m)
+void sand_at(vec3 w, inout mtl m)
 {
-	const vec4 RING[3] = vec4[3](
-		vec4(-2.10, 3.40, 1.30, 1.00),
-		vec4(5.70, 0.90, 1.14, 0.72),
-		vec4(-6.90, -1.10, 1.46, 0.46));
-	for (int i = 0; i < 3; i++) {
-		float dx = w.x - RING[i].x, dz = w.z - RING[i].y;
-		float d = sqrt(dx * dx + dz * dz);
-		float edge = smoothstepf(0.17, 0.02, abs(d - RING[i].z));
-		float inside = smoothstepf(RING[i].z, RING[i].z - 0.55, d);
-		float a = atan2f(dz, dx);
-		float keep = smoothstepf(0.28, 0.64,
-			room_fbm2(cos(a) * 1.7 + float(i) * 7.3, sin(a) * 1.7 + float(i) * 2.9));
-		float ring = edge * keep * RING[i].w;
-		m.albedo = mix(m.albedo, m.albedo * 0.58, ring * 0.60);
-		m.albedo = mix(m.albedo, m.albedo * 1.12, inside * keep * RING[i].w * 0.14);
-		m.rough = clampf(m.rough + ring * 0.26, 0.05, 1.0);
-		m.coat = clampf(m.coat * (1.0 - ring * 0.60), 0.0, 1.0);
-	}
-	float sx = (w.x - 8.60) / 2.30, sz = (w.z + 4.10) / 1.70;
-	float sd = sqrt(sx * sx + sz * sz) * (0.75 + room_fbm2(w.x * 0.8 + 3.0, w.z * 0.8) * 0.6);
-	float spill = smoothstepf(1.05, 0.45, sd);
-	m.albedo = mix(m.albedo, m.albedo * 0.68, spill * 0.40);
-	m.coat = clampf(m.coat * (1.0 - spill * 0.50), 0.0, 1.0);
-	m.rough = clampf(m.rough + spill * 0.14, 0.05, 1.0);
+	float warp = room_fbm(w.x * 0.21 + 4.0, w.z * 0.21) * 3.2;
+	float ph = (w.z * 0.92 + w.x * 0.18 + warp) / 1.15;
+	float crest = spow(0.5 + 0.5 * ssin(ph * 2.0 * M_PI), 1.6);
+	float grain = room_noise(w.x * 61.0, w.z * 61.0);
+	float grit = spow(room_noise(w.x * 23.0 + 7.0, w.z * 23.0), 9.0);
+	float drift = room_fbm2(w.x * 0.27 + 13.0, w.z * 0.27 + 5.0);
+
+	float tone = clampf(0.25 + crest * 0.60 + (drift - 0.5) * 0.40, 0.0, 1.0);
+	m.albedo = mix(vec3(0.46, 0.34, 0.18), vec3(0.74, 0.60, 0.36), tone);
+	m.albedo *= 0.88 + grain * 0.24;
+	m.albedo = mix(m.albedo, vec3(0.20, 0.17, 0.13), grit * (1.0 - crest) * 0.80);
+	m.rough = 0.88 + grain * 0.08;
+	m.coat = 0.0;
+	m.bump_freq = 70.0;
+	m.bump_amp = 0.050;
 }
 
 mtl icon_material(int id, vec3 pw)
@@ -1694,7 +1685,7 @@ mtl icon_material(int id, vec3 pw)
 		wood = vec4(w.x, w.y * 2.6, 0.0, 1.10);
 		break;
 	case MID_DESK_TOP:
-		wood = vec4(w.x, w.z, 5.4, 1.00);
+		sand_at(w, m);
 		break;
 	case MID_DESK_BODY:
 		wood = vec4(w.z, w.y, 0.0, 0.50);
@@ -1999,8 +1990,6 @@ mtl icon_material(int id, vec3 pw)
 			m.coat = 0.0;
 			m.albedo *= 0.78;
 			m.rough = clampf(m.rough + 0.22, 0.2, 1.0);
-		} else if (id == MID_DESK_TOP) {
-			desk_stains(w, m);
 		} else if (id == MID_DESK_BODY) {
 			m.albedo *= 0.72;
 			m.coat *= 0.55;
