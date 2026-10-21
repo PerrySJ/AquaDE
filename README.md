@@ -62,9 +62,13 @@ fyzugx for making DEsk and releasing it under the MIT licence.
 - **Light.** The tank (sand with caustics, light shafts through deep water,
   stones, rosette plants, ribbon grass) is ray-traced on the GPU (GLES 3),
   with a CPU fallback, and cached for each screen size.
+- **The Control Panel is a submarine's control station** (`Super+C`):
+  riveted hull-steel panels with rust running down from the rivets, ribbed
+  rubber bumpers, brass-ringed gauges, and a sonar screen whose sweep goes
+  round over the CPU trace. From it you set volume, Wi-Fi, Bluetooth,
+  brightness and the power buttons, and the system tray hangs under it.
 - **Also on the shelf:** a calendar with sticky notes, a memo pad and a
-  clock. The Control Panel (volume, network, Bluetooth, brightness, the
-  system tray) still looks the way it does in DEsk for now.
+  clock.
 - **The rest of a full desktop:** more than one screen, X11 apps through
   Xwayland, an input method (IBus), screen-off and locking when idle, and
   seven languages (English, Japanese, Chinese, Korean, Spanish, French,
@@ -76,11 +80,12 @@ fyzugx for making DEsk and releasing it under the MIT licence.
 | **The treasure chest, open** | **The lock screen** |
 | ![The treasure chest open, with notifications inside](docs/screenshots/aquade-post.jpg) | ![The watertight door, with its porthole, name plate and password slot](docs/screenshots/aquade-lock.jpg) |
 
+![The Control Panel: a riveted submarine console with a sonar screen, gauges, switches, the volume knob and the power buttons](docs/screenshots/aquade-console.jpg)
+
 ![Who lives in the tank: a clownfish, a blue tang, neon tetras, a grouper, a shore crab and Ferris](docs/screenshots/aquade-life.jpg)
 
 ## Still to come
 
-- An aquarium version of the Control Panel.
 - Updating the documentation in `docs/`, which still describes DEsk's desk
   in places.
 

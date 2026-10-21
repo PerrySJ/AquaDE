@@ -3220,6 +3220,91 @@ static void tank_back_at(vec3 w, struct mtl *m)
 		vmul(v3(0.090, 0.200, 0.210), ray));
 }
 
+/* The Control Panel as a submarine's control station: its faces and case
+ * in the same painted hull steel as the door at the lock, sea green gone
+ * to rust in patches, the faces riveted round their edges with rust run
+ * down from each rivet; and the cheeks are ribbed rubber bumpers. */
+#define SUB_RIVET_R 0.062
+#define SUB_RIVET_P 0.46
+
+static void sub_steel_at(vec3 w, int id, struct mtl *m)
+{
+	vec3 p = vsub(w, v3(0.0, 0.0, cc_dz(g_cc_out, g_rm_aspect)));
+	struct cc_face panel, tower;
+	cc_faces(&panel, &tower);
+	const struct cc_face *f = p.y > RM_CC_PY1 ? &tower : &panel;
+	vec3 q = cc_to_face(f, p);
+	double u = q.x, s = q.z;
+	double t = room_fbm(w.x * 3.0, (w.y + w.z) * 3.0);
+	vec3 c = vmix(v3(0.050, 0.078, 0.078), v3(0.080, 0.115, 0.110), t);
+	c = vmul(c, 0.90 + 0.20 * room_noise(w.x * 40.0, (w.y + w.z) * 40.0));
+	double blot = room_noise(w.x * 3.2 + 7.0, (w.y + w.z) * 3.2) * 0.7
+		+ room_noise(w.x * 16.0, (w.y + w.z) * 16.0 + 3.0) * 0.3;
+	double rust = smoothstepf(0.72, 0.88, blot) * 0.8;
+	double shade = 1.0, gloss = 0.0;
+	if (id == MID_CC_PANEL) {
+		const double R = SUB_RIVET_R, P = SUB_RIVET_P;
+		double inner = (RM_CC_X1 - RM_CC_X0) * 0.5 - RM_CC_CHEEK;
+		double eu = inner - 0.20, es = f->half - 0.17;
+		double bu = 1e9, bs = 1e9;
+		for (int sd = -1; sd <= 1; sd += 2) {
+			/* down each side */
+			double du = u - sd * eu, ds = s - P * floor(s / P + 0.5);
+			if (fabs(s) < es + 0.01 && du * du + ds * ds < bu * bu + bs * bs) {
+				bu = du;
+				bs = ds;
+			}
+			/* and along the top and the bottom */
+			ds = s - sd * es;
+			du = u - P * floor(u / P + 0.5);
+			if (fabs(u) < eu + 0.01 && du * du + ds * ds < bu * bu + bs * bs) {
+				bu = du;
+				bs = ds;
+			}
+		}
+		double d = hypot(bu, bs);
+		if (d < R) {
+			/* a dome: lit on the side that faces up the panel */
+			shade = 1.12 + 0.55 * bs / R;
+			gloss = 1.0;
+		} else if (d < R * 1.25) {
+			shade = 0.66;
+		}
+		/* what the rivet has wept, down the face under it */
+		double trail = (1.0 - smoothstepf(0.0, R * 0.8, fabs(bu)))
+			* smoothstepf(-0.30, -R * 1.2, bs) * (1.0 - smoothstepf(-R * 1.2, -R, bs))
+			* (0.5 + 0.5 * room_noise(u * 30.0, s * 4.0));
+		rust = fmax(rust, trail * 0.45);
+	}
+	vec3 r = vmul(v3(0.15, 0.075, 0.040), 0.75 + 0.50 * room_noise(w.x * 120.0, (w.y + w.z) * 120.0));
+	c = vmix(c, r, clampf(rust, 0.0, 1.0));
+	m->albedo = vmul(c, shade);
+	m->rough = 0.60 + 0.30 * rust - 0.18 * gloss;
+	m->coat = 0.08;
+	m->coat_rough = 0.40;
+	m->bump_freq = 60.0;
+	m->bump_amp = 0.040;
+	m->dust = 0.5;
+}
+
+static void sub_rubber_at(vec3 w, struct mtl *m)
+{
+	double t = room_fbm(w.x * 20.0, (w.y + w.z) * 20.0);
+	double rib = 0.5 + 0.5 * cos(w.y * 2.0 * M_PI / 0.16);
+	vec3 c = vmix(v3(0.020, 0.022, 0.022), v3(0.045, 0.048, 0.046), t);
+	c = vmul(c, 0.45 + 0.75 * rib);
+	/* a film of algae low down, where the water is stillest */
+	double alg = room_noise(w.x * 5.0, (w.y + w.z) * 5.0) * (1.0 - smoothstepf(0.6, 2.0, w.y));
+	c = vmix(c, v3(0.030, 0.060, 0.025), smoothstepf(0.35, 0.70, alg) * 0.7);
+	m->albedo = c;
+	m->rough = 0.66 - 0.12 * rib;
+	m->coat = 0.05;
+	m->coat_rough = 0.30;
+	m->bump_freq = 140.0;
+	m->bump_amp = 0.050;
+	m->dust = 0.8;
+}
+
 static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 {
 	m->albedo = v3(0.5, 0.5, 0.5);
@@ -3637,26 +3722,9 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		break;
 	}
 	case MID_CC_STEEL:
-	case MID_CC_PANEL: {
-		/* Crinkle-finish painted steel, the black that lab gear and
-		 * aircraft panels were always finished in: a hard shell over a
-		 * surface that is not quite flat. */
-		double t = room_fbm(w.x * 30.0, (w.y + w.z) * 30.0);
-		double crin = pow(room_noise(w.x * 90.0, (w.y - w.z) * 90.0), 1.6);
-		m->albedo = vmix(v3(0.026, 0.027, 0.030), v3(0.062, 0.063, 0.069), t);
-		m->albedo = vmul(m->albedo, 0.88 + crin * 0.26);
-		/* Crinkle is a texture you put on a panel so it will NOT shine:
-		 * a gloss coat over it turned the whole face into a grey mirror of
-		 * the room, which is how black paint came out looking like bare
-		 * aluminium. */
-		m->rough = (id == MID_CC_PANEL) ? 0.78 : 0.68;
-		m->coat = 0.12;
-		m->coat_rough = 0.40;
-		m->bump_freq = 170.0;
-		m->bump_amp = 0.090;
-		m->dust = 0.65;
+	case MID_CC_PANEL:
+		sub_steel_at(w, id, m);
 		break;
-	}
 	case MID_CC_BRASS: {
 		/* Instrument brass: turned, lacquered once, handled since. The set
 		 * stands at the back of the desk where a sleeve never goes, so its
@@ -3703,10 +3771,9 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		m->dust = 0.30;
 		break;
 	case MID_CC_CHEEK:
-		/* you take hold of the set by its cheeks to move it */
-		walnut_at(w, w.z, w.y, m, 0.0, 0.75);
-		m->albedo = vmul(m->albedo, 0.92);
-		m->coat *= 0.84;
+		/* you take hold of the set by its cheeks to move it: rubber, so
+		 * it does not knock the hull */
+		sub_rubber_at(w, m);
 		break;
 	case MID_POST_RED:
 		chest_at(w, m);
@@ -19976,25 +20043,38 @@ static void crt_cache(double w, double h)
 
 	/* the graticule, etched on the inside of the glass. Cool white rather
 	 * than phosphor green: it is scratched into the glass in front of the
-	 * picture, not part of it. */
+	 * picture, not part of it. Under water the tube is the sonar's: rings
+	 * for the range and lines for the bearing, out from the middle. */
 	c = cairo_create(g_crt.grat);
 	cairo_set_line_width(c, fmax(0.7, h * 0.0035));
 	cairo_set_source_rgba(c, 0.52, 0.74, 0.58, CRT_GRAT_A);
-	for (int i = 1; i < 8; i++) {
-		for (int axis = 0; axis < 2; axis++) {
-			for (int k = 0; k <= 10; k++) {
-				double t = (double)k / 10.0;
-				double x = axis ? t * w : w * i / 8.0;
-				double y = axis ? h * i / 8.0 : t * h;
-				crt_warp(w, h, &x, &y);
-				if (k) {
-					cairo_line_to(c, x, y);
-				} else {
-					cairo_move_to(c, x, y);
-				}
+	for (int i = 1; i <= 4; i++) {
+		double r = h * 0.13 * i;
+		for (int k = 0; k <= 72; k++) {
+			double a = 2.0 * M_PI * k / 72.0;
+			double x = cx + cos(a) * r, y = cy + sin(a) * r;
+			crt_warp(w, h, &x, &y);
+			if (k) {
+				cairo_line_to(c, x, y);
+			} else {
+				cairo_move_to(c, x, y);
 			}
-			cairo_stroke(c);
 		}
+		cairo_stroke(c);
+	}
+	for (int i = 0; i < 12; i++) {
+		double a = 2.0 * M_PI * i / 12.0, r0 = (i % 3) ? h * 0.13 : h * 0.02;
+		for (int k = 0; k <= 8; k++) {
+			double r = r0 + (h * 0.56 - r0) * k / 8.0;
+			double x = cx + cos(a) * r, y = cy + sin(a) * r;
+			crt_warp(w, h, &x, &y);
+			if (k) {
+				cairo_line_to(c, x, y);
+			} else {
+				cairo_move_to(c, x, y);
+			}
+		}
+		cairo_stroke(c);
 	}
 	cairo_destroy(c);
 
@@ -20068,6 +20148,58 @@ static void cc_face_crt(cairo_t *cr, double w, double h,
 	cairo_paint_with_alpha(cr, lit);
 	cairo_set_source_surface(cr, g_crt.grat, 0, 0);
 	cairo_paint_with_alpha(cr, (0.13 + 0.09 * lit) / CRT_GRAT_A);
+
+	/* ---- the sonar's sweep ----
+	 *
+	 * Round once in four seconds, the phosphor it has just passed over
+	 * still glowing behind it, and what is out in the water coming up as
+	 * the beam goes over it and fading till it comes round again. */
+	{
+		double cx = w * 0.5, cy = h * 0.5, R = h * 0.56;
+		double sweep = fmod(clock * 2.0 * M_PI / 4.0, 2.0 * M_PI);
+		const int N = 14;
+		const double tail = 1.1;
+		for (int i = N - 1; i >= 0; i--) {
+			double a1 = sweep - tail * i / N, a0 = sweep - tail * (i + 1) / N;
+			cairo_move_to(cr, cx, cy);
+			cairo_arc(cr, cx, cy, R, a0, a1);
+			cairo_close_path(cr);
+			double f = 1.0 - (double)i / N;
+			cairo_set_source_rgba(cr, 0.26, 0.92, 0.40, 0.34 * f * f * lit);
+			cairo_fill(cr);
+		}
+		cairo_set_line_width(cr, h * 0.010);
+		cairo_set_source_rgba(cr, 0.70, 1.0, 0.76, 0.55 * lit);
+		cairo_move_to(cr, cx, cy);
+		cairo_line_to(cr, cx + cos(sweep) * R, cy + sin(sweep) * R);
+		cairo_stroke(cr);
+		/* echoes: fish, mostly, and the far wall of the tank */
+		static const double ECHO[5][3] = {
+			{ 0.6, 0.30, 1.0 }, { 2.3, 0.42, 0.8 }, { 3.4, 0.18, 0.7 },
+			{ 4.6, 0.37, 1.0 }, { 5.5, 0.48, 0.6 },
+		};
+		for (int e = 0; e < 5; e++) {
+			/* they move, a little, as fish do */
+			double ea = ECHO[e][0] + 0.25 * sin(clock * 0.05 + e * 1.7);
+			double er = h * ECHO[e][1] * (1.0 + 0.10 * sin(clock * 0.07 + e));
+			double since = fmod(sweep - ea + 4.0 * M_PI, 2.0 * M_PI);
+			double glow = exp(-since * 0.9) * ECHO[e][2];
+			if (glow < 0.03) {
+				continue;
+			}
+			double x = cx + cos(ea) * er, y = cy + sin(ea) * er;
+			crt_warp(w, h, &x, &y);
+			double br = h * 0.042;
+			cairo_pattern_t *bp = cairo_pattern_create_radial(x, y, 0, x, y, br);
+			cairo_pattern_add_color_stop_rgba(bp, 0.0, 0.86, 1.0, 0.88, 0.95 * glow * lit);
+			cairo_pattern_add_color_stop_rgba(bp, 0.4, 0.36, 1.0, 0.46, 0.50 * glow * lit);
+			cairo_pattern_add_color_stop_rgba(bp, 1.0, 0.20, 0.86, 0.28, 0.0);
+			cairo_set_source(cr, bp);
+			cairo_arc(cr, x, y, br, 0, 2 * M_PI);
+			cairo_fill(cr);
+			cairo_pattern_destroy(bp);
+		}
+	}
 
 	/* ---- the trace ----
 	 *

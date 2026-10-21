@@ -1695,6 +1695,92 @@ void tank_back_at(vec3 w, inout mtl m)
 		+ vec3(0.090, 0.200, 0.210) * ray;
 }
 
+/* The Control Panel as a submarine's control station: its faces and case
+ * in the same painted hull steel as the door at the lock, sea green gone
+ * to rust in patches, the faces riveted round their edges with rust run
+ * down from each rivet; and the cheeks are ribbed rubber bumpers. */
+#define SUB_RIVET_R 0.062
+#define SUB_RIVET_P 0.46
+
+void sub_steel_at(vec3 w, int id, inout mtl m)
+{
+	vec3 p = w - vec3(0.0, 0.0, cc_dz(u_cc_out, u_aspect));
+	cc_face f = p.y > RM_CC_PY1 ? cc_face_build(RM_CC_TY0, RM_CC_TZ0, RM_CC_TY1, RM_CC_TZ1)
+		: cc_face_build(RM_CC_PY0, RM_CC_PZ0, RM_CC_PY1, RM_CC_PZ1);
+	vec3 q = cc_to_face(f, p);
+	float u = q.x, s = q.z;
+	float t = room_fbm(w.x * 3.0, (w.y + w.z) * 3.0);
+	vec3 c = mix(vec3(0.050, 0.078, 0.078), vec3(0.080, 0.115, 0.110), t);
+	c = c * (0.90 + 0.20 * room_noise(w.x * 40.0, (w.y + w.z) * 40.0));
+	float blot = room_noise(w.x * 3.2 + 7.0, (w.y + w.z) * 3.2) * 0.7
+		+ room_noise(w.x * 16.0, (w.y + w.z) * 16.0 + 3.0) * 0.3;
+	float rust = smoothstepf(0.72, 0.88, blot) * 0.8;
+	float shade = 1.0, gloss = 0.0;
+	if (id == MID_CC_PANEL) {
+		float R = SUB_RIVET_R;
+		float P = SUB_RIVET_P;
+		float inner = (RM_CC_X1 - RM_CC_X0) * 0.5 - RM_CC_CHEEK;
+		float eu = inner - 0.20, es = f.hl - 0.17;
+		float bu = 1e9, bs = 1e9;
+		for (int sdi = -1; sdi <= 1; sdi += 2) {
+			float sd = float(sdi);
+			/* down each side */
+			float du = u - sd * eu, ds = s - P * floor(s / P + 0.5);
+			if (abs(s) < es + 0.01 && du * du + ds * ds < bu * bu + bs * bs) {
+				bu = du;
+				bs = ds;
+			}
+			/* and along the top and the bottom */
+			ds = s - sd * es;
+			du = u - P * floor(u / P + 0.5);
+			if (abs(u) < eu + 0.01 && du * du + ds * ds < bu * bu + bs * bs) {
+				bu = du;
+				bs = ds;
+			}
+		}
+		float d = length(vec2(bu, bs));
+		if (d < R) {
+			/* a dome: lit on the side that faces up the panel */
+			shade = 1.12 + 0.55 * bs / R;
+			gloss = 1.0;
+		} else if (d < R * 1.25) {
+			shade = 0.66;
+		}
+		/* what the rivet has wept, down the face under it */
+		float trail = (1.0 - smoothstepf(0.0, R * 0.8, abs(bu)))
+			* smoothstepf(-0.30, -R * 1.2, bs) * (1.0 - smoothstepf(-R * 1.2, -R, bs))
+			* (0.5 + 0.5 * room_noise(u * 30.0, s * 4.0));
+		rust = max(rust, trail * 0.45);
+	}
+	vec3 r = vec3(0.15, 0.075, 0.040) * (0.75 + 0.50 * room_noise(w.x * 120.0, (w.y + w.z) * 120.0));
+	c = mix(c, r, clampf(rust, 0.0, 1.0));
+	m.albedo = c * shade;
+	m.rough = 0.60 + 0.30 * rust - 0.18 * gloss;
+	m.coat = 0.08;
+	m.coat_rough = 0.40;
+	m.bump_freq = 60.0;
+	m.bump_amp = 0.040;
+	m.dust = 0.5;
+}
+
+void sub_rubber_at(vec3 w, inout mtl m)
+{
+	float t = room_fbm(w.x * 20.0, (w.y + w.z) * 20.0);
+	float rib = 0.5 + 0.5 * cos(w.y * 2.0 * 3.14159265 / 0.16);
+	vec3 c = mix(vec3(0.020, 0.022, 0.022), vec3(0.045, 0.048, 0.046), t);
+	c = c * (0.45 + 0.75 * rib);
+	/* a film of algae low down, where the water is stillest */
+	float alg = room_noise(w.x * 5.0, (w.y + w.z) * 5.0) * (1.0 - smoothstepf(0.6, 2.0, w.y));
+	c = mix(c, vec3(0.030, 0.060, 0.025), smoothstepf(0.35, 0.70, alg) * 0.7);
+	m.albedo = c;
+	m.rough = 0.66 - 0.12 * rib;
+	m.coat = 0.05;
+	m.coat_rough = 0.30;
+	m.bump_freq = 140.0;
+	m.bump_amp = 0.050;
+	m.dust = 0.8;
+}
+
 mtl icon_material(int id, vec3 pw)
 {
 	mtl m;
@@ -2071,19 +2157,9 @@ mtl icon_material(int id, vec3 pw)
 		break;
 	}
 	case MID_CC_STEEL:
-	case MID_CC_PANEL: {
-		float t = room_fbm(w.x * 30.0, (w.y + w.z) * 30.0);
-		float crin = spow(room_noise(w.x * 90.0, (w.y - w.z) * 90.0), 1.6);
-		m.albedo = mix(vec3(0.026, 0.027, 0.030), vec3(0.062, 0.063, 0.069), t);
-		m.albedo *= 0.88 + crin * 0.26;
-		m.rough = (id == MID_CC_PANEL) ? 0.78 : 0.68;
-		m.coat = 0.12;
-		m.coat_rough = 0.40;
-		m.bump_freq = 170.0;
-		m.bump_amp = 0.090;
-		m.dust = 0.65;
+	case MID_CC_PANEL:
+		sub_steel_at(w, id, m);
 		break;
-	}
 	case MID_CC_BRASS: {
 		float brush = room_noise(w.x * 130.0, (w.y + w.z) * 22.0);
 		float tarn = clampf(room_fbm2(w.x * 4.2 + 9.0, (w.y + w.z) * 4.2) * 1.45 - 0.22, 0.0, 1.0);
@@ -2117,7 +2193,7 @@ mtl icon_material(int id, vec3 pw)
 		m.dust = 0.30;
 		break;
 	case MID_CC_CHEEK:
-		wood = vec4(w.z, w.y, 0.0, 0.75);
+		sub_rubber_at(w, m);
 		break;
 	case MID_POST_RED:
 		chest_at(w, m);
@@ -2164,10 +2240,6 @@ mtl icon_material(int id, vec3 pw)
 	}
 	if (wood.w >= 0.0) {
 		walnut_at(w, wood.x, wood.y, m, wood.z, wood.w);
-		if (id == MID_CC_CHEEK) {
-			m.albedo *= 0.92;
-			m.coat *= 0.84;
-		}
 	}
 	return m;
 }

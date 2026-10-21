@@ -7,12 +7,13 @@ cd31d48c589011d40e2a3106c702a98ede72ab042dd1d778e320a662ed2feffe  ./docs/CONFIGU
 122a4de7a1f5ea8f8dfb4c1d408e895968fb41c9e60b2a1500788fed59fab685  ./docs/design.md
 076ae54aa4de4f2f81e801825a2b28239a5113aed2481e88b53b7c37f6a2c92b  ./docs/MODDING.ja.md
 09de5237140efcf261a8e337bab2dd6a0d1922edf54d0bad3839b0b352e4a05f  ./docs/MODDING.md
+04f5779b9b3643c329c2ec5ad29385a2ef45e5e3b965bc633cf4bb000b7d7d6b  ./docs/screenshots/aquade-console.jpg
 742bfab8c41dc2194634ed39c2584c410831408801b89455664494b86e5b31bb  ./docs/screenshots/aquade-drawer.jpg
-919c06a5c686efe72de41e21e99c463fde831bc5a07acd053b1b1f4495af69cb  ./docs/screenshots/aquade-life.jpg
+aa9958e00323dc01f37c7635e1b2ae42140c347868fcb8f0de5dfe3ca8bb62e2  ./docs/screenshots/aquade-life.jpg
 fa0483790c435ca19db8db6278d9df6dd27204dcae2ff8f2b8bc3ed9277c53f9  ./docs/screenshots/aquade-lock.jpg
 65daa0c23451c000f1ee998d7a4959dc5338c6ae19bc2bc292ce9d0f1a87d23e  ./docs/screenshots/aquade-post.jpg
 bf565f24fc4b46af6e667f0014a748b0d9bb7b6353218101ecd183bfa58fe218  ./docs/screenshots/aquade-shelf.jpg
-bb0a4eee87b9b5de5c1fd42f9d2cf327fcf9dfc5272a6d8b1f25908e27ece134  ./docs/screenshots/aquade-tank.jpg
+f511495b80c8ef5f5021e2714d0f35c2174295d42f1e468d89f56f7b3c5bf76a  ./docs/screenshots/aquade-tank.jpg
 28f2cff1ce40aa45047eeff4aa6daeafc1677841359c27624cecad59c139d6b4  ./.gitignore
 f234b02f4dd159f668d343e245d2cb97a799badaa0483bd487540aa13755ced7  ./include/agenda.h
 4164ddb93268beda690526161db3a6310bbfd83e922d338a556644cfc1b5ff20  ./include/apps.h
@@ -39,7 +40,7 @@ d71a97f44854ceed9b3c1c68506b083ce22099977388599e1eabaed37002deed  ./meson_option
 4be7e0edd3a74ec4646f6f46d810e3e1df49707a010fff0d2d2f34cef6226a9e  ./packaging/debian/aquade-desktop.equivs
 65b0f82a6cf129bf1a1c31a2428795abd33886c15ddd5f3ad97e5922d7bdc3a7  ./protocols/wlr-output-management-unstable-v1.xml
 7ebd98f3449d246a57829e4b4dd9fbc3ef98e3dd42fa94ea102f14f490eb20de  ./protocols/wlr-output-power-management-unstable-v1.xml
-dadfcd6af6532dbb1cce414e67fc2c258909c565fe696c3d6d86a23703e3112c  ./README.md
+a5aabb187190f92eda630f0b4c813d98d07db51e87784ef77c964b305c4f233a  ./README.md
 c24fc25f965f81999c25c758b42bea91a1ce0fbee29ee175367d891755df736e  ./RELEASE-NOTES.ja.md
 8529dcacf90ff20d029425b780d9ff8f18b38fba5a9e66c61dc059c9ac408fbd  ./RELEASE-NOTES.md
 d700030a565f7b1ff63810cacf19285ddb1dccf27ff9a0ed09c033fb72bd4ae2  ./scripts/aquade-ctl
@@ -82,7 +83,7 @@ d8270967f5d6b581dc11ddc193c6e17aceb3fb75bbd723a66fcaf9981fce721a  ./session/auto
 ceffdb14a54669b5f00a5f9f3a7e1e5ffe9d091fa87de7b77dfaa6eff71272d1  ./src/agenda.c
 d9271f0abda7649a7796c479cf508d3c73f6f49812c404ef86f707f6313c36ee  ./src/apps.c
 4fce1c348273b780ee8970725ad39ee6c971c49d819af3727ec2392e6217c700  ./src/camera.c
-38d0e2d8c9f23412be827a638e79bd6431cf2522fea45984cc01340b96ab3e20  ./src/draw.c
+0e7ee7ee4c5a8cd46a2510500bf63cddfcbbbaa19478a250bec1f0695a7d4225  ./src/draw.c
 a6110bb8873fba930560737e53dbd499281c8a0ef63c3a538a7906d808046e5c  ./src/fonts.c
 34dc7c6e72c43688cf2f17ac844a19baf67da92f18c4c0ea32c42b8587fa950b  ./src/gpu.c
 f1e9ccd992c0e0b99f3e025d640d46d9f90247053d1d983287d0545a41842355  ./src/gputest.c
@@ -97,7 +98,7 @@ da951ebafe49e8728d9109f16d8cb553966dd2bbc7764ddc9dbbd178c2918039  ./src/index.c
 7b72ea3018c5bb02e1692d9d5a0bd52daa4b1f7780a1b1bd2b423a06fdc78735  ./src/post.c
 aa52cd739f4f8d8c9be3fb657a94892af7d9c5f73d0fa47fbab5a3f8a7e6dff5  ./src/power.c
 be378fe61eb538fe43f049a63515850215f70ed647ec1a73d758ec0f8c5ca8eb  ./src/preview.c
-f6ce8f3ba6a044ccde51a55d0f92b8b4c23631ee22903c3a71e9a31e8d59d05f  ./src/room.glsl
+ea85f938c8031c1a20a765b4105ad69d9ee657dde2aa1b72fc5c149395f0f59a  ./src/room.glsl
 aa012c43f6583cdaf5c7d21a8f15b8e975246933acfbb6566188a01e74b132d2  ./src/session.c
 e506c6cbc9d6eaecd4ee4ee9de1f981145fda815951b7918a64e7b2312a2144b  ./src/settings.c
 e9746cb3442be32e9c49e52029bf050eb53115a9d1ed5a8aaf236c6fd822006e  ./src/sfx.c
