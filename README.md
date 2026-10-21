@@ -23,7 +23,14 @@ What has changed from DEsk so far:
 - Stones at the front left and three rosette plants at the sides
   (`map_scape`), kept to the edges so the middle stays clear for windows.
 
-The rest of the aquarium (tank, plants, fish) is still to come. Below is DEsk's own README.
+![The tank floor, with the drawer shut](docs/screenshots/aquade-tank.jpg)
+
+| The drawer, pulled out | The bookcase (not yet under water all the way) |
+| --- | --- |
+| ![The drawer](docs/screenshots/aquade-drawer.jpg) | ![The bookcase](docs/screenshots/aquade-shelf.jpg) |
+
+The rest of the aquarium (an underwater bookcase, Control Panel and post
+box, fish) is still to come. Below is DEsk's own README.
 
 ```sh
 W=$PWD/deps/wlroots
