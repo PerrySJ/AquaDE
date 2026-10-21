@@ -1,6 +1,6 @@
 [Icon Theme]
 Name=AquaDE
-Comment=Manila folders, papers, brass and walnut: the icons of the AquaDE desk
+Comment=Sea-green folders, plastic sheets, shells and brass: the icons of the AquaDE tank
 Inherits=Adwaita,AdwaitaLegacy,hicolor
 Example=folder
 Directories=16x16/places,16x16/mimetypes,16x16/devices,scalable/places,scalable/mimetypes,scalable/devices

@@ -69,6 +69,10 @@ fyzugx for making DEsk and releasing it under the MIT licence.
   brightness and the power buttons, and the system tray hangs under it.
 - **Also on the shelf:** a calendar with sticky notes, a memo pad and a
   clock.
+- **Icons for the tank.** Files and folders in your file manager are drawn
+  to match: sea-green plastic folders, white plastic pages, a hermit crab's
+  shell for Home, a crab pot for the trash, a treasure chest for packages
+  and a sonar set for the computer.
 - **The rest of a full desktop:** more than one screen, X11 apps through
   Xwayland, an input method (IBus), screen-off and locking when idle, and
   seven languages (English, Japanese, Chinese, Korean, Spanish, French,
@@ -87,7 +91,8 @@ fyzugx for making DEsk and releasing it under the MIT licence.
 ## Still to come
 
 - Testing a real install, logged in as a full AquaDE session.
-- Icons of its own: the icon theme is still DEsk's.
+- The GTK theme for other programs' windows is still DEsk's (paper, ink and
+  brass).
 
 ## Requirements
 

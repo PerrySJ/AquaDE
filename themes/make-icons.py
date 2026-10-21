@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """make-icons.py -- AquaDE's icon theme, drawn here as SVG.
 
-The programs on the desk (Thunar first) show folders, files, drives and
+The programs in the tank (Thunar first) show folders, files, drives and
 places in whatever icon theme they are given; Adwaita's are flat and grey,
-and on a walnut desk among paper sheets they look like something left
+and on the sand among the plastic sheets they look like something left
 behind by another desktop. These are the things themselves, as near as a
-drawing gets: a manila folder of card with sheets in it, a page with a
-corner turned down and typing on it, a stack of instant photographs, a
-record sliding out of its sleeve, a film slate, a carton taped shut, a
-punched card, a block of wood type, a wire wastebasket, a brass globe, a
-drive in its aluminium case. What is not here (toolbar arrows, dialog
+drawing gets, and as they would be under water: a sea-green plastic folder
+with sheets in it, a white plastic page with a corner turned down and
+typing on it, a spiral shell with a hermit crab at home in it, a patch of
+the tank floor, a crab pot for the trash, a treasure chest for a package,
+a sonar set for the computer -- and, as they always were, a stack of
+instant photographs, a record sliding out of its sleeve, a film slate,
+punched cards, a block of wood type, a brass globe, a drive in its
+aluminium case. (The set began as DEsk's, drawn for a walnut desk.) What is not here (toolbar arrows, dialog
 signs) comes from Adwaita, which the theme inherits.
 
 How they are made real: the shape and its light are gradients -- every
@@ -227,11 +230,14 @@ def typed(x0, x1, y0, rows, gap=11.0, h=4.4, col="#6a6457", seed=1, last_short=T
 
 # ---- materials ----------------------------------------------------------
 
-PAPER = [(0, "#fffefa"), (1, "#f1ebde")]
-PAPER_EDGE = "#c4b9a2"
-MANILA_BACK = [(0, "#e6c47f"), (1, "#c8994d")]
-MANILA_FRONT = [(0, "#fae6b8"), (0.05, "#f3d89f"), (0.7, "#e3bd73"), (1, "#d3a75a")]
-MANILA_EDGE = "#97692f"
+# under water nothing is paper or card: sheets are the diver's white
+# plastic the windows are, and a folder is sea-green plastic, the kind a
+# diver's slate is kept in
+PAPER = [(0, "#fbfefe"), (1, "#e3eeee")]
+PAPER_EDGE = "#9fb7b6"
+MANILA_BACK = [(0, "#5aaea2"), (1, "#3a867c")]
+MANILA_FRONT = [(0, "#a8e6db"), (0.05, "#90d8cb"), (0.7, "#5fb4a7"), (1, "#4a9d91")]
+MANILA_EDGE = "#2a6a62"
 BRASS = [(0, "#fff0bf"), (0.3, "#e6c166"), (0.62, "#a77b2a"), (0.85, "#d8b257"), (1, "#8a6420")]
 WALNUT = [(0, "#87532c"), (1, "#56311a")]
 STEEL = [(0, "#fbfcfd"), (0.45, "#cfd4da"), (0.55, "#bcc2ca"), (1, "#e8ebee")]
@@ -271,11 +277,11 @@ def deboss(ic, shape, cx, cy, scale=1.0):
     """pressed into the card, as a blind stamp does: the hollow in shadow
     under its top edge, and a lip of light along the bottom of it"""
     if ic.small:
-        return (f'<g transform="translate({cx:g} {cy:g}) scale({scale:g})" fill="#8f5f24" '
-                f'stroke="#8f5f24" opacity=".85">{shape}</g>')
-    lip = f'<g transform="translate(0 1.8)" fill="#fff4d8" stroke="#fff4d8" opacity=".9">{shape}</g>'
-    sunk = g(f'<g fill="#a8762f" stroke="#a8762f">{shape}</g>',
-             pressed(ic, 2.2, 1.5, "#4a2c06", 0.65), op=0.86)
+        return (f'<g transform="translate({cx:g} {cy:g}) scale({scale:g})" fill="#2a6a62" '
+                f'stroke="#2a6a62" opacity=".85">{shape}</g>')
+    lip = f'<g transform="translate(0 1.8)" fill="#dcfff9" stroke="#dcfff9" opacity=".9">{shape}</g>'
+    sunk = g(f'<g fill="#3a8a80" stroke="#3a8a80">{shape}</g>',
+             pressed(ic, 2.2, 1.5, "#0a2f2a", 0.65), op=0.86)
     return f'<g transform="translate({cx:g} {cy:g}) scale({scale:g})">{lip}{sunk}</g>'
 
 
@@ -285,21 +291,21 @@ def folder(ic, emblem=None, open_=False):
     back = (f'<path d="{BACK}" fill="{ic.lin(MANILA_BACK)}" stroke="{MANILA_EDGE}" '
             f'stroke-width="{12 if sm else 2.2:g}" stroke-linejoin="round"/>')
     if not sm:
-        back += ('<path d="M36,37.2 H92" stroke="#fbe9bf" stroke-width="2.4" '
+        back += ('<path d="M36,37.2 H92" stroke="#d6fff8" stroke-width="2.4" '
                  'stroke-linecap="round" opacity=".9"/>'
-                 '<path d="M114,51.2 H219" stroke="#f6dfab" stroke-width="2" '
+                 '<path d="M114,51.2 H219" stroke="#c4f4ec" stroke-width="2" '
                  'stroke-linecap="round" opacity=".7"/>')
-    parts.append(g(back, grain(ic, 0.05, "0.85", 2, 3, "#5a3a10")))
+    parts.append(g(back, grain(ic, 0.02, "0.85", 2, 3, "#0f3a35")))
     top = 124 if open_ else 98
     # the sheets in it, and how dark it is down among them
     if sm:
-        parts.append('<rect x="38" y="58" width="180" height="96" fill="#fffdf6" '
-                     'stroke="#a8977a" stroke-width="10"/>')
+        parts.append('<rect x="38" y="58" width="180" height="96" fill="#f6fcfc" '
+                     'stroke="#86a3a2" stroke-width="10"/>')
     else:
         inside = loose_sheet(ic, 38, 58, 182, 148, -2.2, 5)
         inside += loose_sheet(ic, 44, 64, 172, 140, 1.5, 7, 5 if open_ else 3)
         inside += (f'<rect x="24" y="{top - 40:g}" width="208" height="40" '
-                   f'fill="{ic.lin([(0, "#3b250a", 0), (1, "#3b250a", 0.3)])}"/>')
+                   f'fill="{ic.lin([(0, "#0c2e2a", 0), (1, "#0c2e2a", 0.3)])}"/>')
         parts.append(g(inside, clip=ic.clip(f'<path d="{BACK}"/>')))
     # the front, leaning out a little -- open, further
     lean = 16 if open_ else 7
@@ -309,16 +315,16 @@ def folder(ic, emblem=None, open_=False):
           f'stroke-width="{12 if sm else 2:g}" stroke-linejoin="round"/>')
     if not sm:
         fr += (f'<path d="{d}" fill="'
-               f'{ic.lin([(0, "#5a3a10", 0.16), (0.12, "#5a3a10", 0), (0.88, "#5a3a10", 0), (1, "#5a3a10", 0.16)], 0, 0, 1, 0)}"/>'
-               f'<path d="M{xb0 - lean + 9:g},{top + 2.4:g} H{xb1 + lean - 9:g}" stroke="#fffaea" '
+               f'{ic.lin([(0, "#0f3a35", 0.16), (0.12, "#0f3a35", 0), (0.88, "#0f3a35", 0), (1, "#0f3a35", 0.16)], 0, 0, 1, 0)}"/>'
+               f'<path d="M{xb0 - lean + 9:g},{top + 2.4:g} H{xb1 + lean - 9:g}" stroke="#e8fffb" '
                'stroke-width="2.6" stroke-linecap="round"/>'
-               f'<path d="M{xb0 - lean + 9:g},{top + 5.4:g} H{xb1 + lean - 9:g}" stroke="#c59447" '
+               f'<path d="M{xb0 - lean + 9:g},{top + 5.4:g} H{xb1 + lean - 9:g}" stroke="#2f7d73" '
                'stroke-width="1.1" stroke-linecap="round" opacity=".45"/>'
-               f'<path d="M{xb0 + 4:g},{bot - 20:g} H{xb1 - 4:g}" stroke="#b98a45" stroke-width="1.4" opacity=".5"/>'
-               f'<path d="M{xb0 + 4:g},{bot - 18.4:g} H{xb1 - 4:g}" stroke="#fff0c6" stroke-width="1.4" opacity=".7"/>')
+               f'<path d="M{xb0 + 4:g},{bot - 20:g} H{xb1 - 4:g}" stroke="#2a7067" stroke-width="1.4" opacity=".5"/>'
+               f'<path d="M{xb0 + 4:g},{bot - 18.4:g} H{xb1 - 4:g}" stroke="#d6fff8" stroke-width="1.4" opacity=".7"/>')
     if emblem:
         fr += deboss(ic, emblem(sm), 128, (top + bot) / 2 + (2 if sm else 3), 1.4 if sm else 1.0)
-    parts.append(g(fr, grain(ic, 0.05, "0.85", 2, 9, "#5a3a10")))
+    parts.append(g(fr, grain(ic, 0.02, "0.85", 2, 9, "#0f3a35")))
     place(ic, "".join(parts), 128, 222, 114, 12, 0.3, (3, 4, 0.32))
 
 
@@ -397,13 +403,13 @@ def sheet(ic, content="", tint=None, seed=1):
     sm = ic.small
     body = (f'<path d="{SHEET}" fill="{ic.lin(tint or PAPER)}" stroke="{PAPER_EDGE}" '
             f'stroke-width="{12 if sm else 2:g}" stroke-linejoin="round"/>')
-    page = g(body, grain(ic, 0.035, "0.9", 2, seed, "#4a3a20")) + content
+    page = g(body, grain(ic, 0.015, "0.9", 2, seed, "#1f3c3c")) + content
     if not sm:
-        page += (f'<path d="M172,58 H210 V68 H172 Z" fill="{ic.lin([(0, "#4a3818", 0.22), (1, "#4a3818", 0)])}"/>'
+        page += (f'<path d="M172,58 H210 V68 H172 Z" fill="{ic.lin([(0, "#1c3838", 0.22), (1, "#1c3838", 0)])}"/>'
                  f'<path d="M163,22 H172 V58 H163 Z" fill="'
-                 f'{ic.lin([(0, "#4a3818", 0), (1, "#4a3818", 0.14)], 0, 0, 1, 0)}"/>')
-    page += (f'<path d="{FOLD}" fill="{ic.lin([(0, "#fdfbf5"), (0.55, "#ede6d6"), (1, "#d4c9b0")], 0.5, 0.5, 0, 1)}" '
-             f'stroke="#b9ac91" stroke-width="{10 if sm else 1.5:g}" stroke-linejoin="round"/>')
+                 f'{ic.lin([(0, "#1c3838", 0), (1, "#1c3838", 0.14)], 0, 0, 1, 0)}"/>')
+    page += (f'<path d="{FOLD}" fill="{ic.lin([(0, "#fbffff"), (0.55, "#e3eded"), (1, "#c3d4d3")], 0.5, 0.5, 0, 1)}" '
+             f'stroke="#97b0af" stroke-width="{10 if sm else 1.5:g}" stroke-linejoin="round"/>')
     place(ic, page, 128, 238, 82, 8, 0.28, (2.5, 3.5, 0.3))
 
 
@@ -815,49 +821,46 @@ def m_video(ic):
 
 
 def m_package(ic):
-    """a carton taped shut, its address label on the front"""
+    """a package: a treasure chest, its lid lifted on what is inside"""
     sm = ic.small
-    front = poly((34, 112), (190, 112), (190, 226), (34, 226))
-    side = poly((190, 112), (238, 66), (238, 180), (190, 226))
-    topf = poly((34, 112), (190, 112), (238, 66), (82, 66))
     sw = 12 if sm else 1.6
-    box = (f'<path d="{side}" fill="{ic.lin([(0, "#a97b46"), (1, "#86592c")])}" stroke="#6b4720" '
-           f'stroke-width="{sw}" stroke-linejoin="round"/>'
-           f'<path d="{front}" fill="{ic.lin([(0, "#cb9b60"), (1, "#a97a44")])}" stroke="#6b4720" '
-           f'stroke-width="{sw}" stroke-linejoin="round"/>'
-           f'<path d="{topf}" fill="{ic.lin([(0, "#d0a873"), (1, "#e1c094")])}" stroke="#6b4720" '
-           f'stroke-width="{sw}" stroke-linejoin="round"/>')
+    oak = [(0, "#7a4a28"), (1, "#4a2a14")]
+    body = (f'<rect x="34" y="122" width="188" height="104" rx="8" fill="{ic.lin(oak)}" stroke="#2a1608" '
+            f'stroke-width="{sw}"/>')
     if not sm:
-        box = g(box, grain(ic, 0.07, "0.6", 3, 71, "#4a2c0e"))
-        box += ('<path d="M58,89 L214,89" stroke="#7a5426" stroke-width="1.6" opacity=".7"/>'
-                '<path d="M36,113.5 H189" stroke="#f3dcb2" stroke-width="1.6" opacity=".8"/>')
-    tape = (f'<path d="{poly((52.2, 94.5), (208.2, 94.5), (219.8, 83.5), (63.8, 83.5))}" '
-            f'fill="{ic.lin([(0, "#e9c780"), (0.5, "#d7ac5c"), (1, "#c9984a")])}" stroke="#9a7230" '
-            f'stroke-width="{6 if sm else 1:g}" stroke-linejoin="round" opacity=".95"/>'
-            f'<path d="{poly((208.2, 94.5), (219.8, 83.5), (219.8, 197.5), (208.2, 208.5))}" '
-            f'fill="{ic.lin([(0, "#c99a4e"), (1, "#a97a35")], 0, 0, 1, 0)}" stroke="#8a6428" '
-            f'stroke-width="{6 if sm else 1:g}" stroke-linejoin="round" opacity=".95"/>')
+        body += ('<path d="M36,156 H220 M36,190 H220" stroke="#2a1608" stroke-width="2" opacity=".6"/>'
+                 '<path d="M36,158 H220 M36,192 H220" stroke="#a87048" stroke-width="1.2" opacity=".5"/>')
+        body = g(body, grain(ic, 0.16, "0.01 0.12", 3, 71, "#1a0c04", 0.5))
+        # weed and wear: it has been down here a while
+        body += ('<path d="M40,224 q10,-14 22,-4 t24,-2" fill="none" stroke="#3f7a32" stroke-width="5" '
+                 'stroke-linecap="round" opacity=".8"/>')
+    # what is inside, catching the light under the lid
+    gold = (f'<path d="M44,124 Q128,96 212,124 Z" fill="{ic.rad([(0, "#fff6c0"), (0.5, "#f0c040"), (1, "#a8741a")], 0.5, 0.8, 0.7)}"/>')
     if not sm:
-        tape += ('<path d="M60,86.2 L214,86.2" stroke="#fffaf0" stroke-width="1.6" opacity=".6"/>'
-                 '<path d="M211.2,94 V205" stroke="#fff3d6" stroke-width="1.3" opacity=".5"/>')
-    label = (f'<rect x="50" y="136" width="76" height="60" rx="2" '
-             f'fill="{ic.lin([(0, "#fdfcf7"), (1, "#ece7da")])}" stroke="#b8ad95" '
-             f'stroke-width="{8 if sm else 1:g}"/>')
+        for (x, y) in ((86, 116), (112, 108), (140, 106), (166, 112), (124, 118)):
+            gold += (f'<ellipse cx="{x}" cy="{y}" rx="11" ry="5" fill="{ic.lin(BRASS, 0, 0, 0, 1)}" '
+                     'stroke="#8a6420" stroke-width="1"/>')
+    # the lid, domed, tipped up and back
+    lid = (f'<path d="M30,106 Q128,20 226,106 L222,118 Q128,40 34,118 Z" fill="{ic.lin(oak)}" '
+           f'stroke="#2a1608" stroke-width="{sw}" stroke-linejoin="round"/>'
+           f'<path d="M30,106 Q128,20 226,106 Q128,62 30,106 Z" fill="{ic.lin([(0, "#8f5a32"), (1, "#5c341a")])}" '
+           f'stroke="#2a1608" stroke-width="{sw}" stroke-linejoin="round"/>')
     if not sm:
-        rnd = random.Random(73)
-        bars = []
-        x = 58
-        while x < 116:
-            w = rnd.choice((1.2, 1.2, 2.2, 3.2))
-            bars.append(f'<rect x="{x:.1f}" y="178" width="{w:g}" height="12"/>')
-            x += w + rnd.choice((1.2, 2.0, 2.6))
-        label += ('<rect x="50" y="136" width="76" height="8" fill="#c0392b" opacity=".85"/>'
-                  + typed(56, 118, 152, 3, 7.5, 3.2, "#4a4438", 74)
-                  + f'<g fill="#2b2620">{"".join(bars)}</g>')
-    else:
-        label += '<path d="M60,160 H116 M60,178 H100" stroke="#6a6152" stroke-width="10"/>'
-    label = g(label, tf="rotate(-2 88 166)")
-    place(ic, box + tape + label, 132, 226, 108, 10, 0.3, (3, 4, 0.34))
+        lid = g(lid, grain(ic, 0.16, "0.01 0.12", 3, 72, "#1a0c04", 0.5))
+    # iron straps, rusted, and the brass hasp
+    iron = ""
+    for x in (70, 186):
+        iron += (f'<rect x="{x - 9}" y="120" width="18" height="108" fill="{ic.lin([(0, "#5a4a42"), (1, "#2e2622")], 0, 0, 1, 0)}" '
+                 f'stroke="#1a1410" stroke-width="{6 if sm else 1:g}"/>')
+        if not sm:
+            iron += "".join(f'<circle cx="{x}" cy="{y}" r="2.6" fill="#8a7a6a"/>' for y in (134, 174, 214))
+            iron += f'<path d="M{x - 6},150 v30" stroke="#a0461e" stroke-width="3" opacity=".5"/>'
+    hasp = (f'<rect x="114" y="130" width="28" height="34" rx="4" fill="{ic.lin(BRASS, 0, 0, 0, 1)}" '
+            f'stroke="#6b4c18" stroke-width="{6 if sm else 1.2:g}"/>')
+    if not sm:
+        hasp += '<path d="M128,140 v10" stroke="#3a2a10" stroke-width="4" stroke-linecap="round"/>'
+        hasp = g(hasp, edge_light(ic, 1.5, 2, 0.8, 22, 50, 0.6))
+    place(ic, gold + lid + body + iron + hasp, 128, 228, 104, 10, 0.3, (3, 4, 0.34))
 
 
 def card(ic, x, y, angle, seed, back=False):
@@ -925,77 +928,43 @@ def lerp(a, b, t):
 
 
 def p_home(ic):
-    """a cottage: stucco walls, a roof of clay tiles, the lights on"""
+    """home: a spiral shell, and the hermit crab who lives in it looking out"""
     sm = ic.small
     sw = 12 if sm else 1.6
-    gable = poly((42, 226), (140, 226), (140, 130), (91, 80), (42, 130))
-    side = poly((140, 226), (224, 206), (224, 118), (140, 130))
-    A, R, E1, E2 = (91, 70), (177, 57), (148, 136), (234, 120)
-    roof = poly(A, R, E2, E1)
-    walls = (f'<path d="{side}" fill="{ic.lin([(0, "#dcc79f"), (1, "#c3a97a")])}" stroke="#8c7550" '
-             f'stroke-width="{sw}" stroke-linejoin="round"/>'
-             f'<path d="{gable}" fill="{ic.lin([(0, "#fbf3df"), (1, "#e8d7b3")])}" stroke="#8c7550" '
-             f'stroke-width="{sw}" stroke-linejoin="round"/>')
-    if not sm:
-        walls = g(walls, grain(ic, 0.06, "0.7", 2, 91, "#5a4628"))
-        walls += (f'<path d="{poly((140, 130), (224, 118), (224, 134), (140, 146))}" '
-                  f'fill="{ic.lin([(0, "#3a2810", 0.35), (1, "#3a2810", 0)])}"/>')
-    win = []
-    for (x0, y0, x1, y1) in ((156, 150, 178, 146), (194, 143, 214, 139)):
-        quad = poly((x0, y0), (x1, y1), (x1, y1 + 30), (x0, y0 + 30))
-        win.append(f'<path d="{quad}" fill="{ic.lin([(0, "#ffe7a3"), (1, "#f0a43a")])}" stroke="#f7f1e4" '
-                   f'stroke-width="{8 if sm else 3.2:g}" stroke-linejoin="round"/>')
+    shell = ""
+    # the whorls, the tip of the spire first and the body whorl last, over it
+    whorls = ((206, 54, 15), (190, 76, 26), (164, 108, 42), (118, 156, 74))
+    for i, (cx, cy, r) in enumerate(whorls):
+        fill = ic.rad([(0, "#fff4e6"), (0.55, "#f2c9a4"), (1, "#c9805a")], 0.38, 0.32, 0.75)
+        shell += (f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{fill}" stroke="#8a4a2e" '
+                  f'stroke-width="{sw}"/>')
         if not sm:
-            mx, my0, my1 = (x0 + x1) / 2, (y0 + y1) / 2, (y0 + y1) / 2 + 30
-            win.append(f'<path d="M{mx:g},{my0:g} V{my1:g} M{x0:g},{y0 + 15:g} L{x1:g},{y1 + 15:g}" '
-                       'stroke="#f7f1e4" stroke-width="2.2"/>')
-    win.append(f'<circle cx="91" cy="116" r="11" fill="{ic.rad([(0, "#fff0b8"), (1, "#f0a43a")])}" '
-               f'stroke="#f7f1e4" stroke-width="{8 if sm else 3.4:g}"/>')
+            # the bands that go round with the growth of it
+            for k in (0.45, 0.72):
+                shell += (f'<path d="M{cx - r * 0.86:.1f},{cy + r * 0.30:.1f} '
+                          f'A{r * 0.95:.1f},{r * k:.1f} 0 0 0 {cx + r * 0.86:.1f},{cy - r * 0.30:.1f}" '
+                          f'fill="none" stroke="#b5643f" stroke-width="{2.6 if i == 3 else 1.6:g}" opacity=".55"/>')
     if not sm:
-        win.append('<path d="M91,105 V127 M80,116 H102" stroke="#f7f1e4" stroke-width="2"/>')
-    door = (f'<path d="M77,226 V186 A14,14 0 0 1 105,186 V226 Z" fill="{ic.lin(WALNUT)}" stroke="#3d220f" '
-            f'stroke-width="{8 if sm else 1.4:g}"/>')
-    if not sm:
-        door += ('<path d="M83,222 V190 A8,8 0 0 1 99,190 V222" fill="none" stroke="#a26c3f" '
-                 'stroke-width="1.2" opacity=".7"/>'
-                 f'<circle cx="99" cy="206" r="2.6" fill="{ic.rad(BRASS[::-1], 0.35, 0.3, 0.8)}"/>'
-                 '<rect x="70" y="225" width="42" height="6" rx="1.5" fill="#a9a59c" stroke="#77736a" stroke-width="1"/>')
-    # the chimney stands on the near slope: its foot cut along the slope
-    chim = (f'<path d="{poly((176, 40), (186, 38.5), (186, 82.5), (176, 84))}" fill="#7a3020" '
-            f'stroke="#5e2416" stroke-width="{sw}" stroke-linejoin="round"/>'
-            f'<path d="{poly((160, 40), (176, 40), (176, 84), (160, 65.5))}" '
-            f'fill="{ic.lin([(0, "#bd5a40"), (1, "#8d3a26")])}" stroke="#5e2416" stroke-width="{sw}" '
-            'stroke-linejoin="round"/>')
-    if not sm:
-        chim += ('<path d="M160,48 H176 M160,56 H176 M163,64 H176 M168,72 H176 M168,40 V48 M172,48 V56 '
-                 'M166,56 V64 M171,64 V72" stroke="#6e2416" stroke-width=".9" opacity=".55"/>'
-                 f'<path d="{poly((186, 82.5), (198, 80.7), (208, 92), (190, 95))}" fill="#3a1206" opacity=".22"/>')
-    chim += (f'<path d="{poly((157, 35), (179, 35), (190, 33.3), (168, 33.3))}" fill="#8a8380" stroke="#3f3a37" '
-             f'stroke-width="{sw}" stroke-linejoin="round"/>'
-             f'<path d="{poly((157, 35), (179, 35), (179, 42), (157, 42))}" fill="#6b6460" stroke="#3f3a37" '
-             f'stroke-width="{sw}" stroke-linejoin="round"/>'
-             f'<path d="{poly((179, 35), (190, 33.3), (190, 40.3), (179, 42))}" fill="#4f4946" stroke="#3f3a37" '
-             f'stroke-width="{sw}" stroke-linejoin="round"/>')
-    tiles = (f'<path d="{roof}" fill="{ic.lin([(0, "#d4664a"), (1, "#963622")])}" stroke="#5e2416" '
-             f'stroke-width="{sw}" stroke-linejoin="round"/>')
-    if not sm:
-        rows, ridges = [], []
-        for t in (0.2, 0.4, 0.6, 0.8):
-            p, q = lerp(A, E1, t), lerp(R, E2, t)
-            rows.append(f"M{p[0]:.1f},{p[1]:.1f} L{q[0]:.1f},{q[1]:.1f}")
-        for s_ in [0.06 + 0.075 * k for k in range(13)]:
-            p, q = lerp(A, R, s_), lerp(E1, E2, s_)
-            ridges.append(f"M{p[0]:.1f},{p[1]:.1f} L{q[0]:.1f},{q[1]:.1f}")
-        tiles += (f'<path d="{" ".join(ridges)}" stroke="#7d2a1a" stroke-width="1" opacity=".3"/>'
-                  f'<path d="{" ".join(rows)}" stroke="#6e2416" stroke-width="2.2" opacity=".55"/>'
-                  f'<path d="{" ".join(rows)}" stroke="#f0937a" stroke-width="1" opacity=".55" '
-                  'transform="translate(0 -2)"/>')
-        tiles = g(tiles, grain(ic, 0.06, "0.8", 2, 93, "#3a1206"))
-    verge = (f'<path d="M30,138 L91,70 L148,136" fill="none" stroke="#9c8f78" '
-             f'stroke-width="{16 if sm else 8.5:g}" stroke-linejoin="round" stroke-linecap="round"/>'
-             f'<path d="M30,138 L91,70 L148,136" fill="none" stroke="#f6f1e6" '
-             f'stroke-width="{8 if sm else 5.5:g}" stroke-linejoin="round" stroke-linecap="round"/>')
-    place(ic, walls + "".join(win) + door + tiles + chim + verge, 132, 228, 106, 11, 0.3, (3, 4, 0.32))
+        shell = g(shell, grain(ic, 0.05, "0.7", 2, 95, "#5a2a12"))
+        # the light from above on its back
+        shell += (f'<ellipse cx="104" cy="118" rx="34" ry="18" fill="'
+                  f'{ic.rad([(0, "#fff", 0.55), (1, "#fff", 0)])}" transform="rotate(-30 104 118)"/>')
+    # the mouth, turned toward us, pink inside
+    mouth = (f'<ellipse cx="88" cy="190" rx="40" ry="30" transform="rotate(-24 88 190)" '
+             f'fill="{ic.rad([(0, "#5a1e1e"), (0.55, "#c25a5a"), (1, "#f4b4a4")], 0.55, 0.5, 0.6)}" '
+             f'stroke="#8a4a2e" stroke-width="{sw}"/>')
+    # and who is at home: two eyes on stalks and a claw
+    crab = ""
+    for (ex, ey) in ((70, 160), (92, 152)):
+        crab += (f'<path d="M{ex + 4},{ey + 26} L{ex},{ey}" stroke="#e2551c" '
+                 f'stroke-width="{10 if sm else 4:g}" stroke-linecap="round"/>'
+                 f'<circle cx="{ex}" cy="{ey}" r="{9 if sm else 7}" fill="#111"/>')
+        if not sm:
+            crab += f'<circle cx="{ex - 2}" cy="{ey - 2.5}" r="2.4" fill="#fff"/>'
+    crab += (f'<path d="M62,200 Q40,196 36,214 Q46,206 54,214 Q48,222 58,226 Q74,222 74,206 Z" '
+             f'fill="{ic.lin([(0, "#ff7a3a"), (1, "#c8400e")])}" stroke="#8a2a08" '
+             f'stroke-width="{8 if sm else 1.4:g}" stroke-linejoin="round"/>')
+    place(ic, shell + mouth + crab, 128, 228, 100, 10, 0.3, (3, 4, 0.32))
 
 
 def pencil(ic):
@@ -1012,31 +981,31 @@ def pencil(ic):
 
 
 def p_desktop(ic):
-    """the desk itself: a walnut top, its drawer, a sheet and a pencil on it"""
+    """the tank floor: a patch of rippled sand, a sheet lying on it, a
+    pebble and a sprig of weed"""
     sm = ic.small
     sw = 12 if sm else 1.6
     topq = poly((58, 82), (198, 82), (246, 174), (10, 174))
     frontq = poly((10, 174), (246, 174), (246, 198), (10, 198))
-    legs = "".join(f'<path d="{poly(*q)}" fill="{ic.lin(WALNUT, 0, 0, 1, 0)}" stroke="#2e1809" stroke-width="{sw}"/>'
-                   for q in (((18, 198), (38, 198), (35, 242), (21, 242)),
-                             ((218, 198), (238, 198), (235, 242), (221, 242))))
-    wood = (f'<path d="{topq}" fill="{ic.lin([(0, "#6e4122"), (1, "#8f5a32")])}" stroke="#2e1809" '
+    sand = (f'<path d="{topq}" fill="{ic.lin([(0, "#d9cfa8"), (1, "#efe6c4")])}" stroke="#8f8463" '
             f'stroke-width="{sw}" stroke-linejoin="round"/>')
     if not sm:
-        wood = g(wood, grain(ic, 0.2, "0.006 0.08", 3, 101, "#2a1406", 0.5))
-        wood += f'<path d="{topq}" fill="{ic.lin([(0, "#fff", 0.14), (0.35, "#fff", 0.02), (1, "#fff", 0)])}"/>'
-    front = (f'<path d="{frontq}" fill="{ic.lin([(0, "#5c341a"), (1, "#3c210e")])}" stroke="#2e1809" '
+        sand = g(sand, grain(ic, 0.12, "1.1", 2, 101, "#5a5030", 0.9))
+        rip = []
+        for t in (0.18, 0.34, 0.5, 0.66, 0.82):
+            p, q = lerp((58, 82), (10, 174), t), lerp((198, 82), (246, 174), t)
+            mx, my = (p[0] + q[0]) / 2, (p[1] + q[1]) / 2
+            rip.append(f"M{p[0]:.1f},{p[1]:.1f} Q{mx:.1f},{my - 5:.1f} {q[0]:.1f},{q[1]:.1f}")
+        sand += f'<path d="{" ".join(rip)}" fill="none" stroke="#b7a97c" stroke-width="2" opacity=".6"/>'
+        # the light, through the water, in a net on the sand
+        sand += (f'<path d="M70,110 q20,-10 36,4 t40,-2 M40,150 q26,-12 50,2 t56,0 t50,-4" fill="none" '
+                 'stroke="#fff" stroke-width="2.4" opacity=".35"/>')
+    front = (f'<path d="{frontq}" fill="{ic.lin([(0, "#a99a6c"), (1, "#7a6d48")])}" stroke="#5a5030" '
              f'stroke-width="{sw}" stroke-linejoin="round"/>')
     if not sm:
-        front = g(front, grain(ic, 0.16, "0.006 0.1", 3, 102, "#1a0c04", 0.5))
-        front += ('<path d="M12,175.5 H244" stroke="#b07a4c" stroke-width="1.8" opacity=".8"/>'
-                  '<rect x="98" y="179" width="60" height="15" rx="2" fill="none" stroke="#24130a" stroke-width="1.4"/>'
-                  '<rect x="98" y="179" width="60" height="15" rx="2" fill="none" stroke="#7a4d2b" '
-                  'stroke-width="1" transform="translate(0 1)" opacity=".6"/>'
-                  f'<rect x="119" y="184" width="18" height="5" rx="2.5" fill="{ic.lin(BRASS)}" '
-                  'stroke="#6b4c18" stroke-width=".8"/>')
+        front = g(front, grain(ic, 0.12, "1.2", 2, 102, "#3a3018", 0.6))
     sheetq = poly((76, 102), (150, 96), (166, 150), (82, 158))
-    paper = f'<path d="{sheetq}" fill="{ic.lin(PAPER)}" stroke="#b9ae96" stroke-width="{8 if sm else 1.2:g}"/>'
+    sheet_ = f'<path d="{sheetq}" fill="{ic.lin(PAPER)}" stroke="{PAPER_EDGE}" stroke-width="{8 if sm else 1.2:g}"/>'
     if not sm:
         rows = []
         for t in (0.22, 0.36, 0.5, 0.64, 0.78):
@@ -1044,13 +1013,16 @@ def p_desktop(ic):
             q = lerp(p, q, 0.8 if t < 0.7 else 0.5)
             p = lerp(p, q, 0.12)
             rows.append(f"M{p[0]:.1f},{p[1]:.1f} L{q[0]:.1f},{q[1]:.1f}")
-        paper += (f'<path d="{" ".join(rows)}" stroke="#7b7466" stroke-width="2.6" stroke-linecap="round" '
-                  'opacity=".7"/>')
-        paper = g(paper, dropped(ic, 2, 2, 0.35))
-        pen = g(g(pencil(ic), tf="translate(160 148) rotate(-24) scale(.86 .7)"), dropped(ic, 2.5, 2, 0.4))
-    else:
-        pen = '<path d="M150,160 L222,120" stroke="#f0b52a" stroke-width="16" stroke-linecap="round"/>'
-    place(ic, legs + wood + front + paper + pen, 128, 238, 112, 8, 0.32, (2, 3, 0.3))
+        sheet_ += (f'<path d="{" ".join(rows)}" stroke="#5f7676" stroke-width="2.6" stroke-linecap="round" '
+                   'opacity=".7"/>')
+        sheet_ = g(sheet_, dropped(ic, 2, 2, 0.35))
+    pebble = (f'<ellipse cx="192" cy="146" rx="18" ry="11" fill="{ic.rad([(0, "#8fa3a3"), (1, "#3f5656")], 0.35, 0.3, 0.8)}" '
+              f'stroke="#2a3a3a" stroke-width="{8 if sm else 1.2:g}"/>')
+    weed = ""
+    for (x, lean, h) in ((40, -14, 64), (50, 6, 80), (60, 20, 58)):
+        weed += (f'<path d="M{x},168 Q{x + lean * 0.3},{168 - h * 0.6} {x + lean},{168 - h}" fill="none" '
+                 f'stroke="#2f8a3e" stroke-width="{12 if sm else 6:g}" stroke-linecap="round"/>')
+    place(ic, front + sand + sheet_ + pebble + weed, 128, 206, 118, 8, 0.32, (2, 3, 0.3))
 
 
 def helix(theta0, k, y0=62.0, y1=224.0, step=4.0):
@@ -1094,7 +1066,8 @@ def balls(ic, spec, sm):
 
 
 def basket(ic, full):
-    """the wire wastebasket: a mesh you see through to its far side"""
+    """the trash: a crab pot, a net of rope on hoops of weathered wood,
+    you see through to its far side, and its float tied on"""
     sm = ic.small
     body = "M46,62 L68,224 A60,13 0 0 0 188,224 L210,62 A82,20 0 0 1 46,62 Z"
     near, far = [], []
@@ -1114,27 +1087,33 @@ def basket(ic, full):
                     run.append(p)
                 if len(run) > 1:
                     (near if run[0][2] else far).append("M" + " ".join(f"{q[0]:.1f},{q[1]:.1f}" for q in run))
-    s = f'<path d="{body}" fill="#2a2d31" opacity="{0.55 if sm else 0.28:g}"/>'
-    s += f'<ellipse cx="128" cy="62" rx="82" ry="20" fill="{ic.lin([(0, "#7d828a"), (1, "#2e3135")])}"/>'
+    s = f'<path d="{body}" fill="#0e2e2c" opacity="{0.55 if sm else 0.30:g}"/>'
+    s += f'<ellipse cx="128" cy="62" rx="82" ry="20" fill="{ic.lin([(0, "#3f6a66"), (1, "#0e2e2c")])}"/>'
     if not sm:
-        s += f'<path d="{" ".join(far)}" stroke="#a7adb5" stroke-width="1.3" opacity=".65"/>'
+        s += f'<path d="{" ".join(far)}" stroke="#b8a47c" stroke-width="1.3" opacity=".6"/>'
     if full:
         s += balls(ic, ((92, 56, 30, 1), (150, 48, 34, 2), (122, 70, 26, 3)), sm)
         if not sm:
             s += g(balls(ic, ((104, 150, 30, 4), (152, 176, 26, 5)), sm), op=0.55)
     if not sm:
-        s += f'<path d="{" ".join(near)}" stroke="#6d737b" stroke-width="3" stroke-linecap="round"/>'
-        s += (f'<path d="{" ".join(near)}" stroke="#eef1f4" stroke-width="1" stroke-linecap="round" '
+        s += f'<path d="{" ".join(near)}" stroke="#8a7448" stroke-width="3.4" stroke-linecap="round"/>'
+        s += (f'<path d="{" ".join(near)}" stroke="#f0e2bc" stroke-width="1" stroke-linecap="round" '
               'opacity=".55" transform="translate(-.6 -.8)"/>')
         s += (f'<path d="{body}" fill="'
               f'{ic.lin([(0, "#000", 0.45), (0.22, "#000", 0), (0.36, "#fff", 0.22), (0.5, "#fff", 0), (0.78, "#000", 0.12), (1, "#000", 0.5)], 0, 0, 1, 0)}"/>')
     else:
-        s += '<path d="M76,96 L96,214 M128,100 V222 M180,96 L160,214" stroke="#5d636b" stroke-width="12"/>'
-    rim = ic.lin([(0, "#f7f8fa"), (0.4, "#9aa0a8"), (0.6, "#d9dde2"), (1, "#7f858d")])
-    s += (f'<ellipse cx="128" cy="62" rx="82" ry="20" fill="none" stroke="#4f545b" stroke-width="{16 if sm else 8.5:g}"/>'
+        s += '<path d="M76,96 L96,214 M128,100 V222 M180,96 L160,214" stroke="#8a7448" stroke-width="12"/>'
+    rim = ic.lin([(0, "#c8a678"), (0.4, "#7a5a36"), (0.6, "#a8865a"), (1, "#5a4024")])
+    s += (f'<ellipse cx="128" cy="62" rx="82" ry="20" fill="none" stroke="#3a2a16" stroke-width="{16 if sm else 8.5:g}"/>'
           f'<ellipse cx="128" cy="62" rx="82" ry="20" fill="none" stroke="{rim}" stroke-width="{8 if sm else 5.5:g}"/>'
-          f'<path d="M68,224 A60,13 0 0 0 188,224" fill="none" stroke="#4f545b" stroke-width="{14 if sm else 8:g}"/>'
+          f'<path d="M68,224 A60,13 0 0 0 188,224" fill="none" stroke="#3a2a16" stroke-width="{14 if sm else 8:g}"/>'
           f'<path d="M68,224 A60,13 0 0 0 188,224" fill="none" stroke="{rim}" stroke-width="{7 if sm else 5:g}"/>')
+    # its float, on a line from the rim
+    s += (f'<path d="M200,64 Q222,70 224,92" fill="none" stroke="#c8b48a" stroke-width="{8 if sm else 2.2:g}"/>'
+          f'<circle cx="224" cy="106" r="{18 if sm else 15}" fill="{ic.rad([(0, "#ffb0a0"), (0.6, "#e0402a"), (1, "#9a1a10")], 0.35, 0.3, 0.8)}" '
+          f'stroke="#6a1008" stroke-width="{8 if sm else 1.2:g}"/>')
+    if not sm:
+        s += '<path d="M209,106 H239" stroke="#fff" stroke-width="5" opacity=".9"/>'
     place(ic, s, 128, 230, 72, 10, 0.34, (2, 3, 0.3))
 
 
@@ -1191,39 +1170,35 @@ def p_globe(ic):
 
 
 def p_computer(ic):
-    """a set in a walnut cabinet, its green screen lit, like the desk's own
-    Control Panel"""
+    """the computer: a sonar set in a riveted steel case, like the tank's
+    own Control Panel"""
     sm = ic.small
     cab = (f'<rect x="28" y="30" width="200" height="178" rx="22" '
-           f'fill="{ic.lin([(0, "#8c5a33"), (1, "#5a331a")])}" stroke="#2e1809" '
+           f'fill="{ic.lin([(0, "#4f8f8a"), (1, "#2a5753")])}" stroke="#123230" '
            f'stroke-width="{12 if sm else 1.8:g}"/>')
     if not sm:
-        cab = g(g(cab, grain(ic, 0.2, "0.008 0.09", 3, 121, "#2a1406", 0.5)),
+        cab = g(g(cab, grain(ic, 0.05, "0.6", 2, 121, "#0c2422", 0.4)),
                 edge_light(ic, 4, 4, 0.8, 26, 50, 0.5))
-    bezel = (f'<rect x="46" y="46" width="164" height="124" rx="16" fill="#151515" stroke="#0a0a0a" '
-             f'stroke-width="{8 if sm else 1:g}"/>')
-    scr = (f'<rect x="56" y="55" width="144" height="106" rx="18" '
+        for (x, y) in ((42, 44), (214, 44), (42, 194), (214, 194), (128, 40)):
+            cab += (f'<circle cx="{x}" cy="{y}" r="4.2" fill="{ic.rad([(0, "#9fd0ca"), (1, "#2a5753")], 0.35, 0.3, 0.8)}" '
+                    'stroke="#123230" stroke-width="1"/>')
+        cab += '<path d="M150,64 v40 M84,170 v26" stroke="#8a4a24" stroke-width="2.4" opacity=".35"/>'
+    bezel = (f'<circle cx="128" cy="106" r="66" fill="{ic.lin(BRASS, 0, 0, 0, 1)}" stroke="#6b4c18" '
+             f'stroke-width="{8 if sm else 1.2:g}"/>')
+    scr = (f'<circle cx="128" cy="106" r="56" '
            f'fill="{ic.rad([(0, "#2a6a3c"), (0.7, "#11301b"), (1, "#081a0e")], 0.5, 0.45, 0.65)}"/>')
     if not sm:
-        txt = []
-        rnd = random.Random(123)
-        for i in range(6):
-            y = 74 + 13 * i
-            x = 70
-            end = rnd.uniform(110, 180)
-            while x < end:
-                w = min(rnd.uniform(6, 18), end - x)
-                txt.append(f'<rect x="{x:.1f}" y="{y - 2.5:g}" width="{w:.1f}" height="5"/>')
-                x += w + 5
-        scr += f'<g fill="#7dff9a" opacity=".85">{"".join(txt)}</g>'
-        scr += ('<g stroke="#000" stroke-width="1" opacity=".18">'
-                + "".join(f'<path d="M58,{y} H198"/>' for y in range(58, 160, 3)) + "</g>")
-        scr += (f'<path d="M66,62 Q128,52 190,62 Q186,92 128,96 Q74,94 66,62 Z" '
-                f'fill="{ic.lin([(0, "#fff", 0.32), (1, "#fff", 0)])}"/>')
-        scr = g(scr, pressed(ic, 3, 3, "#000", 0.7),
-                clip=ic.clip('<rect x="56" y="55" width="144" height="106" rx="18"/>'))
+        rings = "".join(f'<circle cx="128" cy="106" r="{r}" fill="none"/>' for r in (14, 28, 42))
+        scr += (f'<g stroke="#7dff9a" stroke-width="1.2" opacity=".45">{rings}'
+                '<path d="M72,106 H184 M128,50 V162"/></g>'
+                f'<path d="M128,106 L176,78 A56,56 0 0 1 184,106 Z" fill="{ic.lin([(0, "#7dff9a", 0.0), (1, "#7dff9a", 0.55)], 0, 1, 0, 0)}"/>'
+                '<path d="M128,106 L176,78" stroke="#c8ffd4" stroke-width="2.4"/>'
+                '<circle cx="160" cy="96" r="4" fill="#c8ffd4"/><circle cx="104" cy="128" r="3" fill="#7dff9a" opacity=".6"/>')
+        scr += (f'<path d="M86,70 Q128,54 170,70 Q160,90 128,92 Q96,90 86,70 Z" '
+                f'fill="{ic.lin([(0, "#fff", 0.30), (1, "#fff", 0)])}"/>')
+        scr = g(scr, pressed(ic, 3, 3, "#000", 0.7), clip=ic.clip('<circle cx="128" cy="106" r="56"/>'))
     else:
-        scr += '<path d="M76,92 H170 M76,124 H150" stroke="#7dff9a" stroke-width="12"/>'
+        scr += '<circle cx="128" cy="106" r="28" fill="none" stroke="#7dff9a" stroke-width="10"/>'
     knobs = ""
     for x in (66, 190):
         knobs += (f'<circle cx="{x}" cy="188" r="{14 if sm else 9}" '
@@ -1236,8 +1211,8 @@ def p_computer(ic):
     if not sm:
         plate = g(plate + '<rect x="108" y="186" width="40" height="3.2" rx="1.6" fill="#6b4c18" opacity=".7"/>',
                   edge_light(ic, 1.5, 2, 0.8, 22, 50, 0.6))
-    feet = ('<rect x="48" y="206" width="26" height="10" rx="3" fill="#24130a"/>'
-            '<rect x="182" y="206" width="26" height="10" rx="3" fill="#24130a"/>')
+    feet = ('<rect x="48" y="206" width="26" height="10" rx="5" fill="#111"/>'
+            '<rect x="182" y="206" width="26" height="10" rx="5" fill="#111"/>')
     place(ic, feet + cab + bezel + scr + knobs + plate, 128, 220, 102, 9, 0.32, (3, 4, 0.34))
 
 
@@ -1298,15 +1273,16 @@ def p_drive_system(ic):
 
 
 def p_usb(ic):
-    """a memory stick: a walnut body, a brass collar, its steel plug"""
+    """a memory stick in a rubber case, for the wet: the steel plug out"""
     sm = ic.small
     body = (f'<rect x="-70" y="-30" width="128" height="60" rx="16" '
-            f'fill="{ic.lin([(0, "#9a653b"), (0.5, "#7a4825"), (1, "#4f2b13")])}" stroke="#2e1809" '
+            f'fill="{ic.lin([(0, "#3f6a66"), (0.5, "#24423f"), (1, "#122624")])}" stroke="#0a1817" '
             f'stroke-width="{12 if sm else 1.6:g}"/>')
     if not sm:
-        body = g(g(body, grain(ic, 0.2, "0.01 0.12", 3, 141, "#2a1406", 0.5)),
-                 edge_light(ic, 4, 4, 0.9, 28, 50, 0.55))
-        body += '<circle cx="-52" cy="0" r="7" fill="#2a1609" stroke="#1a0c04" stroke-width="1.2"/>'
+        body = g(body, edge_light(ic, 4, 4, 0.6, 18, 50, 0.4))
+        body += ('<path d="M-44,-22 V22 M-30,-22 V22 M-16,-22 V22" stroke="#0a1817" stroke-width="3" '
+                 'opacity=".45"/>')
+        body += '<circle cx="-56" cy="0" r="7" fill="#0a1817" stroke="#000" stroke-width="1.2"/>'
     collar = (f'<rect x="54" y="-26" width="14" height="52" rx="2" fill="{brass(ic, True)}" stroke="#6b4c18" '
               f'stroke-width="{8 if sm else 1.2:g}"/>')
     plug = (f'<rect x="66" y="-22" width="52" height="44" rx="2" fill="{ic.lin(STEEL)}" stroke="#5d636b" '
@@ -1451,7 +1427,7 @@ def write(sub, name, draw):
 
 INDEX = """[Icon Theme]
 Name=AquaDE
-Comment=Manila folders, papers, brass and walnut: the icons of the AquaDE desk
+Comment=Sea-green folders, plastic sheets, shells and brass: the icons of the AquaDE tank
 Inherits=Adwaita,AdwaitaLegacy,hicolor
 Example=folder
 Directories=16x16/places,16x16/mimetypes,16x16/devices,scalable/places,scalable/mimetypes,scalable/devices

@@ -252,8 +252,9 @@ reuse the shark's body, `desk_swim`, with a kind of its own). Check it with
 ## 9. Icons and theme
 
 - The icon theme is generated: `python3 themes/make-icons.py` writes
-  `themes/icons/AquaDE`. The icons are still DEsk's, drawn as things on a
-  desk. Shapes and light are gradients; texture is SVG filters, and each
+  `themes/icons/AquaDE`: DEsk's set, redrawn for the tank (plastic sheets
+  and folders, a shell for home, a crab pot, a treasure chest, a sonar
+  set). Shapes and light are gradients; texture is SVG filters, and each
   icon must still read without filters (Qt ignores them).
   `themes/contact-sheet.py` makes a sheet of all of them to look at.
 - The GTK theme is `themes/gtk/AquaDE/gtk-3.0/gtk.css`, on top of Adwaita.
