@@ -959,7 +959,7 @@ hit3 map_post(vec3 p)
 {
 	hit3 h = hit3(1e9, 0);
 	float gross = sd_box(p - vec3(RM_PB_CX, (RM_PB_SHOULDER + RM_PB_CAP_T) * 0.5, RM_PB_CZ),
-		vec3(RM_PB_HX + 0.30, (RM_PB_SHOULDER + RM_PB_CAP_T) * 0.5 + 0.35, RM_PB_HZ + 0.55));
+		vec3(RM_PB_HX + 0.30, (RM_PB_SHOULDER + RM_PB_CAP_T) * 0.5 + 1.60, RM_PB_HZ + 0.55));
 	if (gross > DRAWER_NEAR) {
 		return hit3(gross, 0);
 	}
@@ -1012,10 +1012,22 @@ hit3 map_post(vec3 p)
 	}
 
 	vec3 cp = pb_to_cap(p);
-	float cap = sd_round_box(cp, vec3(RM_PB_HX + 0.14, RM_PB_CAP_T * 0.5, RM_PB_HZ + 0.14), 0.13);
-	h = hmin3(h, hit3(cap, MID_POST_RED));
+	{
+		const float r = 0.10;
+		float dome = length(vec2(cp.y - RM_PB_DOME_C, cp.z)) - RM_PB_DOME_R + r;
+		float side = abs(cp.z) - RM_PB_LID_A + r;
+		float bot = -RM_PB_CAP_T * 0.5 - cp.y + r;
+		float ends = abs(cp.x) - (RM_PB_HX + 0.14) + r;
+		float prof = max(dome, side);
+		float outd = length(max(vec3(prof, bot, ends), 0.0));
+		float ind = min(max(prof, max(bot, ends)), 0.0);
+		h = hmin3(h, hit3(outd + ind - r, MID_POST_RED));
+	}
+	h = hmin3(h, hit3(sd_round_box(p - vec3(RM_PB_CX, RM_PB_SHOULDER - 0.12,
+		RM_PB_CZ + RM_PB_HZ + 0.20), vec3(0.20, 0.30, 0.035), 0.03), MID_CC_BRASS));
 
 	h.d = max(h.d, (RM_ZF + 0.02) - p.z);
+	h.d = min(h.d, DRAWER_NEAR);
 	return h;
 }
 

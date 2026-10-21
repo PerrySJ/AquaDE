@@ -2079,6 +2079,15 @@ static int console_owner(vec3 p)
 #define RM_PB_SHOULDER 4.05   /* where the body stops and the cap starts */
 #define RM_PB_CAP_T 0.62      /* how thick the cap is */
 #define RM_PB_TILT 0.185      /* the cap falls this much towards the front */
+/* The cap is a chest's lid: a barrel, domed DOME over its flat, its arc
+ * meeting the flat at its front and back edges (LID_A either side of its
+ * middle) -- a circle of radius DOME_R about DOME_C, in the cap's frame. */
+#define RM_PB_DOME 0.42
+#define RM_PB_LID_A (RM_PB_HZ + 0.14)
+#define RM_PB_DOME_R ((RM_PB_LID_A * RM_PB_LID_A + RM_PB_DOME * RM_PB_DOME) / (2.0 * RM_PB_DOME))
+#define RM_PB_DOME_C (RM_PB_CAP_T * 0.5 + RM_PB_DOME - RM_PB_DOME_R)
+/* the lid's top, s along it from its middle */
+#define RM_PB_LID_N(s) (RM_PB_DOME_C + sqrt(RM_PB_DOME_R * RM_PB_DOME_R - (s) * (s)))
 
 /* Where the slot in the lid was, in the cap's frame: across it, and how far
  * back. The lid has no slot now -- from the desk it is past the top of the
@@ -2114,7 +2123,7 @@ static int console_owner(vec3 p)
 #define RM_PB_PLATE_S1 (RM_PB_HZ - 0.10)
 #define RM_PB_TOP_F 0.30
 #define RM_PB_TOP_S (RM_PB_PLATE_S0 + (RM_PB_PLATE_S1 - RM_PB_PLATE_S0) * RM_PB_TOP_F)
-#define RM_PB_TOP_N (RM_PB_CAP_T * 0.5 + 0.012)
+#define RM_PB_TOP_N (RM_PB_LID_N(RM_PB_TOP_S) + 0.012)
 #define RM_PB_TOP_Y (RM_PB_SHOULDER + RM_PB_CAP_T * 0.5 \
 	+ RM_PB_TOP_N * cos(RM_PB_TILT) - RM_PB_TOP_S * sin(RM_PB_TILT))
 #define RM_PB_TOP_DZ (-(RM_PB_TOP_N * sin(RM_PB_TILT) + RM_PB_TOP_S * cos(RM_PB_TILT)))
@@ -2149,7 +2158,7 @@ static hit3 map_post(vec3 p)
 {
 	hit3 h = { 1e9, 0 };
 	double gross = sd_box(vsub(p, v3(RM_PB_CX, (RM_PB_SHOULDER + RM_PB_CAP_T) * 0.5,
-		RM_PB_CZ)), v3(RM_PB_HX + 0.30, (RM_PB_SHOULDER + RM_PB_CAP_T) * 0.5 + 0.35,
+		RM_PB_CZ)), v3(RM_PB_HX + 0.30, (RM_PB_SHOULDER + RM_PB_CAP_T) * 0.5 + 1.60,
 		RM_PB_HZ + 0.55));
 	if (gross > DRAWER_NEAR) {
 		return (hit3){ gross, 0 };
@@ -2221,17 +2230,37 @@ static hit3 map_post(vec3 p)
 			v3(0.24, 0.32, 0.05), 0.09), MID_CC_BRASS });
 	}
 
-	/* the cap, tilted so the weather runs off the front of it */
+	/* the lid, domed like a chest's, and tilted toward the front */
 	vec3 cp = pb_to_cap(p);
-	double cap = sd_round_box(cp, v3(RM_PB_HX + 0.14, RM_PB_CAP_T * 0.5,
-		RM_PB_HZ + 0.14), 0.13);
-	h = hmin3(h, (hit3){ cap, MID_POST_RED });
+	{
+		/* the arc and the front and back meet at a slant, and only a plain
+		 * max of them is never more than the true distance (more, and a
+		 * shadow ray steps into the lid and finds it black); the bottom
+		 * and the ends are square to them, and round off exactly */
+		const double r = 0.10;
+		double dome = hypot(cp.y - RM_PB_DOME_C, cp.z) - RM_PB_DOME_R + r;
+		double side = fabs(cp.z) - RM_PB_LID_A + r;
+		double prof = fmax(dome, side);
+		double bot = -RM_PB_CAP_T * 0.5 - cp.y + r;
+		double ends = fabs(cp.x) - (RM_PB_HX + 0.14) + r;
+		double d0 = fmax(prof, 0.0), d2 = fmax(bot, 0.0), d3 = fmax(ends, 0.0);
+		double out = sqrt(d0 * d0 + d2 * d2 + d3 * d3);
+		double in = fmin(fmax(prof, fmax(bot, ends)), 0.0);
+		h = hmin3(h, (hit3){ out + in - r, MID_POST_RED });
+	}
+	/* the hasp down from the lid over the door, brass */
+	h = hmin3(h, (hit3){ sd_round_box(vsub(p, v3(RM_PB_CX, RM_PB_SHOULDER - 0.12,
+		RM_PB_CZ + RM_PB_HZ + 0.20)), v3(0.20, 0.30, 0.035), 0.03), MID_CC_BRASS });
 
 	/* Standing this far back it overhangs the desk by a finger's width.
 	 * Nothing past the top board's own edge exists, so it does not hang
 	 * over the void behind the desk -- the same cut the control panel
 	 * comes out of. */
 	h.d = fmax(h.d, (RM_ZF + 0.02) - p.z);
+	/* No further than where the bound takes over says it is: the field
+	 * has no step there for a soft shadow to read as something in the
+	 * way (it made black patches on the lid). */
+	h.d = fmin(h.d, DRAWER_NEAR);
 	return h;
 }
 
@@ -4811,7 +4840,7 @@ static void gb_varr(struct glsl_buf *b, const char *name, const vec3 *v, int n)
 	X(RM_PB_SLOT_HS) X(RM_PB_SLOT_S) X(RM_PB_TOP_Y) X(RM_PB_TOP_DZ) \
 	X(RM_PB_FS_Y) X(RM_PB_FS_HU) X(RM_PB_FS_HH) X(RM_PB_FS_FR) \
 	X(RM_PB_HOOD_OUT) X(RM_PB_HOOD_TILT) \
-	X(RM_PB_TOP_GAP) \
+	X(RM_PB_TOP_GAP) X(RM_PB_DOME_R) X(RM_PB_DOME_C) X(RM_PB_LID_A) \
 	X(SHELF_LAMP_Y) X(SHELF_LAMP_IRR) X(LIT_KEY_IRRADIANCE) \
 	X(ROOM_LAMP_REF0) X(ROOM_LAMP_RADIUS0) X(ROOM_LAMP_CONE_IN) \
 	X(ROOM_LAMP_CONE_OUT) \
@@ -23794,9 +23823,9 @@ void desk_draw_post_idle(cairo_t *cr, int screen_w, int screen_h,
 	/* the plate, on the cap */
 	vec3 pq[4];
 	for (int k = 0; k < 4; k++) {
+		double ps = (k & 2) ? RM_PB_PLATE_S1 : RM_PB_PLATE_S0;
 		pq[k] = pb_cap_to_world((k & 1) ? RM_PB_HX - 0.10 : -RM_PB_HX + 0.10,
-			RM_PB_CAP_T * 0.5 + 0.012,
-			(k & 2) ? RM_PB_PLATE_S1 : RM_PB_PLATE_S0);
+			RM_PB_LID_N(ps) + 0.012, ps);
 	}
 	cairo_matrix_t mt;
 	const double PW = 320.0, PH = 62.0;
@@ -31012,8 +31041,8 @@ void desk_allapps_box(int w, int h, double *x, double *y, double *pw, double *ph
 	struct room_xf xf;
 	if (room_xform(w, h, 0.0, &xf)) {
 		double u, v;
-		vec3 c = pb_cap_to_world(0.0, RM_PB_CAP_T * 0.5,
-			(RM_PB_HZ - 0.10 + RM_PB_SLOT_S + RM_PB_SLOT_HS + 0.30) * 0.5);
+		double ms = (RM_PB_HZ - 0.10 + RM_PB_SLOT_S + RM_PB_SLOT_HS + 0.30) * 0.5;
+		vec3 c = pb_cap_to_world(0.0, RM_PB_LID_N(ms), ms);
 		if (room_project(&xf.rr->cam, c, &u, &v)) {
 			mid = xf.oy + v * xf.rr->h * xf.scale;
 		}
