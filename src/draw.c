@@ -3026,6 +3026,41 @@ static void slate_at(vec3 w, struct mtl *m, double seed)
 	m->bump_amp = 0.060;
 }
 
+/* The treasure chest the post comes in: oak boards gone dark and soft
+ * with the water, bound with two iron straps that have rusted, and green
+ * where the algae has found the grain. */
+static void chest_at(vec3 w, struct mtl *m)
+{
+	walnut_at(w, w.y + w.z, w.x, m, 0.78, 0.90);
+	double grey = (m->albedo.x + m->albedo.y + m->albedo.z) / 3.0;
+	m->albedo = vmix(m->albedo, v3(grey, grey * 1.05, grey * 0.90), 0.20);
+	m->albedo = vmul(m->albedo, 0.80);
+	/* the gaps between the boards, opened up by the water */
+	double bu = (w.y + w.z) / 0.78;
+	double gap = smoothstepf(0.06, 0.0, fabs(bu - floor(bu + 0.5)));
+	m->albedo = vmul(m->albedo, 1.0 - gap * 0.75);
+	double algae = clampf(room_fbm2(w.x * 0.8 + 5.0, (w.y + w.z) * 0.8) * 1.7 - 0.55,
+		0.0, 1.0);
+	m->albedo = vmix(m->albedo, v3(0.040, 0.075, 0.035), algae * 0.45);
+	m->rough = clampf(m->rough + 0.25, 0.0, 0.95);
+	m->coat = 0.0;
+
+	double s = fabs(fabs(w.x - RM_PB_CX) - 1.20);
+	double strap = smoothstepf(0.19, 0.15, s);
+	if (strap > 0.0) {
+		double t = room_fbm(w.x * 8.0, (w.y + w.z) * 8.0);
+		double rust = clampf(room_fbm2(w.x * 3.0, (w.y + w.z) * 3.0) * 1.5 - 0.2, 0.0, 1.0);
+		vec3 iron = vmix(v3(0.040, 0.038, 0.036), v3(0.150, 0.065, 0.030), rust * 0.7);
+		iron = vmul(iron, 0.85 + t * 0.30);
+		m->albedo = vmix(m->albedo, iron, strap);
+		m->metal = 0.45 * (1.0 - rust) * strap;
+		m->rough = m->rough + (0.55 + rust * 0.30 - m->rough) * strap;
+		m->bump_freq = 60.0;
+		m->bump_amp = 0.070;
+	}
+	m->edge = 2.4;
+}
+
 /* The back of the tank: deep water, darker the further down, with the light
  * from overhead coming down through it in slanting shafts. It glows rather
  * than reflects, because what you see there is light in the water. */
@@ -3580,38 +3615,16 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		m->albedo = vmul(m->albedo, 0.92);
 		m->coat *= 0.84;
 		break;
-	case MID_POST_RED: {
-		/* Cast iron under coach enamel, repainted more than once and not
-		 * always well. Enamel does not wear thin the way a lacquer does:
-		 * it chips, and what is under it is iron. */
-		double t = room_fbm(w.x * 6.0, (w.y + w.z) * 6.0);
-		double orange = room_fbm2(w.x * 1.3 + 12.0, w.y * 1.3);
-		m->albedo = vmix(v3(0.232, 0.024, 0.016), v3(0.318, 0.048, 0.026), t * 0.85);
-		m->albedo = vmix(m->albedo, v3(0.186, 0.038, 0.024), orange * 0.32);
-		double chip = nick_at(w.x, w.y + w.z, 2.6, 41.0);
-		m->albedo = vmix(m->albedo, v3(0.088, 0.064, 0.052), chip * 0.85);
-		double sc = scratch_at(w.y, w.x, 0.34, 6.0, 0.007, 27.0);
-		m->albedo = vmix(m->albedo, vmul(m->albedo, 1.70), clampf(sc, 0.0, 1.0) * 0.30);
-		m->rough = 0.34 + t * 0.14 + chip * 0.42;
-		m->coat = 0.46 * (1.0 - chip * 0.9);
-		m->coat_rough = 0.12 + t * 0.09 + chip * 0.30;
-		/* orange peel: coach enamel was brushed on, and it shows */
-		m->bump_freq = 34.0;
-		m->bump_amp = 0.055;
-		m->dust = 1.0;
-		/* every arris on it has been knocked at some point */
-		m->edge = 2.4;
+	case MID_POST_RED:
+		chest_at(w, m);
 		break;
-	}
 	case MID_POST_DARK: {
+		/* the foot and the inside: the same oak, black with the water */
 		double t = room_fbm(w.x * 14.0, (w.y + w.z) * 14.0);
-		m->albedo = vmix(v3(0.036, 0.026, 0.022), v3(0.074, 0.054, 0.044), t);
-		m->rough = 0.62 + t * 0.14;
-		m->coat = 0.14;
-		m->coat_rough = 0.34;
+		m->albedo = vmix(v3(0.022, 0.024, 0.020), v3(0.050, 0.048, 0.036), t);
+		m->rough = 0.80 + t * 0.12;
 		m->bump_freq = 120.0;
 		m->bump_amp = 0.040;
-		m->dust = 1.0;
 		m->edge = 2.0;
 		break;
 	}

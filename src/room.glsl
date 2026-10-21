@@ -1547,6 +1547,37 @@ void slate_at(vec3 w, inout mtl m, float seed)
 	m.bump_amp = 0.060;
 }
 
+void chest_at(vec3 w, inout mtl m)
+{
+	walnut_at(w, w.y + w.z, w.x, m, 0.78, 0.90);
+	float grey = (m.albedo.x + m.albedo.y + m.albedo.z) / 3.0;
+	m.albedo = mix(m.albedo, vec3(grey, grey * 1.05, grey * 0.90), 0.20);
+	m.albedo *= 0.80;
+	float bu = (w.y + w.z) / 0.78;
+	float gap = smoothstepf(0.06, 0.0, abs(bu - floor(bu + 0.5)));
+	m.albedo *= 1.0 - gap * 0.75;
+	float algae = clampf(room_fbm2(w.x * 0.8 + 5.0, (w.y + w.z) * 0.8) * 1.7 - 0.55,
+		0.0, 1.0);
+	m.albedo = mix(m.albedo, vec3(0.040, 0.075, 0.035), algae * 0.45);
+	m.rough = clampf(m.rough + 0.25, 0.0, 0.95);
+	m.coat = 0.0;
+
+	float s = abs(abs(w.x - RM_PB_CX) - 1.20);
+	float strap = smoothstepf(0.19, 0.15, s);
+	if (strap > 0.0) {
+		float t = room_fbm(w.x * 8.0, (w.y + w.z) * 8.0);
+		float rust = clampf(room_fbm2(w.x * 3.0, (w.y + w.z) * 3.0) * 1.5 - 0.2, 0.0, 1.0);
+		vec3 iron = mix(vec3(0.040, 0.038, 0.036), vec3(0.150, 0.065, 0.030), rust * 0.7);
+		iron *= 0.85 + t * 0.30;
+		m.albedo = mix(m.albedo, iron, strap);
+		m.metal = 0.45 * (1.0 - rust) * strap;
+		m.rough = mix(m.rough, 0.55 + rust * 0.30, strap);
+		m.bump_freq = 60.0;
+		m.bump_amp = 0.070;
+	}
+	m.edge = 2.4;
+}
+
 void tank_back_at(vec3 w, inout mtl m)
 {
 	float up = smoothstepf(RM_FLOOR, 24.0, w.y);
@@ -2016,33 +2047,15 @@ mtl icon_material(int id, vec3 pw)
 	case MID_CC_CHEEK:
 		wood = vec4(w.z, w.y, 0.0, 0.75);
 		break;
-	case MID_POST_RED: {
-		float t = room_fbm(w.x * 6.0, (w.y + w.z) * 6.0);
-		float orange = room_fbm2(w.x * 1.3 + 12.0, w.y * 1.3);
-		m.albedo = mix(vec3(0.232, 0.024, 0.016), vec3(0.318, 0.048, 0.026), t * 0.85);
-		m.albedo = mix(m.albedo, vec3(0.186, 0.038, 0.024), orange * 0.32);
-		float chip = nick_at(w.x, w.y + w.z, 2.6, 41.0);
-		m.albedo = mix(m.albedo, vec3(0.088, 0.064, 0.052), chip * 0.85);
-		float sc = scratch_at(w.y, w.x, 0.34, 6.0, 0.007, 27.0);
-		m.albedo = mix(m.albedo, m.albedo * 1.70, clampf(sc, 0.0, 1.0) * 0.30);
-		m.rough = 0.34 + t * 0.14 + chip * 0.42;
-		m.coat = 0.46 * (1.0 - chip * 0.9);
-		m.coat_rough = 0.12 + t * 0.09 + chip * 0.30;
-		m.bump_freq = 34.0;
-		m.bump_amp = 0.055;
-		m.dust = 1.0;
-		m.edge = 2.4;
+	case MID_POST_RED:
+		chest_at(w, m);
 		break;
-	}
 	case MID_POST_DARK: {
 		float t = room_fbm(w.x * 14.0, (w.y + w.z) * 14.0);
-		m.albedo = mix(vec3(0.036, 0.026, 0.022), vec3(0.074, 0.054, 0.044), t);
-		m.rough = 0.62 + t * 0.14;
-		m.coat = 0.14;
-		m.coat_rough = 0.34;
+		m.albedo = mix(vec3(0.022, 0.024, 0.020), vec3(0.050, 0.048, 0.036), t);
+		m.rough = 0.80 + t * 0.12;
 		m.bump_freq = 120.0;
 		m.bump_amp = 0.040;
-		m.dust = 1.0;
 		m.edge = 2.0;
 		break;
 	}
