@@ -35000,7 +35000,10 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 	for (int k = 0; k < 3; k++) {
 		const struct lk_proj *pj = &rm->proj[k];
 		double u, v;
-		if (!pj->on || !room_project(&pj->cam, p, &u, &v) || u < 0.0 || u > 1.0 || v < 0.0
+		/* the desk from above sees the deep water past its edges, not the
+		 * floor: on the floor it would lay a ring of it round the desk */
+		if ((k == 2 && kind == LK_RM_SHELL)
+			|| !pj->on || !room_project(&pj->cam, p, &u, &v) || u < 0.0 || u > 1.0 || v < 0.0
 			|| v > 1.0) {
 			continue;
 		}
@@ -35021,21 +35024,26 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 		return lk_tex_at(&pj->tex, px / pj->tex.w, py / pj->tex.h, true, &a);
 	}
 	*sub = 2 + kind;
-	/* made: stone for the desk, slate for the case, the walls in the colour
-	 * they have at the edges of the picture, the lamp over the desk */
+	/* made: the tank's own materials -- sand on the ledge, stone under it,
+	 * slate for the case; the water all round in the colour it has at the
+	 * edges of the picture */
 	vec3 c;
+	struct mtl mt;
+	memset(&mt, 0, sizeof mt);
 	switch (kind) {
 	case LK_RM_DESK:
 	case LK_RM_LEG: {
-		c = vmul(v3(0.20, 0.22, 0.21), 0.85 + 0.25 * room_noise(p.x * rm->s * 4.0, p.y * rm->s * 4.0));
+		if (kind == LK_RM_DESK && n.y > 0.5) {
+			sand_at(p, &mt);
+		} else {
+			rock_at(p, &mt);
+		}
+		c = mt.albedo;
 		if (kind == LK_RM_DESK && n.z > 0.5 && p.y < -RM_TOP_T - 0.2) {
-			/* the drawer, in the apron: a dark line round it, a brass pull */
+			/* the drawer, in the stone: a dark line round it */
 			double dx = RM_DR_HX - fabs(p.x), dy = fmin(p.y - (RM_DR_BOT - 0.10), (-RM_TOP_T - 0.15) - p.y);
 			if (dx > 0.0 && dy > 0.0 && fmin(dx, dy) < 0.12) {
 				c = vmul(c, 0.35);
-			}
-			if (fabs(p.x) < 1.9 && fabs(p.y - (RM_DR_BOT + RM_DR_TOP) * 0.5) < 0.40) {
-				c = v3(0.55, 0.40, 0.16);
 			}
 		}
 		break;
@@ -35051,21 +35059,32 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 		break;
 	default:
 		if (n.y > 0.5) {
-			/* the floor: the tank's sand */
-			double g = room_noise(p.x * rm->s * 20.0, p.z * rm->s * 20.0);
-			c = vmul(v3(0.46, 0.43, 0.34), 0.80 + 0.30 * g);
+			/* the floor: the tank's sand, caustics and all */
+			sand_at(p, &mt);
+			c = vmul(mt.albedo, 0.80);
 		} else if (n.y < -0.5) {
-			c = rm->ceil;
+			/* the surface, from under it: bright, and broken into a net of
+			 * ripples by the light coming through */
+			double r1 = fabs(room_fbm2(p.x * 0.09 + 2.0, p.z * 0.09 + 9.0) - 0.5);
+			double r2 = fabs(room_fbm2(p.x * 0.14 + 17.0, p.z * 0.14 + 3.0) - 0.5);
+			double net = smoothstepf(0.08, 0.0, r1) + smoothstepf(0.07, 0.0, r2) * 0.7;
+			double mid = 1.0 - smoothstepf(10.0, 60.0, fabs(p.x));
+			c = vadd(vmul(rm->wall, 1.25 + 0.35 * mid), vmul(v3(0.22, 0.38, 0.40), net * (0.5 + 0.5 * mid)));
+			return c;
 		} else {
-			/* the wall, as the picture has it beside the bookcase; along its
-			 * foot a skirting board, its top edge catching the lamp */
-			c = rm->wall;
+			/* the water, as the picture has it beside the bookcase: deeper
+			 * toward the floor, with shafts of light slanting down through
+			 * it; along its foot the tank's black skirt */
 			double up = p.y - rm->fy;
 			if (up < 4.2) {
-				c = up > 3.8 ? v3(0.06, 0.06, 0.06) : v3(0.02, 0.02, 0.02);   /* the tank's black skirt */
+				return up > 3.8 ? v3(0.06, 0.06, 0.06) : v3(0.02, 0.02, 0.02);
 			}
-			return vmul(c, 0.86 + 0.14 * smoothstepf(-10.0, 20.0, p.y)
-				- 0.10 * smoothstepf(30.0, 60.0, fabs(p.x)));
+			double hi = smoothstepf(0.0, rm->cy - rm->fy, up);
+			double ray = room_fbm((p.x + p.z) * 0.11 + p.y * 0.045, 3.0);
+			ray = pow(smoothstepf(0.45, 0.80, ray), 2.0) * hi;
+			c = vmul(rm->wall, 0.70 + 0.55 * hi);
+			c = vadd(c, vmul(v3(0.06, 0.13, 0.14), ray));
+			return vmul(c, 1.0 - 0.10 * smoothstepf(30.0, 60.0, fabs(p.x)));
 		}
 		break;
 	}
@@ -35268,13 +35287,14 @@ static bool lk_room_build(struct lk_room *rm, int w, int h, int view, cairo_surf
 #define LK_RM_BOX(x0, y0, z0, x1, y1, z1, k) \
 	do { rm->box[n].lo = v3((x0), (y0), (z0)); rm->box[n].hi = v3((x1), (y1), (z1)); \
 		rm->box[n].kind = (k); n++; } while (0)
-	/* the desk: its top, the apron the drawer is in, four legs */
+	/* the ledge: its sand top, the stone front the drawer is in, and a
+	 * stone slab at each end down to the floor, as the tank has it */
 	LK_RM_BOX(-RM_HX, -RM_TOP_T, RM_ZF, RM_HX, 0.0, RM_ZN, LK_RM_DESK);
 	double ax = RM_HX - 0.30, az0 = RM_ZF + 0.40, az1 = RM_ZN - 0.25, ay = RM_DR_BOT - 0.15;
 	LK_RM_BOX(-ax, ay, az0, ax, -RM_TOP_T, az1, LK_RM_DESK);
-	for (int i = 0; i < 4; i++) {
-		double lx = (i & 1) ? ax - 1.3 : -ax, lz = (i & 2) ? az1 - 1.3 : az0;
-		LK_RM_BOX(lx, RM_FLOOR, lz, lx + 1.3, ay, lz + 1.3, LK_RM_LEG);
+	for (int i = 0; i < 2; i++) {
+		double lx = i ? ax - 2.4 : -ax;
+		LK_RM_BOX(lx, RM_FLOOR, az0, lx + 2.4, ay, az1, LK_RM_LEG);
 	}
 	/* the bookcase, and its cornice */
 	LK_RM_BOX(-g_rm_sh_hx, RM_FLOOR, RM_SH_ZB, g_rm_sh_hx, RM_SH_TOP, RM_SH_ZF, LK_RM_CASE);
