@@ -8281,6 +8281,16 @@ static void fill_paper(cairo_t *cr, double x, double y, double w, double h, doub
 	cairo_restore(cr);
 }
 
+/* the same, on the diver's plastic windows and letters are on */
+static void fill_slate(cairo_t *cr, double x, double y, double w, double h, double r)
+{
+	cairo_save(cr);
+	desk_rounded(cr, x, y, w, h, r);
+	cairo_clip(cr);
+	fill_tile(cr, slate_tile(), 1.0, 1.0);
+	cairo_restore(cr);
+}
+
 static void leather_fill(cairo_t *cr, double x, double y, double w, double h, double r)
 {
 	cairo_save(cr);
@@ -22315,11 +22325,11 @@ static void post_card_face(cairo_t *cr, double w, double h, const struct desk_no
 	bool hot)
 {
 	unsigned seed = note->id * 2654435761u;
-	fill_paper(cr, 0, 0, w, h, w * 0.012);
+	fill_slate(cr, 0, 0, w, h, w * 0.012);
 	cairo_save(cr);
 	desk_rounded_path(cr, 0, 0, w, h, w * 0.012);
 	cairo_clip(cr);
-	paper_age(cr, w, h, seed, 0.20);
+	sheet_film(cr, w, h, seed);
 	double mx = w * 0.055;
 	/* the writing is sized to the width of the sheet: h is only how much
 	 * of it there is */
@@ -22592,11 +22602,11 @@ static cairo_surface_t *post_face_copy(const struct desk_note *note, int fw, int
 			 * of it coming through */
 			cairo_surface_t *bk = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, fw, fh);
 			cairo_t *bc = cairo_create(bk);
-			fill_paper(bc, 0, 0, fw, fh, fw * 0.012);
+			fill_slate(bc, 0, 0, fw, fh, fw * 0.012);
 			cairo_save(bc);
 			desk_rounded_path(bc, 0, 0, fw, fh, fw * 0.012);
 			cairo_clip(bc);
-			paper_age(bc, fw, fh, note->id * 2654435761u + 5u, 0.24);
+			sheet_film(bc, fw, fh, note->id * 2654435761u + 5u);
 			/* the lines of the other side run the same way here, for the
 			 * strip laying it down already turns it over */
 			cairo_translate(bc, fw, 0);
@@ -22862,11 +22872,11 @@ cairo_surface_t *desk_letter_sheet(const struct desk_note *note,
 	cairo_t *cr = cairo_create(sf);
 	unsigned seed = note->id * 2654435761u + 11u;
 
-	fill_paper(cr, 0, 0, w, h, 3.0);
+	fill_slate(cr, 0, 0, w, h, 3.0);
 	cairo_save(cr);
 	desk_rounded_path(cr, 0, 0, w, h, 3.0);
 	cairo_clip(cr);
-	paper_age(cr, w, h, seed, 0.30);
+	sheet_film(cr, w, h, seed);
 
 	/* it was folded in three to go in the envelope, and it remembers */
 	for (int i = 1; i < 3; i++) {
