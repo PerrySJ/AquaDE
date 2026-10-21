@@ -10806,6 +10806,15 @@ static void cr_draw(cairo_t *cr, struct desk_crumple *c, double u, bool shadow)
 		}
 		cairo_matrix_t pm;
 		cairo_matrix_multiply(&pm, &m, &to_pixels);
+		/* A facet all but edge on has a matrix pixman cannot hold (16.16
+		 * fixed point): it fails as out of memory, and that leaves the
+		 * whole cairo_t drawing nothing after it -- for some seeds, the
+		 * ball. Such a facet is a sliver nobody would see anyway. */
+		const double lim = 16000.0;
+		if (fabs(pm.xx) > lim || fabs(pm.xy) > lim || fabs(pm.yx) > lim || fabs(pm.yy) > lim
+			|| fabs(pm.x0) > lim || fabs(pm.y0) > lim) {
+			continue;
+		}
 		bool flipped = (det > 0) != (ddet > 0);
 		cairo_pattern_t *src = pat[flipped ? 1 : 0];
 		cairo_pattern_set_matrix(src, &pm);
@@ -10922,6 +10931,426 @@ void desk_crumple_ball(cairo_t *cr, struct desk_crumple *c, double x, double y,
 double desk_crumple_radius(const struct desk_crumple *c)
 {
 	return c->R;
+}
+
+/* ================================================================
+ * What eats the ball
+ *
+ * Under water a sheet screwed up is not thrown off the side: something
+ * comes for it. Seen from above, as everything on the sand is: a shark
+ * mostly, now and then a grouper, and for a little sheet a pufferfish,
+ * which swells up after. It comes in from the nearer edge on a loop
+ * whose turn is at the ball -- the nose goes through it -- and goes out
+ * the way it came, its body bending along the loop and its tail beating,
+ * its shadow on the sand under it. Where the ball was, bubbles.
+ * ================================================================ */
+
+#define SWIM_PRE 24      /* points along the way in, off the edge */
+#define SWIM_LOOP 112    /* and round the loop */
+#define SWIM_SPINE 28    /* down the fish */
+
+void desk_swim_init(struct desk_swim *w, int kind, double bx, double by, double ball_r,
+	double dir, double screen_w, unsigned seed)
+{
+	memset(w, 0, sizeof *w);
+	w->kind = kind;
+	w->seed = seed;
+	w->bx = bx;
+	w->by = by;
+	w->len = kind == DESK_FISH_PUFFER ? clampf(ball_r * 2.4, 80.0, 150.0)
+		: kind == DESK_FISH_GROUPER ? clampf(ball_r * 3.6, 200.0, 360.0)
+		: clampf(ball_r * 6.2, 260.0, 600.0);
+	/* and never more than a third of the screen across */
+	w->len = fmin(w->len, screen_w * 0.36);
+	double L = w->len, ux = -dir;
+	double ex = dir < 0.0 ? -L * 0.10 : screen_w + L * 0.10;
+	double a = L * (kind == DESK_FISH_PUFFER ? 0.60 : 0.42);
+	/* a cubic whose middle is at the ball: the far handles a third of
+	 * the way in from the edge past it */
+	double cx = bx + (bx - ex) / 3.0;
+	double P[4][2] = { { ex, by - a }, { cx, by - a }, { cx, by + a }, { ex, by + a } };
+	int n = 0;
+	for (int k = 0; k < SWIM_PRE; k++) {
+		double f = 1.05 * L * (1.0 - (double)k / SWIM_PRE);
+		w->px[n] = ex - ux * f;
+		w->py[n++] = by - a;
+	}
+	for (int j = 0; j < SWIM_LOOP; j++) {
+		double t = (double)j / (SWIM_LOOP - 1), s = 1.0 - t;
+		double b0 = s * s * s, b1 = 3 * s * s * t, b2 = 3 * s * t * t, b3 = t * t * t;
+		w->px[n] = b0 * P[0][0] + b1 * P[1][0] + b2 * P[2][0] + b3 * P[3][0];
+		w->py[n++] = b0 * P[0][1] + b1 * P[1][1] + b2 * P[2][1] + b3 * P[3][1];
+	}
+	for (int k = 1; n < DESK_SWIM_PTS; k++) {
+		w->px[n] = ex - ux * 1.05 * L * k / SWIM_PRE;
+		w->py[n++] = by + a;
+	}
+	w->s[0] = 0.0;
+	for (int i = 1; i < DESK_SWIM_PTS; i++) {
+		w->s[i] = w->s[i - 1] + hypot(w->px[i] - w->px[i - 1], w->py[i] - w->py[i - 1]);
+	}
+	w->s0 = w->s[SWIM_PRE];
+	w->s1 = w->s[DESK_SWIM_PTS - 1];
+	double apex = (w->s[SWIM_PRE] + w->s[SWIM_PRE + SWIM_LOOP - 1]) * 0.5;
+	w->dur = clampf(0.62 + (w->s1 - w->s0) / 5200.0, 0.62, 1.05);
+	w->bite = w->dur * (apex - w->s0) / (w->s1 - w->s0);
+}
+
+double desk_swim_time(const struct desk_swim *w)
+{
+	return w->dur;
+}
+
+double desk_swim_bite(const struct desk_swim *w)
+{
+	return w->bite;
+}
+
+/* the point s along the loop, and which way it is going there */
+static void swim_at(const struct desk_swim *w, double s, double *x, double *y, double *tx,
+	double *ty)
+{
+	int lo = 0, hi = DESK_SWIM_PTS - 1;
+	s = clampf(s, 0.0, w->s[hi]);
+	while (hi - lo > 1) {
+		int mid = (lo + hi) / 2;
+		if (w->s[mid] <= s) {
+			lo = mid;
+		} else {
+			hi = mid;
+		}
+	}
+	double seg = fmax(w->s[hi] - w->s[lo], 1e-9), f = (s - w->s[lo]) / seg;
+	*x = w->px[lo] + (w->px[hi] - w->px[lo]) * f;
+	*y = w->py[lo] + (w->py[hi] - w->py[lo]) * f;
+	*tx = (w->px[hi] - w->px[lo]) / seg;
+	*ty = (w->py[hi] - w->py[lo]) / seg;
+}
+
+/* How wide the fish is (half of it), u from its nose (0) to its tail (1),
+ * as a share of its length. */
+static double swim_width(int kind, double u, double puff)
+{
+	switch (kind) {
+	case DESK_FISH_PUFFER: {
+		double e = (u - 0.42) / 0.50;
+		return 0.24 * (1.0 + 0.55 * puff) * sqrt(fmax(0.0, 1.0 - e * e)) + 0.02;
+	}
+	case DESK_FISH_GROUPER:
+		return 0.13 * (u < 0.15 ? 0.80 * sin(u / 0.15 * M_PI * 0.5)
+			: u < 0.40 ? 0.80 + 0.20 * smoothstepf(0.15, 0.40, u)
+			: 1.0 - 0.62 * smoothstepf(0.40, 0.92, u));
+	default:
+		return 0.085 * (u < 0.12 ? 0.70 * sin(u / 0.12 * M_PI * 0.5)
+			: u < 0.30 ? 0.70 + 0.30 * smoothstepf(0.12, 0.30, u)
+			: 1.0 - 0.88 * smoothstepf(0.30, 0.94, u));
+	}
+}
+
+struct swim_pose {
+	double x[SWIM_SPINE], y[SWIM_SPINE];   /* the spine, nose first */
+	double nx[SWIM_SPINE], ny[SWIM_SPINE]; /* to its left */
+	double hw[SWIM_SPINE];                 /* half its width */
+	double puff;
+};
+
+static void swim_pose(const struct desk_swim *w, double t, struct swim_pose *p)
+{
+	double L = w->len;
+	double sh = w->s0 + (w->s1 - w->s0) * clampf(t / w->dur, 0.0, 1.0);
+	double hz = w->kind == DESK_FISH_PUFFER ? 6.0 : w->kind == DESK_FISH_GROUPER ? 2.6 : 3.4;
+	double amp = w->kind == DESK_FISH_PUFFER ? 0.020 : 0.050;
+	double ph = t * hz * 2.0 * M_PI + (w->seed & 7);
+	p->puff = w->kind == DESK_FISH_PUFFER ? smoothstepf(w->bite, w->bite + 0.18, t) : 0.0;
+	for (int i = 0; i < SWIM_SPINE; i++) {
+		double u = (double)i / (SWIM_SPINE - 1);
+		double x, y, tx, ty;
+		swim_at(w, sh - L * u, &x, &y, &tx, &ty);
+		double wave = L * amp * pow(u, 1.6) * sin(ph - u * 4.2);
+		p->x[i] = x - ty * wave;
+		p->y[i] = y + tx * wave;
+		p->hw[i] = L * swim_width(w->kind, u, p->puff);
+	}
+	for (int i = 0; i < SWIM_SPINE; i++) {
+		int a = i > 0 ? i - 1 : 0, b = i < SWIM_SPINE - 1 ? i + 1 : SWIM_SPINE - 1;
+		double dx = p->x[a] - p->x[b], dy = p->y[a] - p->y[b];
+		double l = fmax(hypot(dx, dy), 1e-9);
+		/* (dx, dy) runs tailward to nose: its left */
+		p->nx[i] = -dy / l;
+		p->ny[i] = dx / l;
+	}
+}
+
+/* a point on the edge of the body at u, on side +1 (left) or -1, k of
+ * the way out from the spine */
+static void swim_edge(const struct swim_pose *p, double u, int side, double k, double *x,
+	double *y)
+{
+	double f = clampf(u, 0.0, 1.0) * (SWIM_SPINE - 1);
+	int i = (int)fmin(floor(f), SWIM_SPINE - 2);
+	f -= i;
+	double hw = (p->hw[i] + (p->hw[i + 1] - p->hw[i]) * f) * k * side;
+	*x = p->x[i] + (p->x[i + 1] - p->x[i]) * f + (p->nx[i] + (p->nx[i + 1] - p->nx[i]) * f) * hw;
+	*y = p->y[i] + (p->y[i + 1] - p->y[i]) * f + (p->ny[i] + (p->ny[i + 1] - p->ny[i]) * f) * hw;
+}
+
+/* the body, k of its width */
+static void swim_body_path(cairo_t *cr, const struct swim_pose *p, double k)
+{
+	cairo_move_to(cr, p->x[0], p->y[0]);
+	for (int i = 1; i < SWIM_SPINE; i++) {
+		cairo_line_to(cr, p->x[i] + p->nx[i] * p->hw[i] * k, p->y[i] + p->ny[i] * p->hw[i] * k);
+	}
+	for (int i = SWIM_SPINE - 1; i >= 1; i--) {
+		cairo_line_to(cr, p->x[i] - p->nx[i] * p->hw[i] * k, p->y[i] - p->ny[i] * p->hw[i] * k);
+	}
+	cairo_close_path(cr);
+}
+
+/* A fin: from the body at u0 to u1, out to a tip `out` lengths from the
+ * edge at u (sideways) and `back` lengths behind it, swept round. */
+static void swim_fin(cairo_t *cr, const struct swim_pose *p, double L, int side, double u0,
+	double u1, double out, double back)
+{
+	double ax, ay, bx, by, mx, my;
+	swim_edge(p, u0, side, 0.9, &ax, &ay);
+	swim_edge(p, u1, side, 0.9, &bx, &by);
+	swim_edge(p, (u0 + u1) * 0.5, side, 1.0, &mx, &my);
+	int i = (int)(clampf((u0 + u1) * 0.5, 0.0, 1.0) * (SWIM_SPINE - 1));
+	int j = i < SWIM_SPINE - 1 ? i + 1 : i, h = j > 0 ? j - 1 : 0;
+	double tx = p->x[j] - p->x[h], ty = p->y[j] - p->y[h];
+	double tl = fmax(hypot(tx, ty), 1e-9);
+	tx /= tl;
+	ty /= tl;
+	double tipx = mx + p->nx[i] * side * L * out + tx * L * back;
+	double tipy = my + p->ny[i] * side * L * out + ty * L * back;
+	cairo_move_to(cr, ax, ay);
+	cairo_curve_to(cr, ax + (tipx - ax) * 0.4, ay + (tipy - ay) * 0.4 - 0.0, tipx, tipy, tipx, tipy);
+	cairo_curve_to(cr, tipx, tipy, bx + (tipx - bx) * 0.2, by + (tipy - by) * 0.2, bx, by);
+	cairo_close_path(cr);
+}
+
+/* the tail fin: out past the end of the spine, `len` long, `wide` across */
+static void swim_tail(cairo_t *cr, const struct swim_pose *p, double L, double len, double wide,
+	bool fan)
+{
+	int e = SWIM_SPINE - 1;
+	double tx = p->x[e] - p->x[e - 1], ty = p->y[e] - p->y[e - 1];
+	double tl = fmax(hypot(tx, ty), 1e-9);
+	tx /= tl;
+	ty /= tl;
+	double x0 = p->x[e - 1], y0 = p->y[e - 1];
+	double x1 = p->x[e] + tx * L * len, y1 = p->y[e] + ty * L * len;
+	double nx = p->nx[e] * L * wide, ny = p->ny[e] * L * wide;
+	cairo_move_to(cr, x0, y0);
+	if (fan) {
+		cairo_curve_to(cr, x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 + nx * 0.6, y1 + ny * 0.6);
+		cairo_curve_to(cr, x1 + tx * L * 0.03, y1 + ty * L * 0.03, x1 + tx * L * 0.03,
+			y1 + ty * L * 0.03, x1 - nx * 0.6, y1 - ny * 0.6);
+		cairo_curve_to(cr, x1 - nx, y1 - ny, x0 - nx, y0 - ny, x0, y0);
+	} else {
+		cairo_line_to(cr, (x0 + x1) * 0.5 + nx, (y0 + y1) * 0.5 + ny);
+		cairo_line_to(cr, x1, y1);
+		cairo_line_to(cr, (x0 + x1) * 0.5 - nx, (y0 + y1) * 0.5 - ny);
+	}
+	cairo_close_path(cr);
+}
+
+/* everything that is the fish, as one path: for its shadow, and the fins */
+static void swim_fins_path(cairo_t *cr, const struct desk_swim *w, const struct swim_pose *p,
+	double t)
+{
+	double L = w->len;
+	switch (w->kind) {
+	case DESK_FISH_PUFFER: {
+		double fl = 0.5 + 0.5 * sin(t * 40.0);
+		for (int s = -1; s <= 1; s += 2) {
+			swim_fin(cr, p, L, s, 0.30, 0.40, 0.08 + 0.04 * fl, 0.04);
+		}
+		swim_tail(cr, p, L, 0.16, 0.09, true);
+		break;
+	}
+	case DESK_FISH_GROUPER:
+		for (int s = -1; s <= 1; s += 2) {
+			swim_fin(cr, p, L, s, 0.26, 0.40, 0.11, 0.06);
+			swim_fin(cr, p, L, s, 0.56, 0.64, 0.05, 0.05);
+		}
+		swim_tail(cr, p, L, 0.12, 0.085, true);
+		break;
+	default:
+		for (int s = -1; s <= 1; s += 2) {
+			swim_fin(cr, p, L, s, 0.25, 0.37, 0.12, 0.12);
+			swim_fin(cr, p, L, s, 0.63, 0.69, 0.045, 0.05);
+		}
+		swim_tail(cr, p, L, 0.17, 0.022, false);
+		break;
+	}
+}
+
+void desk_swim_extent(const struct desk_swim *w, double t, double box[4])
+{
+	struct swim_pose p;
+	swim_pose(w, t, &p);
+	double m = w->len * 0.30;
+	box[0] = box[1] = 1e30;
+	box[2] = box[3] = -1e30;
+	for (int i = 0; i < SWIM_SPINE; i++) {
+		box[0] = fmin(box[0], p.x[i] - m);
+		box[1] = fmin(box[1], p.y[i] - m);
+		box[2] = fmax(box[2], p.x[i] + m + w->len * 0.07);
+		box[3] = fmax(box[3], p.y[i] + m + w->len * 0.11);
+	}
+	if (t >= w->bite) {
+		double r = w->len * 0.16 + 12.0;
+		box[0] = fmin(box[0], w->bx - r);
+		box[2] = fmax(box[2], w->bx + r);
+		box[1] = fmin(box[1], w->by - 130.0);
+		box[3] = fmax(box[3], w->by + 12.0);
+	}
+}
+
+/* bubbles where the ball was, let go as it was taken */
+static void swim_bubbles(cairo_t *cr, const struct desk_swim *w, double age)
+{
+	const double life = 0.65;
+	if (age < 0.0 || age > life) {
+		return;
+	}
+	double a = 1.0 - age / life;
+	cairo_save(cr);
+	cairo_set_line_width(cr, 1.2);
+	for (int i = 0; i < 9; i++) {
+		double h0 = hash21(w->seed * 0.013 + i * 1.7, 2.3), h1 = hash21(w->seed * 0.017 + i, 7.1);
+		double r = 2.5 + h1 * 4.5;
+		double x = w->bx + (h0 - 0.5) * w->len * 0.22 + sin(age * 9.0 + i) * 3.0;
+		double y = w->by - age * (90.0 + h1 * 90.0) + (h0 - 0.5) * 16.0;
+		cairo_new_sub_path(cr);
+		cairo_arc(cr, x, y, r, 0, 2 * M_PI);
+		cairo_set_source_rgba(cr, 0.85, 0.97, 1.0, 0.18 * a);
+		cairo_fill_preserve(cr);
+		cairo_set_source_rgba(cr, 0.92, 1.0, 1.0, 0.65 * a);
+		cairo_stroke(cr);
+		cairo_new_sub_path(cr);
+		cairo_arc(cr, x - r * 0.35, y - r * 0.35, r * 0.25, 0, 2 * M_PI);
+		cairo_set_source_rgba(cr, 1, 1, 1, 0.7 * a);
+		cairo_fill(cr);
+	}
+	cairo_restore(cr);
+}
+
+void desk_draw_swim(cairo_t *cr, const struct desk_swim *w, double t)
+{
+	if (t < 0.0 || t > w->dur) {
+		return;
+	}
+	struct swim_pose p;
+	swim_pose(w, t, &p);
+	double L = w->len;
+	/* back, flank, fins, markings */
+	vec3 back, flank, fin;
+	switch (w->kind) {
+	case DESK_FISH_PUFFER:
+		back = v3(0.62, 0.54, 0.30);
+		flank = v3(0.82, 0.74, 0.46);
+		fin = v3(0.80, 0.70, 0.40);
+		break;
+	case DESK_FISH_GROUPER:
+		back = v3(0.28, 0.23, 0.15);
+		flank = v3(0.44, 0.38, 0.25);
+		fin = v3(0.34, 0.28, 0.18);
+		break;
+	default:
+		back = v3(0.27, 0.34, 0.39);
+		flank = v3(0.40, 0.47, 0.52);
+		fin = v3(0.33, 0.40, 0.45);
+		break;
+	}
+	cairo_save(cr);
+	cairo_set_fill_rule(cr, CAIRO_FILL_RULE_WINDING);
+	/* its shadow on the sand, a way below it and soft with the depth:
+	 * the body's only, the fins too thin to throw much */
+	for (int k = 0; k < 3; k++) {
+		cairo_save(cr);
+		cairo_translate(cr, L * (0.05 + 0.012 * k), L * (0.09 + 0.012 * k));
+		swim_body_path(cr, &p, 1.0 + 0.25 * k);
+		cairo_set_source_rgba(cr, 0.01, 0.05, 0.06, 0.10);
+		cairo_fill(cr);
+		cairo_restore(cr);
+	}
+	/* fins, under the body */
+	cairo_new_path(cr);
+	swim_fins_path(cr, w, &p, t);
+	cairo_set_source_rgba(cr, fin.x, fin.y, fin.z, w->kind == DESK_FISH_PUFFER ? 0.75 : 0.95);
+	cairo_fill(cr);
+	/* the body: the flanks, and its back darker down the middle */
+	swim_body_path(cr, &p, 1.0);
+	cairo_set_source_rgb(cr, flank.x, flank.y, flank.z);
+	cairo_fill(cr);
+	/* the back shading into the flanks: three steps in */
+	for (int k = 0; k < 3; k++) {
+		swim_body_path(cr, &p, 0.80 - 0.18 * k);
+		cairo_set_source_rgba(cr, back.x, back.y, back.z, 0.40);
+		cairo_fill(cr);
+	}
+	if (w->kind == DESK_FISH_SHARK) {
+		/* the dorsal fin, edge on from above */
+		cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+		cairo_set_line_width(cr, L * 0.016);
+		cairo_set_source_rgba(cr, 0.16, 0.21, 0.25, 0.95);
+		int i0 = (int)(0.36 * (SWIM_SPINE - 1)), i1 = (int)(0.50 * (SWIM_SPINE - 1));
+		cairo_move_to(cr, p.x[i0], p.y[i0]);
+		for (int i = i0 + 1; i <= i1; i++) {
+			cairo_line_to(cr, p.x[i], p.y[i]);
+		}
+		cairo_stroke(cr);
+	} else {
+		/* spots */
+		cairo_save(cr);
+		swim_body_path(cr, &p, 1.0);
+		cairo_clip(cr);
+		for (int k = 0; k < 16; k++) {
+			double u = 0.12 + 0.78 * hash21(k * 3.1, 1.3);
+			double side = hash21(k * 1.7, 4.9) * 1.8 - 0.9;
+			double x, y;
+			swim_edge(&p, u, 1, side, &x, &y);
+			double r = L * (w->kind == DESK_FISH_PUFFER ? 0.020 : 0.026) * (0.6 + hash21(k, 8.8));
+			cairo_new_sub_path(cr);
+			cairo_arc(cr, x, y, r, 0, 2 * M_PI);
+		}
+		cairo_set_source_rgba(cr, 0.16, 0.11, 0.06, w->kind == DESK_FISH_PUFFER ? 0.55 : 0.45);
+		cairo_fill(cr);
+		cairo_restore(cr);
+	}
+	if (p.puff > 0.05) {
+		/* swollen: its spines up all round */
+		cairo_set_line_width(cr, 1.3);
+		cairo_set_source_rgba(cr, 0.45, 0.38, 0.20, 0.85 * p.puff);
+		for (int k = 0; k < 22; k++) {
+			double u = 0.08 + 0.74 * (k / 2) / 10.0;
+			int side = k & 1 ? 1 : -1;
+			double x0, y0, x1, y1;
+			swim_edge(&p, u, side, 0.92, &x0, &y0);
+			swim_edge(&p, u, side, 1.0 + 0.30 * p.puff, &x1, &y1);
+			cairo_move_to(cr, x0, y0);
+			cairo_line_to(cr, x1, y1);
+		}
+		cairo_stroke(cr);
+	}
+	/* eyes, at the sides of the head */
+	for (int s = -1; s <= 1; s += 2) {
+		double x, y;
+		swim_edge(&p, w->kind == DESK_FISH_PUFFER ? 0.16 : 0.08, s, 0.78, &x, &y);
+		cairo_new_sub_path(cr);
+		cairo_arc(cr, x, y, L * (w->kind == DESK_FISH_PUFFER ? 0.035 : 0.011), 0, 2 * M_PI);
+		cairo_set_source_rgb(cr, 0.03, 0.03, 0.03);
+		cairo_fill(cr);
+	}
+	/* the light from above: a sheen down the back */
+	swim_body_path(cr, &p, 0.25);
+	cairo_set_source_rgba(cr, 1, 1, 1, 0.06);
+	cairo_fill(cr);
+	cairo_restore(cr);
+	swim_bubbles(cr, w, t - w->bite);
 }
 
 /* ================================================================

@@ -748,6 +748,29 @@ void desk_crumple_draw(cairo_t *cr, struct desk_crumple *c, double u);
 void desk_crumple_ball(cairo_t *cr, struct desk_crumple *c, double x, double y,
 	double scale, double angle, double lift);
 double desk_crumple_radius(const struct desk_crumple *c);
+/* What eats the ball, under water (see draw.c): a fish seen from above,
+ * in from the nearer side of the screen on a loop whose turn is at the
+ * ball, and out again the way it came. desk_swim_init lays out the loop
+ * for a ball of radius ball_r at (bx, by) on a screen screen_w wide; t is
+ * seconds from its start, to desk_swim_time; it bites at desk_swim_bite.
+ * Coordinates are the screen's. */
+enum { DESK_FISH_SHARK, DESK_FISH_GROUPER, DESK_FISH_PUFFER };
+#define DESK_SWIM_PTS 160
+struct desk_swim {
+	int kind;
+	double len;                       /* nose to tail, pixels */
+	double bx, by;                    /* the ball */
+	double px[DESK_SWIM_PTS], py[DESK_SWIM_PTS], s[DESK_SWIM_PTS];   /* the loop */
+	double s0, s1;                    /* where along it the nose goes, from and to */
+	double dur, bite;                 /* seconds */
+	unsigned seed;
+};
+void desk_swim_init(struct desk_swim *w, int kind, double bx, double by, double ball_r,
+	double dir, double screen_w, unsigned seed);
+double desk_swim_time(const struct desk_swim *w);
+double desk_swim_bite(const struct desk_swim *w);
+void desk_swim_extent(const struct desk_swim *w, double t, double box[4]);
+void desk_draw_swim(cairo_t *cr, const struct desk_swim *w, double t);
 /* One application, printed on a sheet of binder paper. icon may be NULL, in
  * which case the sheet gets a letterpress initial instead. code is the
  * catalogue mark in the top corner and in the running foot. seed decides

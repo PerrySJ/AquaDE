@@ -560,6 +560,62 @@ static int write_boot(const char *path, int w, int h, const char *list)
 	return 0;
 }
 
+/* What eats a closed window, as a contact sheet: a row for the shark, the
+ * grouper and the pufferfish, each coming in, at the ball, biting, and
+ * going, on the sand round the ball. */
+static int write_shark(const char *path, int w, int h)
+{
+	enum { COLS = 5, ROWS = 3 };
+	int cw = w / COLS, ch = h / ROWS;
+	double k = cw / 640.0;
+	cairo_surface_t *out = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, cw * COLS, ch * ROWS);
+	cairo_t *cr = cairo_create(out);
+	static const int kinds[ROWS] = { DESK_FISH_SHARK, DESK_FISH_GROUPER, DESK_FISH_PUFFER };
+	static const double ball[ROWS] = { 70.0, 70.0, 26.0 };
+	static const double at[COLS] = { 0.35, 0.75, 0.97, 1.12, 1.6 };
+	for (int r = 0; r < ROWS; r++) {
+		struct desk_swim sw;
+		double bx = w * 0.30, by = h * 0.45;
+		/* a sheet the ball's size, screwed up */
+		int sz = (int)(ball[r] / 0.15);
+		cairo_surface_t *sheet = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, sz, sz * 3 / 4);
+		cairo_t *sc = cairo_create(sheet);
+		desk_draw_blank_sheet(sc, 0, 0, sz, sz * 3 / 4, "Letter");
+		cairo_destroy(sc);
+		struct desk_crumple *cr_ball = desk_crumple_new(sheet, 99u + r);
+		cairo_surface_destroy(sheet);
+		double R = desk_crumple_radius(cr_ball);
+		desk_swim_init(&sw, kinds[r], bx, by, R, -1.0, w, 7u + r);
+		for (int c = 0; c < COLS; c++) {
+			double t = fmin(desk_swim_bite(&sw) * at[c], desk_swim_time(&sw) * 0.98);
+			cairo_save(cr);
+			cairo_translate(cr, c * cw, r * ch);
+			cairo_rectangle(cr, 0, 0, cw, ch);
+			cairo_clip(cr);
+			cairo_translate(cr, cw * 0.5, ch * 0.5);
+			cairo_scale(cr, k, k);
+			cairo_translate(cr, -bx, -by);
+			cairo_set_source_rgb(cr, 0.56, 0.55, 0.47);
+			cairo_paint(cr);
+			if (t < desk_swim_bite(&sw)) {
+				desk_crumple_ball(cr, cr_ball, bx, by, 1.0, 0.0, 0.0);
+			}
+			desk_draw_swim(cr, &sw, t);
+			cairo_restore(cr);
+		}
+		desk_crumple_free(cr_ball);
+	}
+	cairo_destroy(cr);
+	cairo_status_t st = cairo_surface_write_to_png(out, path);
+	cairo_surface_destroy(out);
+	if (st != CAIRO_STATUS_SUCCESS) {
+		fprintf(stderr, "could not write %s\n", path);
+		return 1;
+	}
+	printf("wrote %s\n", path);
+	return 0;
+}
+
 /* The screen lock, as a contact sheet: walking up to it, waiting, letters
  * in, leaning in to the key while it is checked, told no, the key turned,
  * the door going in on the room, and through it -- the last frame the view
@@ -756,7 +812,7 @@ static int write_lock(const char *path, int w, int h)
 
 #define PREVIEW_USAGE "usage: desk-preview [-o file.png] [-s 1600x1000] [--no-window] " \
 	"[--closed] [--apps] [--shelf] [--console] [--post] [--sounds DIR] [--calendar] " \
-	"[--memo] [--lock] [--boot[=u,u,...]] [--agenda] [--book] [--book-anim[=u,u,...]] " \
+	"[--memo] [--lock] [--shark] [--boot[=u,u,...]] [--agenda] [--book] [--book-anim[=u,u,...]] " \
 	"[--lang en|ja|zh|ko|es|fr|de] [--binder-anim=N[:u,u,...]]\n"
 
 int main(int argc, char **argv)
@@ -770,7 +826,7 @@ int main(int argc, char **argv)
 	bool post = false;
 	bool calendar = false, memo = false;
 	const char *boot = NULL;
-	bool lock = false;
+	bool lock = false, shark = false;
 	bool agenda = false;
 	bool book = false, book_anim = false;
 	const char *anim_times = NULL;
@@ -802,6 +858,8 @@ int main(int argc, char **argv)
 			memo = true;
 		} else if (strcmp(argv[i], "--lock") == 0) {
 			lock = true;
+		} else if (strcmp(argv[i], "--shark") == 0) {
+			shark = true;
 		} else if (strncmp(argv[i], "--boot", 6) == 0
 			&& (argv[i][6] == '\0' || argv[i][6] == '=')) {
 			boot = argv[i][6] == '=' ? argv[i] + 7 : "";
@@ -863,6 +921,9 @@ int main(int argc, char **argv)
 	}
 	if (lock) {
 		return write_lock(path, w, h);
+	}
+	if (shark) {
+		return write_shark(path, w, h);
 	}
 	if (agenda) {
 		return write_agenda(path, w, h);

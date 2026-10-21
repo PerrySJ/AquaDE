@@ -300,6 +300,9 @@ static const struct setting SETTINGS[] = {
 		NULL, NULL, 1, NULL },
 	{ S_CHECK, "throw_closed_windows", "Screw up a closed window and throw it away",
 		"Off, a window that is closed simply goes.", NULL, NULL, 1, NULL },
+	{ S_CHECK, "shark_eats_closed_windows", "A shark eats a screwed-up window",
+		"It swims in from the nearer side and takes the ball; a little one gets a "
+		"pufferfish. Off, the ball is thrown off the side.", NULL, NULL, 1, NULL },
 	{ S_CHECK, "corner_on_hover", "Turn a corner up when the pointer rests on it",
 		"Off, it turns up only when it is clicked. For windows, letters and binder sheets.",
 		NULL, NULL, 1, NULL },
@@ -999,6 +1002,7 @@ static bool conf_write(const char *path, const char *key, const char *value)
 			"#   paper.<program> = yes | no         one program the other way (desktop id,\n"
 			"#                                      app id or X class)\n"
 			"#   throw_closed_windows = yes | no    closed windows screwed up and thrown away\n"
+			"#   shark_eats_closed_windows = yes | no  and eaten by a shark, not thrown\n"
 			"#   corner_on_hover = yes | no         corners turn up when the pointer rests\n"
 			"#   scale = auto | 1 | 1.25 | 1.5 | 2  how big things on the desk are\n"
 			"#   graphics = ultra | high | medium | low | 2d\n"

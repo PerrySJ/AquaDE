@@ -24,6 +24,7 @@ enum desk_sound {
 	DESK_SND_PAPER_CRUMPLE,    /* screwed up */
 	DESK_SND_PAPER_TOSS,       /* thrown */
 	DESK_SND_PAPER_LAND,       /* landing, off the desk, some way off */
+	DESK_SND_CHOMP,            /* a shark taking the ball: water, jaws, bubbles */
 	DESK_SND_CORNER_LIFT,      /* a corner turning up */
 	DESK_SND_CORNER_TAP,       /* what is printed on its back, pressed */
 	/* the drawer */

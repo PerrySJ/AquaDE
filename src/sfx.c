@@ -619,6 +619,28 @@ static void s_paper_land(struct buf *b, struct rng *r, int v)
 	finish(b, -40.0, -24.0);
 }
 
+static void s_chomp(struct buf *b, struct rng *r, int v)
+{
+	(void)v;
+	/* a shark taking a ball of paper under water: the rush of it coming,
+	 * the jaws shutting -- a dull thud, the water taking the edge off --
+	 * a muffled crunch, and the bubbles let go rising after */
+	swish(b, r, 0.0, 0.22, 0.75, near(r, 160.0, 0.1), near(r, 520.0, 0.1), 0.9, 0.7);
+	static const double f[] = { 85.0, 170.0, 310.0, 0.0 };
+	static const double a[] = { 1.0, 0.45, 0.18 };
+	static const double d[] = { 0.06, 0.035, 0.02 };
+	strike(b, r, 0.18, 0.9, 0.0, f, a, d, 0.05);
+	burst(b, r, 0.18, 0.003, 0.03, 0.6, LP(900.0, 0.7), NOF);
+	crackle(b, r, 0.19, 0.09, 0.25, 5000.0, 0.5, 400.0, 2400.0);
+	for (int k = 0; k < 5; k++) {
+		double t = 0.26 + k * near(r, 0.05, 0.4);
+		double fq = near(r, 520.0 + k * 90.0, 0.2);
+		mode(b, t, fq, 0.14 * near(r, 1.0, 0.3), 0.012);
+		mode(b, t + 0.004, fq * 1.18, 0.08, 0.010);
+	}
+	finish(b, -26.0, -10.0);
+}
+
 static void s_corner_lift(struct buf *b, struct rng *r, int v)
 {
 	(void)v;
@@ -1383,6 +1405,7 @@ static const struct sfx_def SFX[DESK_SND_COUNT] = {
 	[DESK_SND_PAPER_CRUMPLE] = { "paper-crumple", 0.75, 3, s_paper_crumple },
 	[DESK_SND_PAPER_TOSS] = { "paper-toss", 0.44, 2, s_paper_toss },
 	[DESK_SND_PAPER_LAND] = { "paper-land", 0.3, 2, s_paper_land },
+	[DESK_SND_CHOMP] = { "chomp", 0.62, 3, s_chomp },
 	[DESK_SND_CORNER_LIFT] = { "corner-lift", 0.12, 3, s_corner_lift },
 	[DESK_SND_CORNER_TAP] = { "corner-tap", 0.08, 3, s_corner_tap },
 	[DESK_SND_DRAWER_OUT] = { "drawer-out", 1.02, 2, s_drawer_out },

@@ -208,6 +208,7 @@ struct desk_sheet {
 struct shell_conf {
 	bool paper_all;             /* programs with frames of their own on paper too */
 	bool throw_closed;          /* a closed window screwed up and thrown away */
+	bool shark;                 /* and, thrown, eaten by a shark */
 	bool corner_hover;          /* a corner turns up when the hand rests on it */
 	double scale;               /* points to pixels; 0: the screen's own */
 	double motion;              /* how long things take, against normal */
@@ -9999,6 +10000,8 @@ static void terminal_open(void)
  *       ".desktop"), its Wayland app id or its X class.
  *   throw_closed_windows = yes | no       a closed window is screwed up and
  *                                         thrown off the desk (yes), or goes
+ *   shark_eats_closed_windows = yes | no  the ball eaten by a shark that
+ *                                         swims in for it (yes), or thrown
  *   corner_on_hover = yes | no            a corner turns up when the hand
  *                                         rests on its fold (yes), or only
  *                                         when it is clicked
@@ -10118,6 +10121,7 @@ static void shell_conf_defaults(struct shell_conf *c)
 	}
 	c->paper_all = true;
 	c->throw_closed = true;
+	c->shark = true;
 	c->corner_hover = true;
 	c->scale = 0.0;
 	c->motion = 1.0;
@@ -10426,6 +10430,8 @@ static void shell_conf_read_file(struct shell_conf *c, const char *path)
 			c->paper_all = b;
 		} else if (!strcmp(key, "throw_closed_windows")) {
 			c->throw_closed = b;
+		} else if (!strcmp(key, "shark_eats_closed_windows")) {
+			c->shark = b;
 		} else if (!strcmp(key, "corner_on_hover")) {
 			c->corner_hover = b;
 		} else if (!strcmp(key, "drawer_closes")) {
@@ -13194,6 +13200,12 @@ struct desk_throw {
 	double dist, flight, peak, vy, spin;
 	double drawn_at;
 	double cost;         /* what drawing it last took */
+	/* under water, eaten instead of thrown: what comes for it, from when
+	 * (the desk's time), and the ball left lying until then */
+	struct desk_swim *swim;
+	struct wlr_scene_buffer *fish;
+	double swim_at;
+	bool ball_down;
 };
 
 static void throw_free(struct desk_throw *th)
@@ -13202,6 +13214,10 @@ static void throw_free(struct desk_throw *th)
 	if (th->node) {
 		wlr_scene_node_destroy(&th->node->node);
 	}
+	if (th->fish) {
+		wlr_scene_node_destroy(&th->fish->node);
+	}
+	free(th->swim);
 	desk_crumple_free(th->c);
 	free(th);
 }
@@ -13263,6 +13279,22 @@ static void throw_paper(struct desk_server *server, cairo_surface_t *snap, doubl
 	th->spin = th->dir * (5.0 + 3.0 * h);
 	wl_list_insert(&server->throws, &th->link);
 	snd_at(server, DESK_SND_PAPER_CRUMPLE, th->cx, 1.0);
+	if (server->conf.shark && (th->swim = calloc(1, sizeof *th->swim))) {
+		/* Under water it is not thrown: something comes in from the
+		 * nearer side for it -- a pufferfish for a little one, now and
+		 * then a grouper, mostly a shark -- and takes it just after it
+		 * is a ball. */
+		int kind = R < 40.0 ? DESK_FISH_PUFFER
+			: (seed * 2246822519u >> 16) % 10 == 0 ? DESK_FISH_GROUPER : DESK_FISH_SHARK;
+		desk_swim_init(th->swim, kind, th->cx, th->cy, R, th->dir, server->desk_w,
+			seed * 2654435761u);
+		double bite = THROW_CRUMPLE + 0.06;
+		double from = fmax(0.0, bite - desk_swim_bite(th->swim));
+		th->swim_at = th->start + from;
+		snd_in(server, DESK_SND_CHOMP, th->cx, 1.0, 0.0, from + desk_swim_bite(th->swim));
+		server_schedule_frames(server);
+		return;
+	}
 	/* and all that follows is known now: thrown, and landing off the
 	 * edge of the desk */
 	snd_for_in(server, DESK_SND_PAPER_TOSS, th->cx, 1.0, 0.42, th->flight, THROW_CRUMPLE);
@@ -13293,6 +13325,56 @@ static void throws_tick_body(struct desk_server *server)
 		struct desk_buf *buf;
 		int bx, by;
 		int dw = 0, dh = 0;
+		if (th->swim) {
+			double ts = now - th->swim_at;
+			if (ts >= desk_swim_time(th->swim)) {
+				throw_free(th);
+				continue;
+			}
+			more = true;
+			if (ts >= 0.0) {
+				/* what is coming for it, over everything */
+				double box[4];
+				desk_swim_extent(th->swim, ts, box);
+				double fw = box[2] - box[0], fh = box[3] - box[1];
+				double k = motion_res();
+				struct desk_buf *fb = buf_create((int)ceil(fw * k) + 1, (int)ceil(fh * k) + 1);
+				cairo_scale(fb->cr, k, k);
+				cairo_translate(fb->cr, -box[0], -box[1]);
+				desk_draw_swim(fb->cr, th->swim, ts);
+				scene_put(&th->fish, server->layer_parked, fb, (int)floor(box[0]),
+					(int)floor(box[1]), NULL);
+				wlr_scene_buffer_set_dest_size(th->fish, (int)ceil(fw) + 1, (int)ceil(fh) + 1);
+				wlr_scene_node_raise_to_top(&th->fish->node);
+			}
+			if (ts >= desk_swim_bite(th->swim)) {
+				/* taken */
+				if (th->node) {
+					wlr_scene_node_destroy(&th->node->node);
+					th->node = NULL;
+				}
+				continue;
+			}
+			if (t >= THROW_CRUMPLE) {
+				/* a ball, lying where the sheet was, until then: drawn
+				 * once */
+				if (th->ball_down) {
+					continue;
+				}
+				th->ball_down = true;
+				double R = desk_crumple_radius(th->c);
+				int m = (int)ceil(R * 1.30 + 34.0);
+				buf = buf_create(m * 2, m * 2);
+				desk_crumple_ball(buf->cr, th->c, m, m, 1.0, 0.0, 0.0);
+				scene_put(&th->node, server->layer_parked, buf, (int)floor(th->cx) - m,
+					(int)floor(th->cy) - m, NULL);
+				wlr_scene_buffer_set_dest_size(th->node, m * 2, m * 2);
+				if (th->fish) {
+					wlr_scene_node_place_below(&th->node->node, &th->fish->node);
+				}
+				continue;
+			}
+		}
 		if (t < THROW_CRUMPLE) {
 			/* Screwed up where it lay: thirty times a second, which is
 			 * plenty for paper being crushed -- and, once it has begun
@@ -13361,6 +13443,9 @@ static void throws_tick_body(struct desk_server *server)
 		scene_put(&th->node, server->layer_parked, buf, bx, by, NULL);
 		wlr_scene_buffer_set_dest_size(th->node, dw, dh);
 		wlr_scene_node_raise_to_top(&th->node->node);
+		if (th->fish) {
+			wlr_scene_node_raise_to_top(&th->fish->node);
+		}
 		more = true;
 	}
 	if (more) {

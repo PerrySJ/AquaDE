@@ -2104,6 +2104,7 @@ DEsk のもの）で、その上に描いたフォルダーとメモ帳にフォ
 | **WINDOWS**（ここから Shell タブ） | | | |
 | Lay every window on paper | `paper_for_all_windows` | yes | 自分で枠を描くアプリも紙に載せる（上） |
 | Screw up a closed window and throw it away | `throw_closed_windows` | yes | no なら閉じた窓はそのまま消える |
+| A shark eats a screwed-up window | `shark_eats_closed_windows` | yes | no なら丸めた窓はサメに食べられず、端へ投げられる |
 | Turn a corner up when the pointer rests on it | `corner_on_hover` | yes | no なら角はクリックでだけめくれる（窓・手紙・バインダー。置くと少し動くのは同じ） |
 | **DESK** | | | |
 | Size of things on the desk | `scale` | auto | Automatic / 100% / 125% / 150% / 200%（画面の設定ツールがほかの倍率を書いたときは、その倍率も選べる語として出ます）。机の上の物の大きさ（1 ポイントが何ピクセルか）。大きくすると机は狭くなり、部屋はトレースし直し（数秒）。アプリの窓の大きさは変わりません。環境変数 `DESK_SCALE` があればそちらが先 |

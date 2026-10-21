@@ -472,6 +472,26 @@ static const char *const WORDS[][DESK_LANG_COUNT] = {
 		"Desactivado, una ventana cerrada simplemente desaparece.",
 		"Désactivé, une fenêtre fermée disparaît simplement.",
 		"Aus: ein geschlossenes Fenster verschwindet einfach." },
+	{ "A shark eats a screwed-up window",
+		"丸めたウィンドウをサメが食べる",
+		"鲨鱼吃掉揉成团的窗口",
+		"구긴 창을 상어가 먹기",
+		"Un tiburón se come la ventana arrugada",
+		"Un requin mange la fenêtre froissée",
+		"Ein Hai frisst das zerknüllte Fenster" },
+	{ "It swims in from the nearer side and takes the ball; a little one gets a "
+		"pufferfish. Off, the ball is thrown off the side.",
+		"近い方の端から泳いできて丸めた紙を食べます。小さなウィンドウにはフグが来ます。"
+		"切にすると、丸めた紙は端の外へ投げられます。",
+		"它从较近的一侧游来吃掉纸团；小窗口会来一条河豚。关闭后，纸团会被扔到一边。",
+		"가까운 쪽에서 헤엄쳐 와서 공을 먹습니다. 작은 창에는 복어가 옵니다. "
+		"끄면 공은 옆으로 던져집니다.",
+		"Llega nadando desde el lado más cercano y se lleva la bola; a una pequeña le "
+		"toca un pez globo. Desactivado, la bola se tira por el lado.",
+		"Il arrive à la nage du côté le plus proche et emporte la boule\xc2\xa0; une petite "
+		"a droit à un poisson-globe. Désactivé, la boule est jetée sur le côté.",
+		"Er schwimmt von der näheren Seite heran und schnappt sich die Kugel; eine kleine "
+		"bekommt einen Kugelfisch. Aus: die Kugel wird zur Seite geworfen." },
 	{ "Turn a corner up when the pointer rests on it",
 		"ポインタを載せると角がめくれる",
 		"指针停在角上时把角掀起",

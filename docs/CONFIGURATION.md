@@ -41,6 +41,7 @@ One `key = value` per line; `#` starts a comment.
 | `paper_for_all_windows` | `yes`, `no` | `yes` | Lay programs that draw their own frame (Firefox, GNOME programs) on paper too. |
 | `paper.<program>` | `yes`, `no` | | One program the other way. `<program>` is its desktop file id, app id or X class. |
 | `throw_closed_windows` | `yes`, `no` | `yes` | Crumple a closed window and throw it away. |
+| `shark_eats_closed_windows` | `yes`, `no` | `yes` | A shark (or a pufferfish, for a small window) swims in and eats the crumpled window instead of it being thrown. |
 | `corner_on_hover` | `yes`, `no` | `yes` | Turn a corner up when the pointer rests on it (otherwise only on a click). |
 
 ### The desk
