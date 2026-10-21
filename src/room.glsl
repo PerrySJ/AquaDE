@@ -1528,6 +1528,25 @@ void rock_at(vec3 w, inout mtl m)
 	m.bump_amp = 0.080;
 }
 
+void slate_at(vec3 w, inout mtl m, float seed)
+{
+	float warp = room_fbm(w.x * 0.25 + seed, w.z * 0.25) * 1.6;
+	float bed = 0.5 + 0.5 * sin((w.y + warp) * 2.4 + seed);
+	float seam = smoothstepf(0.10, 0.0, abs(bed - 0.5));
+	float t = room_fbm(w.x * 1.6 + w.y * 0.8 + seed, w.z * 1.6 - w.y * 0.6);
+	float fine = room_noise(w.x * 14.0 + seed, w.z * 14.0 + w.y * 6.0);
+	m.albedo = mix(vec3(0.070, 0.074, 0.076), vec3(0.200, 0.198, 0.190), t * 0.8 + bed * 0.2);
+	m.albedo *= 0.88 + fine * 0.24;
+	float algae = clampf(room_fbm2(w.x * 0.7 - seed, w.z * 0.7 + w.y * 0.5) * 1.6 - 0.45,
+		0.0, 1.0);
+	m.albedo = mix(m.albedo, vec3(0.040, 0.085, 0.040), clampf(seam * 0.8 + algae * 0.45, 0.0, 1.0));
+	m.rough = 0.62 + fine * 0.14 + algae * 0.15;
+	m.coat = 0.18 * (1.0 - algae);
+	m.coat_rough = 0.22;
+	m.bump_freq = 30.0;
+	m.bump_amp = 0.060;
+}
+
 void tank_back_at(vec3 w, inout mtl m)
 {
 	float up = smoothstepf(RM_FLOOR, 24.0, w.y);
@@ -1858,20 +1877,17 @@ mtl icon_material(int id, vec3 pw)
 		m.dust = 0.3;
 		break;
 	case MID_SHELF_CASE:
-		wood = vec4(w.y, w.x, 0.0, 0.55);
+		slate_at(w, m, 0.0);
 		break;
 	case MID_SHELF_BOARD:
-		wood = vec4(w.x, w.z, 6.2, 0.70);
+		slate_at(w, m, 4.3);
+		m.albedo *= 0.92;
 		break;
-	case MID_SHELF_BACK: {
-		float t = room_fbm(w.x * 3.0, w.y * 3.0);
-		m.albedo = vec3(0.086, 0.052, 0.032) * (0.86 + t * 0.30);
-		m.rough = 0.78;
-		m.bump_freq = 34.0;
-		m.bump_amp = 0.040;
-		m.dust = 0.6;
+	case MID_SHELF_BACK:
+		slate_at(w, m, 9.1);
+		m.albedo *= 0.55;
+		m.coat = 0.0;
 		break;
-	}
 	case MID_BINDER_A: {
 		float t = room_fbm(w.x * 22.0, w.y * 22.0);
 		float cell = spow(room_noise(w.x * 48.0, w.y * 48.0), 2.4);
@@ -2067,12 +2083,6 @@ mtl icon_material(int id, vec3 pw)
 			m.coat = 0.0;
 			m.albedo *= 0.78;
 			m.rough = clampf(m.rough + 0.22, 0.2, 1.0);
-		} else if (id == MID_SHELF_CASE) {
-			m.albedo *= 0.86;
-			m.coat *= 0.66;
-		} else if (id == MID_SHELF_BOARD) {
-			m.albedo *= 0.80;
-			m.coat *= 0.48;
 		} else if (id == MID_CC_CHEEK) {
 			m.albedo *= 0.92;
 			m.coat *= 0.84;

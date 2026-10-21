@@ -1461,7 +1461,7 @@ static hit3 room_gadgets(vec3 p)
 		}
 
 		if (up) {
-			/* the stand: a stepped plinth, the same timber as the case */
+			/* the stand: a stepped plinth, the same slate as the shelves */
 			h = hmin3(h, (hit3){ sd_round_box(vsub(p,
 				v3(g->x, g->foot + g->plinth * 0.30, gz)),
 				v3(g->hx + 0.34, g->plinth * 0.30, g->hz + 0.46), 0.06),
@@ -3004,6 +3004,28 @@ static void rock_at(vec3 w, struct mtl *m)
 	m->bump_amp = 0.080;
 }
 
+/* Slate: what the shelves are built from. It splits into flat beds, so it
+ * is banded along y, blue-grey, wet enough to shine a little, and green
+ * where the algae has got into the seams between the beds. */
+static void slate_at(vec3 w, struct mtl *m, double seed)
+{
+	double warp = room_fbm(w.x * 0.25 + seed, w.z * 0.25) * 1.6;
+	double bed = 0.5 + 0.5 * sin((w.y + warp) * 2.4 + seed);
+	double seam = smoothstepf(0.10, 0.0, fabs(bed - 0.5));
+	double t = room_fbm(w.x * 1.6 + w.y * 0.8 + seed, w.z * 1.6 - w.y * 0.6);
+	double fine = room_noise(w.x * 14.0 + seed, w.z * 14.0 + w.y * 6.0);
+	m->albedo = vmix(v3(0.070, 0.074, 0.076), v3(0.200, 0.198, 0.190), t * 0.8 + bed * 0.2);
+	m->albedo = vmul(m->albedo, 0.88 + fine * 0.24);
+	double algae = clampf(room_fbm2(w.x * 0.7 - seed, w.z * 0.7 + w.y * 0.5) * 1.6 - 0.45,
+		0.0, 1.0);
+	m->albedo = vmix(m->albedo, v3(0.040, 0.085, 0.040), clampf(seam * 0.8 + algae * 0.45, 0.0, 1.0));
+	m->rough = 0.62 + fine * 0.14 + algae * 0.15;
+	m->coat = 0.18 * (1.0 - algae);
+	m->coat_rough = 0.22;
+	m->bump_freq = 30.0;
+	m->bump_amp = 0.060;
+}
+
 /* The back of the tank: deep water, darker the further down, with the light
  * from overhead coming down through it in slanting shafts. It glows rather
  * than reflects, because what you see there is light in the water. */
@@ -3375,27 +3397,19 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		m->dust = 0.3;
 		break;
 	case MID_SHELF_CASE:
-		/* obviously the same timber as the desk, waxed rather than
-		 * lacquered, with the grain running up the stiles */
-		walnut_at(w, w.y, w.x, m, 0.0, 0.55);
-		m->albedo = vmul(m->albedo, 0.86);
-		m->coat *= 0.66;
+		/* the shelves are slate ledges stacked up out of the sand */
+		slate_at(w, m, 0.0);
 		break;
 	case MID_SHELF_BOARD:
-		/* eight binders dragged on and off these for years */
-		walnut_at(w, w.x, w.z, m, 6.2, 0.70);
-		m->albedo = vmul(m->albedo, 0.80);
-		m->coat *= 0.48;
+		slate_at(w, m, 4.3);
+		m->albedo = vmul(m->albedo, 0.92);
 		break;
-	case MID_SHELF_BACK: {
-		double t = room_fbm(w.x * 3.0, w.y * 3.0);
-		m->albedo = vmul(v3(0.086, 0.052, 0.032), 0.86 + t * 0.30);
-		m->rough = 0.78;
-		m->bump_freq = 34.0;
-		m->bump_amp = 0.040;
-		m->dust = 0.6;
+	case MID_SHELF_BACK:
+		/* a slab further back, in the shade of the ledges */
+		slate_at(w, m, 9.1);
+		m->albedo = vmul(m->albedo, 0.55);
+		m->coat = 0.0;
 		break;
-	}
 	case MID_BINDER_A: {
 		/* oxblood calf, rubbed along the head and the fore edge */
 		double t = room_fbm(w.x * 22.0, w.y * 22.0);
