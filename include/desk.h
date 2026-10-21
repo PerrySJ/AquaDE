@@ -754,6 +754,16 @@ double desk_crumple_radius(const struct desk_crumple *c);
  * for a ball of radius ball_r at (bx, by) on a screen screen_w wide; t is
  * seconds from its start, to desk_swim_time; it bites at desk_swim_bite.
  * Coordinates are the screen's. */
+/* Bubbles going up in the tank: from source i (the air stone among the
+ * rocks, then the plants), the box on a w x h screen they rise in, and
+ * what is in it at a moment (seconds, any clock), drawn in the screen's
+ * coordinates. */
+#define DESK_BUBBLE_SOURCES 4
+bool desk_bubble_box(int w, int h, int i, double box[4]);
+void desk_draw_bubbles(cairo_t *cr, int w, int h, int i, double now);
+/* how many from source i are in the water at now: none, and there is
+ * nothing to draw */
+int desk_bubbles_live(int i, double now);
 enum { DESK_FISH_SHARK, DESK_FISH_GROUPER, DESK_FISH_PUFFER };
 #define DESK_SWIM_PTS 160
 struct desk_swim {

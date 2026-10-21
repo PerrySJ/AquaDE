@@ -26223,6 +26223,158 @@ bool desk_overlay_box(int which, int w, int h, double box[4])
 	return true;
 }
 
+/* ================================================================
+ * Bubbles
+ *
+ * The tank is never quite still: an air stone among the rocks lets go a
+ * steady stream, and the plants, in the light, a bubble now and then off a
+ * leaf. Seen from above, a bubble going up comes toward you -- it grows,
+ * drifts a little toward the back as it goes, wobbles -- and at the top it
+ * is gone. Every bubble is let go on a schedule, so what is in the water at
+ * a moment is worked out from the moment alone; there is nothing to keep.
+ * ================================================================ */
+
+struct bub_src {
+	double x, y, z;      /* where, in the room */
+	double every;        /* a bubble about this often, seconds */
+	double life;         /* seconds to the top */
+	double r0;           /* how big, let go */
+};
+
+static void bub_sources(struct bub_src s[DESK_BUBBLE_SOURCES])
+{
+	vec3 rk = v3(-RM_HX + 2.6, 0.0, RM_ZN - 6.2);
+	s[0] = (struct bub_src){ rk.x + 0.9, 0.7, rk.z + 0.5, 0.17, 2.6, 2.0 };
+	s[1] = (struct bub_src){ RM_HX - 2.0, 1.6, -3.0, 2.3, 2.0, 1.8 };
+	s[2] = (struct bub_src){ RM_HX - 4.6, 1.1, -0.6, 3.1, 2.0, 1.6 };
+	s[3] = (struct bub_src){ -RM_HX + 2.2, 1.3, -4.2, 2.7, 2.0, 1.7 };
+}
+
+/* where a source is on a screen w x h, the desk's own, and how big a unit
+ * of the room is there */
+static bool bub_at(int w, int h, const struct bub_src *s, double *x, double *y, double *k)
+{
+	struct room_xf xf;
+	if (!room_xform(w, h, 0.0, &xf)) {
+		return false;
+	}
+	double u, v, u1, v1;
+	if (!room_project(&xf.rr->cam, v3(s->x, s->y, s->z), &u, &v)
+		|| !room_project(&xf.rr->cam, v3(s->x + 1.0, s->y, s->z), &u1, &v1)) {
+		return false;
+	}
+	double sw = xf.rr->w * xf.scale, sh = xf.rr->h * xf.scale;
+	*x = xf.ox + u * sw;
+	*y = xf.oy + v * sh;
+	*k = hypot((u1 - u) * sw, (v1 - v) * sh);
+	return true;
+}
+
+/* how far up the screen a bubble goes, and how far out to either side */
+#define BUB_RISE 4.4
+#define BUB_SIDE 1.6
+
+bool desk_bubble_box(int w, int h, int i, double box[4])
+{
+	struct bub_src s[DESK_BUBBLE_SOURCES];
+	bub_sources(s);
+	double x, y, k;
+	if (i < 0 || i >= DESK_BUBBLE_SOURCES || !bub_at(w, h, &s[i], &x, &y, &k)) {
+		return false;
+	}
+	double side = k * BUB_SIDE + 12.0;
+	box[0] = floor(x - side);
+	box[1] = floor(y - k * BUB_RISE - 16.0);
+	box[2] = ceil(side * 2.0);
+	box[3] = ceil(k * BUB_RISE + 28.0);
+	return true;
+}
+
+static void bub_one(cairo_t *cr, double x, double y, double r, double a)
+{
+	/* dark enough at the rim to read on pale sand, light inside, and the
+	 * window of the light from above caught in its top */
+	cairo_new_sub_path(cr);
+	cairo_arc(cr, x, y, r, 0, 2 * M_PI);
+	cairo_set_source_rgba(cr, 0.80, 0.95, 1.0, 0.16 * a);
+	cairo_fill_preserve(cr);
+	cairo_set_line_width(cr, fmax(0.8, r * 0.22));
+	cairo_set_source_rgba(cr, 0.08, 0.22, 0.26, 0.30 * a);
+	cairo_stroke(cr);
+	cairo_new_sub_path(cr);
+	cairo_arc(cr, x, y, r * 0.86, 0, 2 * M_PI);
+	cairo_set_line_width(cr, fmax(0.6, r * 0.14));
+	cairo_set_source_rgba(cr, 0.92, 1.0, 1.0, 0.55 * a);
+	cairo_stroke(cr);
+	cairo_new_sub_path(cr);
+	cairo_arc(cr, x - r * 0.35, y - r * 0.38, r * 0.24, 0, 2 * M_PI);
+	cairo_set_source_rgba(cr, 1, 1, 1, 0.85 * a);
+	cairo_fill(cr);
+}
+
+/* The bubbles from source i in the water at now, drawn on cr (where the
+ * source is at (x, y), k pixels a unit) or, with no cr, only counted. The
+ * n-th is let go at about n * every, a little early or late. */
+static int bub_run(cairo_t *cr, int i, double now, double x, double y, double k)
+{
+	struct bub_src s[DESK_BUBBLE_SOURCES];
+	bub_sources(s);
+	const struct bub_src *b = &s[i];
+	long n1 = (long)floor(now / b->every) + 1;
+	long n0 = (long)floor((now - b->life * 1.2) / b->every) - 1;
+	int count = 0;
+	for (long n = n0; n <= n1; n++) {
+		double h0 = hash21((double)n * 0.731 + i * 17.0, 1.7);
+		double h1 = hash21((double)n * 0.517 + i * 11.0, 4.3);
+		double h2 = hash21((double)n * 0.293 + i * 5.0, 9.1);
+		/* the plants: only now and then, not every turn */
+		if (i > 0 && h2 < 0.45) {
+			continue;
+		}
+		double born = (n + (h0 - 0.5) * 0.8) * b->every;
+		double age = now - born;
+		double life = b->life * (0.8 + 0.4 * h1);
+		if (age < 0.0 || age > life) {
+			continue;
+		}
+		count++;
+		if (!cr) {
+			continue;
+		}
+		double u = age / life;
+		/* up, toward the back as seen from above, faster as it goes;
+		 * swaying, more the higher it is */
+		double sway = sin(age * (5.0 + 3.0 * h1) + h0 * 6.28) * k * 0.25 * u
+			+ (h2 - 0.5) * k * 1.3 * u;
+		double bx = x + sway, by = y - k * BUB_RISE * u * (0.6 + 0.4 * u);
+		double r = k * 0.06 * b->r0 * (0.7 + 0.6 * h2) * (1.0 + 1.3 * u);
+		double a = smoothstepf(0.0, 0.08, u) * (1.0 - smoothstepf(0.82, 1.0, u));
+		bub_one(cr, bx, by, r, a);
+	}
+	return count;
+}
+
+int desk_bubbles_live(int i, double now)
+{
+	if (i < 0 || i >= DESK_BUBBLE_SOURCES) {
+		return 0;
+	}
+	return bub_run(NULL, i, now, 0.0, 0.0, 0.0);
+}
+
+void desk_draw_bubbles(cairo_t *cr, int w, int h, int i, double now)
+{
+	struct bub_src s[DESK_BUBBLE_SOURCES];
+	bub_sources(s);
+	double x, y, k;
+	if (i < 0 || i >= DESK_BUBBLE_SOURCES || !bub_at(w, h, &s[i], &x, &y, &k)) {
+		return;
+	}
+	cairo_save(cr);
+	bub_run(cr, i, now, x, y, k);
+	cairo_restore(cr);
+}
+
 bool desk_clock_glow_box(int w, int h, double box[4])
 {
 	if (!desk_overlay_box(DESK_OVL_CLOCK, w, h, box)) {

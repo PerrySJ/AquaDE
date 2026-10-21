@@ -2104,6 +2104,7 @@ DEsk のもの）で、その上に描いたフォルダーとメモ帳にフォ
 | **WINDOWS**（ここから Shell タブ） | | | |
 | Lay every window on paper | `paper_for_all_windows` | yes | 自分で枠を描くアプリも紙に載せる（上） |
 | Screw up a closed window and throw it away | `throw_closed_windows` | yes | no なら閉じた窓はそのまま消える |
+| Bubbles in the tank | `tank_life` | yes | no なら泡は出ず、水は静かなまま |
 | A shark eats a screwed-up window | `shark_eats_closed_windows` | yes | no なら丸めた窓はサメに食べられず、端へ投げられる |
 | Turn a corner up when the pointer rests on it | `corner_on_hover` | yes | no なら角はクリックでだけめくれる（窓・手紙・バインダー。置くと少し動くのは同じ） |
 | **DESK** | | | |

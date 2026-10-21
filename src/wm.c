@@ -209,6 +209,7 @@ struct shell_conf {
 	bool paper_all;             /* programs with frames of their own on paper too */
 	bool throw_closed;          /* a closed window screwed up and thrown away */
 	bool shark;                 /* and, thrown, eaten by a shark */
+	bool tank_life;             /* bubbles going up in the tank */
 	bool corner_hover;          /* a corner turns up when the hand rests on it */
 	double scale;               /* points to pixels; 0: the screen's own */
 	double motion;              /* how long things take, against normal */
@@ -1237,6 +1238,12 @@ struct desk_server {
 	 * black. */
 	double idle_at, wake_at;
 	struct wl_event_source *idle_timer;
+	/* the bubbles going up in the tank: one sprite for each source, in a
+	 * tree of their own over the desk, drawn fifteen times a second while
+	 * the desk is to be seen (bubbles_cb) */
+	struct wl_event_source *bub_timer;
+	struct wlr_scene_tree *bub_tree;
+	struct wlr_scene_buffer *bub[DESK_BUBBLE_SOURCES];
 	bool dark, idle_held;
 	uint32_t wake_key, wake_button;
 	struct wlr_idle_notifier_v1 *idle_notifier;
@@ -10002,6 +10009,8 @@ static void terminal_open(void)
  *                                         thrown off the desk (yes), or goes
  *   shark_eats_closed_windows = yes | no  the ball eaten by a shark that
  *                                         swims in for it (yes), or thrown
+ *   tank_life = yes | no                  bubbles going up from the stones
+ *                                         and the plants (yes), or still water
  *   corner_on_hover = yes | no            a corner turns up when the hand
  *                                         rests on its fold (yes), or only
  *                                         when it is clicked
@@ -10122,6 +10131,7 @@ static void shell_conf_defaults(struct shell_conf *c)
 	c->paper_all = true;
 	c->throw_closed = true;
 	c->shark = true;
+	c->tank_life = true;
 	c->corner_hover = true;
 	c->scale = 0.0;
 	c->motion = 1.0;
@@ -10432,6 +10442,8 @@ static void shell_conf_read_file(struct shell_conf *c, const char *path)
 			c->throw_closed = b;
 		} else if (!strcmp(key, "shark_eats_closed_windows")) {
 			c->shark = b;
+		} else if (!strcmp(key, "tank_life")) {
+			c->tank_life = b;
 		} else if (!strcmp(key, "corner_on_hover")) {
 			c->corner_hover = b;
 		} else if (!strcmp(key, "drawer_closes")) {
@@ -16170,6 +16182,68 @@ static void boot_tick(struct desk_server *server)
 	if (shown && L < 0.999) {
 		server_schedule_frames(server);
 	}
+}
+
+/* Is the desk there to be looked at -- not under the shelf, the console,
+ * the post box or the door, nor the screen dark, nor a window over all of
+ * it? */
+static bool desk_in_view(struct desk_server *server)
+{
+	if (!server->icons_shown || server->dark || locked(server) || shelf_up(server)
+		|| console_up(server) || post_up(server)) {
+		return false;
+	}
+	struct desk_toplevel *v;
+	wl_list_for_each(v, &server->toplevels, link) {
+		if (v->fullscreen && v->scene_tree) {
+			return false;
+		}
+	}
+	return true;
+}
+
+#define BUB_MS 66
+
+static int bubbles_cb(void *data)
+{
+	struct desk_server *server = data;
+	/* and only while somebody is there: two minutes untouched and the
+	 * water goes still, until the next touch */
+	bool on = server->conf.tank_life && desk_gfx_level() != DESK_GFX_2D
+		&& desk_in_view(server) && real_sec() - server->idle_at < 120.0;
+	if (!server->bub_tree) {
+		server->bub_tree = wlr_scene_tree_create(server->layer_desk);
+	}
+	wlr_scene_node_set_enabled(&server->bub_tree->node, on);
+	if (!on) {
+		/* looked at again in a while, at no cost meanwhile */
+		wl_event_source_timer_update(server->bub_timer, 400);
+		return 0;
+	}
+	wlr_scene_node_raise_to_top(&server->bub_tree->node);
+	double now = monotonic_sec();
+	double k = motion_res();
+	for (int i = 0; i < DESK_BUBBLE_SOURCES; i++) {
+		double box[4];
+		/* nothing going up from it just now (a plant, mostly): nothing
+		 * drawn, nothing to send */
+		if (!desk_bubbles_live(i, now) || !desk_bubble_box(server->desk_w, server->desk_h, i, box)) {
+			if (server->bub[i]) {
+				wlr_scene_node_set_enabled(&server->bub[i]->node, false);
+			}
+			continue;
+		}
+		struct desk_buf *buf = buf_create((int)ceil(box[2] * k), (int)ceil(box[3] * k));
+		cairo_scale(buf->cr, k, k);
+		cairo_translate(buf->cr, -box[0], -box[1]);
+		desk_draw_bubbles(buf->cr, server->desk_w, server->desk_h, i, now);
+		scene_put(&server->bub[i], server->bub_tree, buf, (int)box[0], (int)box[1], NULL);
+		wlr_scene_buffer_set_dest_size(server->bub[i], (int)box[2], (int)box[3]);
+		wlr_scene_node_set_enabled(&server->bub[i]->node, true);
+	}
+	/* (a new picture in the scene asks for its own frame) */
+	wl_event_source_timer_update(server->bub_timer, BUB_MS);
+	return 0;
 }
 
 static int tick_cb(void *data)
@@ -23192,6 +23266,8 @@ int main(int argc, char **argv)
 	server.cc_timer = wl_event_loop_add_timer(loop, console_live_cb, &server);
 	/* the wait for the screen to go dark, counted from now */
 	server.idle_timer = wl_event_loop_add_timer(loop, idle_cb, &server);
+	server.bub_timer = wl_event_loop_add_timer(loop, bubbles_cb, &server);
+	wl_event_source_timer_update(server.bub_timer, 1000);
 	server.idle_at = real_sec();
 	idle_rearm(&server);
 	if (idle_ms(&server) > 0) {
