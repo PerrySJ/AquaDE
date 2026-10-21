@@ -1079,7 +1079,7 @@ struct desk_clock_state {
 	double show_t;                        /* how far into it, seconds */
 	int year;                             /* the year it is, to say so */
 	struct desk_supply supply;
-	double avg_w;                         /* since DEsk started; < 0 unknown */
+	double avg_w;                         /* since AquaDE started; < 0 unknown */
 	double hour_wh;                       /* in the last hour; < 0 unknown */
 	double hour_span;                     /* how much of that hour there is, 0..1 */
 	struct desk_media media;            /* what is playing */

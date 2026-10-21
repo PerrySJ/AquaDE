@@ -1,5 +1,5 @@
 project('desk', 'c',
-  version: '0.1.3',
+  version: '0.0.1',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=c11',
@@ -15,7 +15,7 @@ add_project_arguments(
 )
 # what this release is called, as --version and the session log say it,
 # and its number, as the notification server tells programs that ask
-add_project_arguments('-DDESK_RELEASE="DEsk v0.1.3 (BETA)"',
+add_project_arguments('-DDESK_RELEASE="AquaDE v0.0.1 (ALPHA)"',
   '-DDESK_VERSION="@0@"'.format(meson.project_version()), language: 'c')
 # a variable initialised from itself (x = x) is uninitialised, and in C
 # -Wall does not say so: a keysym once read as garbage that way
@@ -155,13 +155,13 @@ if not pam.found()
   pam = meson.get_compiler('c').find_library('pam')
 endif
 wm_deps += pam
-# DEsk's own autostart entries live with its data, wherever the prefix
+# AquaDE's own autostart entries live with its data, wherever the prefix
 # put that, and are looked for there after the XDG directories
 wm_args = ['-DDESK_DATADIR="' + (get_option('prefix') / get_option('datadir')) + '"']
 
 # X11 programs, through Xwayland. wlroots has to have been built with it --
 # a distribution's usually is, one built for a kiosk may not be -- and the
-# window manager's half of it speaks xcb. Without either, DEsk still
+# window manager's half of it speaks xcb. Without either, AquaDE still
 # builds and runs; it simply opens Wayland programs only.
 have_xwayland = false
 xwayland_opt = get_option('xwayland')
@@ -196,7 +196,7 @@ summary({'Xwayland (X11 programs)': have_xwayland, 'GPU room tracer': have_gpu,
   'Touchpad and mouse settings (libinput)': have_libinput})
 
 if sdbus.found()
-  # With a bus, DEsk IS the notification daemon and the post box fills
+  # With a bus, AquaDE IS the notification daemon and the post box fills
   # with what the machine actually has to say. Without one it still runs;
   # the box is simply always empty.
   wm_sources += 'src/post.c'
@@ -262,7 +262,7 @@ if wayland_client.found()
   install_data('session/desk-settings.png',
     install_dir: get_option('datadir') / 'icons/hicolor/128x128/apps',
   )
-  # the DEsk Experience Index: how this machine does at what the desk asks
+  # the AquaDE Experience Index: how this machine does at what the desk asks
   # of it (src/index.c)
   executable('desk-index',
     ['src/index.c'] + client_protos,
@@ -305,30 +305,30 @@ xdpw_conf = configure_file(
 )
 install_data(xdpw_conf,
   install_dir: '/etc/xdg/xdg-desktop-portal-wlr',
-  rename: 'DEsk',
+  rename: 'AquaDE',
 )
-# DEsk's standard programs: the default program for each kind of file in
+# AquaDE's standard programs: the default program for each kind of file in
 # its session, and what the drawer's things open (apps.c)
 install_data('session/desk-mimeapps.list',
   install_dir: get_option('datadir') / 'applications',
 )
 
-# The look of other programs in a DEsk session: its icons (themes/icons,
+# The look of other programs in a AquaDE session: its icons (themes/icons,
 # drawn by themes/make-icons.py) and its GTK theme (themes/gtk), given to
 # the session's own layer of settings by desk-session (desk-dconf-profile)
-install_subdir('themes/icons/DEsk', install_dir: get_option('datadir') / 'icons')
-install_subdir('themes/gtk/DEsk', install_dir: get_option('datadir') / 'themes')
+install_subdir('themes/icons/AquaDE', install_dir: get_option('datadir') / 'icons')
+install_subdir('themes/gtk/AquaDE', install_dir: get_option('datadir') / 'themes')
 install_data('session/desk-dconf-profile',
   install_dir: get_option('datadir') / 'desk',
 )
 gtk_update_icon_cache = find_program('gtk-update-icon-cache', required: false)
 if gtk_update_icon_cache.found()
   meson.add_install_script(gtk_update_icon_cache, '-q', '-t', '-f',
-    get_option('prefix') / get_option('datadir') / 'icons' / 'DEsk',
+    get_option('prefix') / get_option('datadir') / 'icons' / 'AquaDE',
     skip_if_destdir: true)
 endif
 
-# the desktop session: DEsk's autostart entries, and the helper they run
+# the desktop session: AquaDE's autostart entries, and the helper they run
 install_data(
   'session/autostart/desk-polkit.desktop',
   'session/autostart/desk-keyring.desktop',
@@ -346,7 +346,7 @@ install_data('scripts/desk-session-helper', 'scripts/desk-screenshot', 'scripts/
   install_mode: 'rwxr-xr-x',
 )
 
-# DEsk nested in the session you are already in, and something to double
+# AquaDE nested in the session you are already in, and something to double
 # click to get it.
 install_data('scripts/desk-window',
   install_dir: get_option('bindir'),

@@ -2,3 +2,4 @@ build/
 build-*/
 out/
 __pycache__/
+/deps/

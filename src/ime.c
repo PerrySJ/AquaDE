@@ -37,7 +37,7 @@ static sd_bus *g_session;
 static struct wl_event_source *g_session_src;
 static bool g_fcitx_asking;
 
-/* typing into DEsk itself: the input context it has of IBus */
+/* typing into AquaDE itself: the input context it has of IBus */
 static struct desk_ime_typing g_typ;
 static bool g_typing;
 static unsigned g_typing_gen;
@@ -324,7 +324,7 @@ static bool ibus_connect(void)
 
 /* ---- typing through IBus ------------------------------------------
  *
- * An input context of DEsk's own: told it can show what is being
+ * An input context of AquaDE's own: told it can show what is being
  * written and the candidates itself, so that IBus sends them here rather
  * than to its panel. Keys go over as they come, without waiting (a key
  * not wanted comes back as not taken, in order, and is typed then). */
@@ -530,7 +530,7 @@ bool desk_ime_typing_begin(const struct desk_ime_typing *t)
 	}
 	if (sd_bus_call_method_async(g_ibus, NULL, "org.freedesktop.IBus", "/org/freedesktop/IBus",
 			"org.freedesktop.IBus", "CreateInputContext", on_ic_made,
-			(void *)(uintptr_t)g_typing_gen, "s", "DEsk") < 0) {
+			(void *)(uintptr_t)g_typing_gen, "s", "AquaDE") < 0) {
 		return false;
 	}
 	sd_bus_flush(g_ibus);

@@ -1,15 +1,15 @@
 #!/bin/sh
-# desk-report -- what to send when DEsk does not work: one file, ready to
+# desk-report -- what to send when AquaDE does not work: one file, ready to
 # attach to an issue or a message.
 #
 #   desk-report            write ~/desk-report.txt and say what to do with it
 #   desk-report --print    the same on the terminal instead
 #
-# It holds DEsk's version, which Linux, the graphics (card and driver), how
+# It holds AquaDE's version, which Linux, the graphics (card and driver), how
 # the screens and the session were found, the last session's log and the
-# one before, the last install's log, whether DEsk fell (coredumpctl), and
-# what the system's journal says of DEsk and the login screen since this boot.
-# Run it as yourself, from a terminal on any desktop or a console -- DEsk
+# one before, the last install's log, whether AquaDE fell (coredumpctl), and
+# what the system's journal says of AquaDE and the login screen since this boot.
+# Run it as yourself, from a terminal on any desktop or a console -- AquaDE
 # need not be running, or even start.
 #
 # Personal things are taken out before anything is written: your user name
@@ -26,7 +26,7 @@ case "${1:-}" in
 *) echo "desk-report: what is $1? (--help says what it takes)" >&2; exit 2 ;;
 esac
 
-state="${XDG_STATE_HOME:-$HOME/.local/state}/desk"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/aquade"
 section() { printf '\n===== %s\n' "$*"; }
 show() {
 	# show FILE [LINES] -- the end of a file, or say it is not there
@@ -52,7 +52,7 @@ pkg_version() {
 }
 
 report() {
-	section "DEsk"
+	section "AquaDE"
 	command -v desk >/dev/null 2>&1 && desk --version 2>&1 | head -n 1 || echo "desk is not installed (not on PATH)"
 	for p in /usr/local/bin/desk /usr/bin/desk; do
 		[ -x "$p" ] && echo "$p"
@@ -93,11 +93,11 @@ report() {
 	pkg_version xdg-desktop-portal-wlr
 
 	section "Settings"
-	for f in /etc/xdg/desk/shell.conf "${XDG_CONFIG_HOME:-$HOME/.config}/desk/shell.conf"; do
+	for f in /etc/xdg/aquade/shell.conf "${XDG_CONFIG_HOME:-$HOME/.config}/aquade/shell.conf"; do
 		[ -r "$f" ] && { echo "-- $f"; grep -v '^[[:space:]]*#' "$f" | grep -v '^[[:space:]]*$'; }
 	done
 
-	section "Did DEsk fall? (coredumpctl)"
+	section "Did AquaDE fall? (coredumpctl)"
 	if command -v coredumpctl >/dev/null 2>&1; then
 		coredumpctl --no-pager list desk 2>/dev/null | tail -n 5 || echo "(none)"
 		coredumpctl --no-pager info desk 2>/dev/null | sed -n '/Stack trace of thread/,/^$/p' | head -n 30
@@ -106,8 +106,8 @@ report() {
 	fi
 
 	# What the login screen said when it started the session -- the only
-	# word there is when DEsk did not get as far as its own log
-	section "The journal since this boot: DEsk and the login screen"
+	# word there is when AquaDE did not get as far as its own log
+	section "The journal since this boot: AquaDE and the login screen"
 	if command -v journalctl >/dev/null 2>&1; then
 		journalctl -b -q --no-pager -o short-monotonic 2>/dev/null \
 			| grep -E '[ /]desk(-session|-session-helper)?(\[|:)|gdm-wayland-session|gdm-session-worker|gdm-password|sddm-helper|lightdm' \

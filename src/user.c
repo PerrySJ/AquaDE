@@ -88,9 +88,9 @@ cairo_surface_t *desk_lock_picture(void)
 			const char *cache = getenv("XDG_CACHE_HOME");
 			char dir[1024];
 			if (cache && *cache) {
-				snprintf(dir, sizeof dir, "%s/desk", cache);
+				snprintf(dir, sizeof dir, "%s/aquade", cache);
 			} else if (home && *home) {
-				snprintf(dir, sizeof dir, "%s/.cache/desk", home);
+				snprintf(dir, sizeof dir, "%s/.cache/aquade", home);
 			} else {
 				continue;
 			}

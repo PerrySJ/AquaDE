@@ -1,7 +1,7 @@
 #!/bin/sh
-# Run DEsk as a window inside the session you are already in, which is what
+# Run AquaDE as a window inside the session you are already in, which is what
 # you want when you are looking at it rather than logging into it. For the
-# real thing -- DEsk as the session -- pick it at the login screen instead.
+# real thing -- AquaDE as the session -- pick it at the login screen instead.
 set -eu
 
 size="${DESK_SIZE:-1440x900}"
@@ -13,7 +13,7 @@ if [ -x "$root/build/desk" ]; then
 elif command -v desk >/dev/null 2>&1; then
 	bin="$(command -v desk)"
 else
-	msg="DEsk is not built. Run: meson compile -C $root/build"
+	msg="AquaDE is not built. Run: meson compile -C $root/build"
 	if command -v zenity >/dev/null 2>&1; then
 		zenity --error --text="$msg"
 	elif command -v xmessage >/dev/null 2>&1; then

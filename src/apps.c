@@ -310,13 +310,13 @@ static void user_file_load(void)
 	char path[512];
 	const char *cfg = getenv("XDG_CONFIG_HOME");
 	if (cfg && *cfg) {
-		snprintf(path, sizeof path, "%s/desk/shelves.conf", cfg);
+		snprintf(path, sizeof path, "%s/aquade/shelves.conf", cfg);
 	} else {
 		const char *home = getenv("HOME");
 		if (!home) {
 			return;
 		}
-		snprintf(path, sizeof path, "%s/.config/desk/shelves.conf", home);
+		snprintf(path, sizeof path, "%s/.config/aquade/shelves.conf", home);
 	}
 	FILE *f = fopen(path, "re");
 	if (!f) {
@@ -457,13 +457,13 @@ static int cache_dir(char *buf, size_t n)
 	const char *base = getenv("XDG_CACHE_HOME");
 	char tmp[400];
 	if (base && *base) {
-		snprintf(tmp, sizeof tmp, "%s/desk", base);
+		snprintf(tmp, sizeof tmp, "%s/aquade", base);
 	} else {
 		const char *home = getenv("HOME");
 		if (!home || !*home) {
 			return 0;
 		}
-		snprintf(tmp, sizeof tmp, "%s/.cache/desk", home);
+		snprintf(tmp, sizeof tmp, "%s/.cache/aquade", home);
 	}
 	if (mkdir(tmp, 0755) != 0 && errno != EEXIST) {
 		return 0;
@@ -1067,14 +1067,14 @@ static void scan_dir(struct scan *sc, const char *root, const char *sub, int dep
 		bool drop = false, off = false;
 		if (strcmp(e.type, "Application") != 0 || !e.exec[0] || e.hidden) {
 			drop = true;
-		} else if (e.notshow[0] && (list_has(e.notshow, "DEsk") || list_has(e.notshow, "DeskWM"))) {
+		} else if (e.notshow[0] && (list_has(e.notshow, "AquaDE") || list_has(e.notshow, "DeskWM"))) {
 			drop = true;
 		} else if (e.tryexec[0] && !on_path(e.tryexec)) {
 			drop = true;
 		} else if (list_has(e.cats, "Screensaver") || list_has(e.cats, "TrayIcon")
 			|| list_has(e.cats, "Applet") || list_has(e.cats, "Shell")) {
 			drop = true;
-		} else if (e.nodisplay || (e.onlyshow[0] && !list_has(e.onlyshow, "DEsk")
+		} else if (e.nodisplay || (e.onlyshow[0] && !list_has(e.onlyshow, "AquaDE")
 			&& !list_has(e.onlyshow, "DeskWM"))) {
 			off = true;
 		}
@@ -1276,7 +1276,7 @@ static void do_scan(void)
 		}
 		p = e ? e + 1 : NULL;
 	}
-	/* and last, applications/ beside DEsk's own binary: what it brings
+	/* and last, applications/ beside AquaDE's own binary: what it brings
 	 * with it (Shell Settings), when it is run from where it was built
 	 * rather than installed */
 	char exe[1024];
@@ -1384,13 +1384,13 @@ void desk_apps_release(const struct desk_app_list *list)
 
 /* ---- the standard programs ------------------------------------------
  *
- * What the drawer's four things are and what Super+Enter opens: DEsk's
+ * What the drawer's four things are and what Super+Enter opens: AquaDE's
  * terminal, web browser, file manager and text editor. For each, the first
  * of: what shell.conf sets for it (app.terminal = <desktop id>); the
  * default program for its kind of file, found where GIO and xdg-open find
  * it (mime_default) -- the user's choice in mimeapps.list before the
- * desk-mimeapps.list DEsk installs -- for all but the terminal, which no
- * kind of file stands for; then the first installed of DEsk's standard
+ * desk-mimeapps.list AquaDE installs -- for all but the terminal, which no
+ * kind of file stands for; then the first installed of AquaDE's standard
  * set; then any program of its kind by its Categories, one not filed under
  * Development (a programmer's editor) before one that is.
  *
@@ -1570,7 +1570,7 @@ static const struct desk_app *mime_default_dirs(const struct desk_app_list *l, c
 }
 
 /* The default program for mime, by the XDG MIME applications spec for the
- * desktop "desk" (DEsk sets XDG_CURRENT_DESKTOP=DEsk): the first
+ * desktop "desk" (AquaDE sets XDG_CURRENT_DESKTOP=AquaDE): the first
  * installed program a [Default Applications] line names, the files looked
  * at in the spec's order -- $XDG_CONFIG_HOME, each of $XDG_CONFIG_DIRS,
  * $XDG_DATA_HOME/applications, each of $XDG_DATA_DIRS/applications, and in
@@ -1578,7 +1578,7 @@ static const struct desk_app *mime_default_dirs(const struct desk_app_list *l, c
  * xdg-open find it in the session, so the drawer opens what a double click
  * on a file opens: the user's own choice in mimeapps.list (which
  * xfce4-mime-settings, Default programs in Shell Settings, writes) before
- * the desk-mimeapps.list DEsk installs. Like them, it takes a default as
+ * the desk-mimeapps.list AquaDE installs. Like them, it takes a default as
  * it is written, and does not also ask, as the spec does, that the program
  * be associated with the kind of file (its MimeType=, [Added
  * Associations]) and not taken back by a [Removed Associations] line. NULL

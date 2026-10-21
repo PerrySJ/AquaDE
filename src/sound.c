@@ -94,7 +94,7 @@ static atomic_bool g_ready;
 static atomic_bool g_running;
 static pthread_t g_thread;
 static bool g_thread_on;
-static char g_app[64] = "DEsk";
+static char g_app[64] = "AquaDE";
 
 enum backend { B_NONE, B_PULSE, B_ALSA, B_FILE };
 static enum backend g_backend;
@@ -921,7 +921,7 @@ static void *sound_main(void *arg)
 	want = want && *want ? want : "auto";
 	g_backend = B_NONE;
 	if (!strncmp(want, "file:", 5)) {
-		/* %p is this process, so that the programs DEsk starts -- who
+		/* %p is this process, so that the programs AquaDE starts -- who
 		 * inherit the setting -- each write a file of their own */
 		const char *src = want + 5;
 		size_t o = 0;
@@ -1039,7 +1039,7 @@ void desk_sound_init(const char *app)
 	if (g_thread_on) {
 		return;
 	}
-	snprintf(g_app, sizeof g_app, "%s", app && *app ? app : "DEsk");
+	snprintf(g_app, sizeof g_app, "%s", app && *app ? app : "AquaDE");
 	g_dice ^= (uint64_t)time(NULL) * 0x9E3779B97F4A7C15ull;
 	atomic_store(&g_running, true);
 	if (pthread_create(&g_thread, NULL, sound_main, NULL) == 0) {

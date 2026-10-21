@@ -6,15 +6,15 @@
  * for any of that name in a later one (which is how a user turns one off:
  * a copy in ~/.config/autostart with Hidden=true). An entry runs unless it
  * is hidden, turned off (X-GNOME-Autostart-enabled=false), meant only for
- * other desktops (OnlyShowIn without DEsk, NotShowIn with it), or its
+ * other desktops (OnlyShowIn without AquaDE, NotShowIn with it), or its
  * TryExec is not installed.
  *
  * And a few that would fight the desk are left out whatever they say,
  * because they are parts of other desktops that name no desktop: a second
- * notification daemon (the post box is DEsk's), a screen locker or a
+ * notification daemon (the post box is AquaDE's), a screen locker or a
  * screensaver for X, a colour daemon for X, the authentication agents of
- * other desktops (DEsk starts one of its own, desk-session-helper), and
- * the network applet's own entry (DEsk starts it in the form the tray can
+ * other desktops (AquaDE starts one of its own, desk-session-helper), and
+ * the network applet's own entry (AquaDE starts it in the form the tray can
  * show). */
 
 /* syscall(), for pidfd_open, which glibc has had a name for only lately */
@@ -154,16 +154,16 @@ static const char *const ACTIVATION_VARS[] = {
 	"XDG_SESSION_DESKTOP", "DESKTOP_SESSION", "QT_QPA_PLATFORM", "QT_QPA_PLATFORMTHEME",
 	"GDK_BACKEND", "MOZ_ENABLE_WAYLAND", "GTK_IM_MODULE", "QT_IM_MODULE", "QT_IM_MODULES",
 	"XMODIFIERS", "DESK_IM", "XCURSOR_THEME", "XCURSOR_SIZE",
-	/* DEsk's own layer of settings over the user's (desk-session): what
+	/* AquaDE's own layer of settings over the user's (desk-session): what
 	 * D-Bus starts for the session -- a file manager asked to show a
 	 * folder -- looks as the rest of the session does. */
 	"DCONF_PROFILE",
 };
 
 /* What a program must not be told when it is not set here: with IBus,
- * programs type through DEsk, and an earlier session (or another
+ * programs type through AquaDE, and an earlier session (or another
  * desktop) may have left GTK_IM_MODULE=ibus in systemd's environment, which
- * would send whatever D-Bus starts straight to IBus, round DEsk.
+ * would send whatever D-Bus starts straight to IBus, round AquaDE.
  * dbus-update-activation-environment can only set; systemd can unset. */
 static const char *const UNSET_VARS[] = { "GTK_IM_MODULE", "QT_IM_MODULE" };
 
@@ -252,7 +252,7 @@ static bool left_out(const char *file)
 	return false;
 }
 
-/* Is DEsk in a list like "KDE;GNOME;"? It goes by DEsk there (and by
+/* Is AquaDE in a list like "KDE;GNOME;"? It goes by AquaDE there (and by
  * DeskWM, the name it had before, in what was written for that). */
 static bool lists_us(const char *list)
 {
@@ -260,7 +260,7 @@ static bool lists_us(const char *list)
 	while (*p) {
 		const char *e = strchr(p, ';');
 		size_t n = e ? (size_t)(e - p) : strlen(p);
-		if ((n == 4 && !strncmp(p, "DEsk", 4)) || (n == 6 && !strncmp(p, "DeskWM", 6))) {
+		if ((n == 4 && !strncmp(p, "AquaDE", 4)) || (n == 6 && !strncmp(p, "DeskWM", 6))) {
 			return true;
 		}
 		if (!e) {
@@ -379,7 +379,7 @@ static void autostart_dir(const char *dir)
 			continue;
 		}
 		if (left_out(de->d_name)) {
-			wlr_log(WLR_INFO, "autostart: not %s (left out under DEsk)", de->d_name);
+			wlr_log(WLR_INFO, "autostart: not %s (left out under AquaDE)", de->d_name);
 			continue;
 		}
 		char found[1024];
@@ -425,7 +425,7 @@ static void autostart(void)
 		p = e ? e + 1 : NULL;
 	}
 #ifdef DESK_DATADIR
-	/* and DEsk's own, last: a file of the same name anywhere above
+	/* and AquaDE's own, last: a file of the same name anywhere above
 	 * stands in for one of these */
 	autostart_dir(DESK_DATADIR "/desk/autostart");
 #endif

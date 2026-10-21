@@ -1,3 +1,31 @@
+# AquaDE
+
+**v0.0.1 (ALPHA)** -- an aquarium-themed Wayland desktop, forked from
+[DEsk](https://github.com/fyzugx/DEsk) v0.1.3 by fyzugx (MIT licence, kept in
+[LICENSE](LICENSE)).
+
+What has changed from DEsk so far:
+
+- The name: AquaDE in what you see, in the session entry and in the icon and
+  GTK theme names. Program names (`desk`, `desk-settings`...) are unchanged
+  for now.
+- Its own folders: `~/.config/aquade`, `~/.local/share/aquade`,
+  `~/.local/state/aquade`, `~/.cache/aquade`, and the lock
+  `$XDG_RUNTIME_DIR/aquade.lock`, so it never shares files with a DEsk.
+- Built against wlroots 0.18.3 kept in `deps/` (not committed).
+
+The aquarium itself is still to come. Below is DEsk's own README.
+
+```sh
+W=$PWD/deps/wlroots
+PKG_CONFIG_PATH=$W/lib/pkgconfig meson setup build -Dc_link_args="-Wl,-rpath,$W/lib"
+meson compile -C build
+./build/desk-preview -o out.png -s 1440x900   # a picture, no compositor
+./scripts/desk-window                         # run in a window
+```
+
+---
+
 **English** | [日本語](README.ja.md)
 
 # DEsk

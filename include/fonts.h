@@ -10,7 +10,7 @@
  * a face for the Latin alphabet and one for Japanese, Chinese or Korean
  * (and anything else the Latin face has no letters for), chosen from what
  * is installed: the first of a list that is there, so that a machine
- * without the faces DEsk is drawn with still gets the nearest thing it
+ * without the faces AquaDE is drawn with still gets the nearest thing it
  * has. */
 enum desk_font {
 	DESK_FONT_UI,       /* small working text: menus, settings, captions */

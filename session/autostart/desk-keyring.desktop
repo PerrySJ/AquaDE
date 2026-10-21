@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=DEsk: Keyring
-Name[ja]=DEsk: キーリング
+Name=AquaDE: Keyring
+Name[ja]=AquaDE: キーリング
 Comment=Keeps the passwords programs store
 Exec=desk-session-helper keyring
 TryExec=desk-session-helper
-OnlyShowIn=DEsk;
+OnlyShowIn=AquaDE;
 NoDisplay=true
 X-GNOME-Autostart-enabled=true

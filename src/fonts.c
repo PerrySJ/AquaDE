@@ -1,4 +1,4 @@
-/* The faces DEsk sets its text in (fonts.h).
+/* The faces AquaDE sets its text in (fonts.h).
  *
  * The toy font API cairo has takes one family and gives every letter of a
  * string from that one face: there is no falling back to another face for
@@ -38,7 +38,7 @@ struct role {
 
 /* Each list in order of preference, ending in a generic name fontconfig
  * always answers. The URW faces (fonts-urw-base35: Palatino, Helvetica,
- * Courier) and Noto CJK (fonts-noto-cjk) are what DEsk is drawn with;
+ * Courier) and Noto CJK (fonts-noto-cjk) are what AquaDE is drawn with;
  * the rest are near enough. */
 #define WIDE_SANS "Noto Sans CJK JP", "Source Han Sans JP", "Noto Sans CJK SC", \
 	"IPAexGothic", "IPAPGothic", "VL PGothic", "WenQuanYi Zen Hei", "WenQuanYi Micro Hei", \

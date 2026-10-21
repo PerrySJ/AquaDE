@@ -19,9 +19,9 @@ static void memo_path(char *out, size_t n)
 	const char *dh = getenv("XDG_DATA_HOME");
 	const char *home = getenv("HOME");
 	if (dh && *dh) {
-		snprintf(out, n, "%s/desk/memo", dh);
+		snprintf(out, n, "%s/aquade/memo", dh);
 	} else if (home && *home) {
-		snprintf(out, n, "%s/.local/share/desk/memo", home);
+		snprintf(out, n, "%s/.local/share/aquade/memo", home);
 	} else {
 		out[0] = '\0';
 	}

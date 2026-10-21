@@ -1,19 +1,19 @@
 /* desk-settings: Shell Settings.
  *
  * The shell's own settings, on a sheet of the shell's paper. This is a
- * program like any other on the desk: it asks DEsk for its frame, so it
+ * program like any other on the desk: it asks AquaDE for its frame, so it
  * is a sheet with a heading and a turned-down corner, folds, and is thrown
  * away like the rest -- and on that paper, its own surface clear wherever
  * nothing is drawn, it draws a folder with a pad in each of its pockets,
  * and prints its form on the pads' sheets. What is chosen goes into
- * $XDG_CONFIG_HOME/desk/shell.conf, which DEsk reads again as soon as
+ * $XDG_CONFIG_HOME/desk/shell.conf, which AquaDE reads again as soon as
  * it changes; the lines it does not know about are kept as they were.
  *
  * It is also where the rest of the machine is set from, and this is where
- * the line is drawn between what DEsk makes and what it borrows (README.md
+ * the line is drawn between what AquaDE makes and what it borrows (README.md
  * and docs/design.md have the same line as a table):
  *
- *   DEsk makes      what is drawn as the room and handled as its things --
+ *   AquaDE makes      what is drawn as the room and handled as its things --
  *                     windows as paper, the drawer, the shelves, the clock,
  *                     the Control Panel, the post box, the front door --
  *                     and what only the compositor can do: the keyboard
@@ -22,7 +22,7 @@
  *                     this form: windows, the size of things, the language,
  *                     the clock, your birthday and the weather, how long
  *                     the screen stays on and whether the desk locks then.
- *   both              DEsk draws the thing, a program or service does the
+ *   both              AquaDE draws the thing, a program or service does the
  *                     work: the volume knob and mute (PipeWire or
  *                     PulseAudio), the brightness (logind), the Wi-Fi and
  *                     Bluetooth levers, the post box (the desk is the
@@ -34,7 +34,7 @@
  *                     and their resolution, printers, the look of other
  *                     programs, default programs, disks -- and the programs
  *                     themselves, the classic GTK ones of Xfce and MATE
- *                     first; and the DEsk Experience Index, desk-index,
+ *                     first; and the AquaDE Experience Index, desk-index,
  *                     which is a program of its own.
  *
  * Each job on the third line is a row on the System pad (the other tab), with
@@ -45,7 +45,7 @@
  * is printed faint and, if a package here brings one, names it by the name
  * it goes by on this system (Debian's, Ubuntu's or Arch's).
  *
- * What does not work here is not offered, as tried in DEsk with a GTK
+ * What does not work here is not offered, as tried in AquaDE with a GTK
  * program beside it. MATE's appearance, display, keyboard and mouse
  * dialogs are X11 programs that crash on a Wayland display, and what they
  * write is put into effect only by MATE's settings daemon, on X. Xfce's
@@ -55,7 +55,7 @@
  *
  * Only programs that need nothing running beside them are offered.
  * wdisplays puts where the screens stand into effect through
- * wlr-output-management itself, and DEsk keeps what is put into effect
+ * wlr-output-management itself, and AquaDE keeps what is put into effect
  * that way (desk/displays.conf), so the screens stand the same at the next
  * login. nwg-look writes the look of programs itself where GTK on Wayland
  * reads it: GSettings' org.gnome.desktop.interface, and GTK's settings.ini;
@@ -429,7 +429,7 @@ static const struct setting SETTINGS[] = {
 		"The programs running, and what each is using.", NULL, NULL, 0, &O_TASKS },
 	{ S_ACTION, NULL, "About this computer",
 		"What the computer is made of, part by part.", NULL, NULL, 0, &O_ABOUT },
-	{ S_ACTION, NULL, "DEsk Experience Index",
+	{ S_ACTION, NULL, "AquaDE Experience Index",
 		"How this machine does at what the desk asks of it: the processor, the memory, the "
 		"graphics and the disk.", NULL, NULL, 0, &O_INDEX },
 };
@@ -518,9 +518,9 @@ static void conf_path(char *out, size_t n)
 	const char *cfg = getenv("XDG_CONFIG_HOME");
 	const char *home = getenv("HOME");
 	if (cfg && *cfg) {
-		snprintf(out, n, "%s/desk/shell.conf", cfg);
+		snprintf(out, n, "%s/aquade/shell.conf", cfg);
 	} else if (home && *home) {
-		snprintf(out, n, "%s/.config/desk/shell.conf", home);
+		snprintf(out, n, "%s/.config/aquade/shell.conf", home);
 	} else {
 		out[0] = '\0';
 	}
@@ -707,7 +707,7 @@ static void conf_read(const char *path, struct desk_form_row *rows)
 	while (*dirs) {
 		size_t len = strcspn(dirs, ":");
 		char sys[512];
-		if (len > 0 && (size_t)snprintf(sys, sizeof sys, "%.*s/desk/shell.conf", (int)len,
+		if (len > 0 && (size_t)snprintf(sys, sizeof sys, "%.*s/aquade/shell.conf", (int)len,
 			dirs) < sizeof sys && access(sys, R_OK) == 0) {
 			conf_read_file(sys, rows);
 			break;
@@ -889,7 +889,7 @@ static void action_words(struct app *a, int i)
 		p->bin);
 	a->rows[i].label = a->named[i];
 	if (o->needs && !a->offered[i]) {
-		snprintf(a->aside[i], sizeof a->aside[i], "%s", TR("DEsk cannot do this yet"));
+		snprintf(a->aside[i], sizeof a->aside[i], "%s", TR("AquaDE cannot do this yet"));
 	} else if (pkg && *pkg) {
 		snprintf(a->aside[i], sizeof a->aside[i], TR("not installed \xe2\x80\x94 e.g. %s"), pkg);
 	} else {
@@ -993,7 +993,7 @@ static bool conf_write(const char *path, const char *key, const char *value)
 		}
 		fclose(in);
 	} else {
-		fputs("# DEsk's shell settings. Shell Settings writes this; so may you.\n"
+		fputs("# AquaDE's shell settings. Shell Settings writes this; so may you.\n"
 			"#\n"
 			"#   paper_for_all_windows = yes | no   programs with frames of their own on paper\n"
 			"#   paper.<program> = yes | no         one program the other way (desktop id,\n"
@@ -1062,7 +1062,7 @@ static bool conf_changed(const char *path, struct timespec *seen, off_t *size, b
 
 /* ---- the rest of the machine ---- */
 
-/* the directory this program is in: a DEsk run from where it was built
+/* the directory this program is in: a AquaDE run from where it was built
  * keeps its own programs there, desk-index among them, off the PATH */
 static char g_exe_dir[512];
 
@@ -1277,7 +1277,7 @@ static void icons_apply(struct app *a)
 /* Started and let go of: forked twice, so that it is nobody's child to
  * wait for, in a session of its own, in the home directory, with nothing of
  * this program's -- not the display's socket, not the sound's -- but the
- * environment, which is the session's: DEsk's, as it started this. */
+ * environment, which is the session's: AquaDE's, as it started this. */
 static bool launch(const char *path)
 {
 	const char *name = strrchr(path, '/') ? strrchr(path, '/') + 1 : path;

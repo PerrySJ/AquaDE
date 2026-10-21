@@ -80,7 +80,7 @@ enum desk_sound {
 
 /* Start: the sounds are made and the server is found on a thread of their
  * own; until both are done, nothing plays. app names the client to the
- * server ("DEsk"). */
+ * server ("AquaDE"). */
 void desk_sound_init(const char *app);
 void desk_sound_shutdown(void);
 /* How loud, against as designed: 0 is silent (and nothing is mixed). */

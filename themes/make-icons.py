@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""make-icons.py -- DEsk's icon theme, drawn here as SVG.
+"""make-icons.py -- AquaDE's icon theme, drawn here as SVG.
 
 The programs on the desk (Thunar first) show folders, files, drives and
 places in whatever icon theme they are given; Adwaita's are flat and grey,
@@ -23,7 +23,7 @@ thing lays on the desk. Nothing is drawn by a filter alone.
 Each icon is drawn twice: in full, from 32 px up (scalable/), and plainer
 -- no grain, no fine print, heavier edges -- for the 16 to 31 px of a side
 pane or a list (16x16/, scaled). Both on 256 units. Run it from anywhere;
-it writes themes/icons/DEsk next to itself.
+it writes themes/icons/AquaDE next to itself.
 
     python3 themes/make-icons.py
 """
@@ -34,7 +34,7 @@ import random
 import shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "icons", "DEsk")
+OUT = os.path.join(HERE, "icons", "AquaDE")
 
 
 def rgbf(h):
@@ -1450,8 +1450,8 @@ def write(sub, name, draw):
 
 
 INDEX = """[Icon Theme]
-Name=DEsk
-Comment=Manila folders, papers, brass and walnut: the icons of the DEsk desk
+Name=AquaDE
+Comment=Manila folders, papers, brass and walnut: the icons of the AquaDE desk
 Inherits=Adwaita,AdwaitaLegacy,hicolor
 Example=folder
 Directories=16x16/places,16x16/mimetypes,16x16/devices,scalable/places,scalable/mimetypes,scalable/devices

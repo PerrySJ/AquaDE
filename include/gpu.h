@@ -7,7 +7,7 @@
 /* Somewhere to run a shader that is not a screen.
  *
  * The room is a signed distance field marched once per pixel, which is the
- * workload graphics hardware exists for -- and DEsk has been doing it on
+ * workload graphics hardware exists for -- and AquaDE has been doing it on
  * five CPU threads because that is where the scene is written. This is the
  * other end of that: an offscreen GLES context, a fragment program, and a
  * float buffer to read the answer back out of.

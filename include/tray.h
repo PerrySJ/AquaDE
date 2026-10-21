@@ -3,7 +3,7 @@
 
 /* The system tray: what programs put there, through StatusNotifierItem.
  *
- * DEsk is the watcher the items register with, if nobody else on the
+ * AquaDE is the watcher the items register with, if nobody else on the
  * bus is, and a host either way -- the thing that shows them, which here
  * is a row of paper slips tucked under the Control Panel at the back of
  * the desk. X11's XEmbed tray is not here: it is a window inside a window,

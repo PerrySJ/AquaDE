@@ -255,7 +255,7 @@ enum drawer_kind {
 	DRAWER_APP,
 	DRAWER_PANEL,
 	DRAWER_SHEET,
-	DRAWER_STD,      /* one of DEsk's standard programs, whichever it is now */
+	DRAWER_STD,      /* one of AquaDE's standard programs, whichever it is now */
 };
 
 #define DRAWER_MAX 32
@@ -775,7 +775,7 @@ struct desk_server {
 	struct drawer_entry drw[DRAWER_MAX];
 	int drw_n;
 	bool drw_default;          /* nobody has filled it yet: what it comes with */
-	bool drw_migrate;          /* kept by a DEsk that had no standard programs */
+	bool drw_migrate;          /* kept by a AquaDE that had no standard programs */
 	unsigned drw_gen;          /* the list of programs it was last matched to */
 	bool drw_dirty;            /* what lies in it has to be drawn again */
 	struct wlr_scene_buffer *drw_node;   /* what lies in it, over the sheet */
@@ -1214,7 +1214,7 @@ struct desk_server {
 	/* nested on an X desktop: the display it is on, and the window of ours
 	 * there still to be named for its dock (see nested_name) */
 	char *parent_display;
-	/* DEsk's own window there, when it runs in one; a connection to find
+	/* AquaDE's own window there, when it runs in one; a connection to find
 	 * where on that screen it is */
 	uint32_t host_window;
 	void *host_xcb;
@@ -6045,7 +6045,7 @@ static void paint_agenda(struct desk_server *server)
 }
 
 /* Tell the input method where the note being written is, on the screen
- * its windows go on: this one, or the one DEsk's window is on. */
+ * its windows go on: this one, or the one AquaDE's window is on. */
 static void agd_tell_cursor(struct desk_server *server)
 {
 	if (!server->agd_ime || !server->agd_edit) {
@@ -10012,7 +10012,7 @@ static void terminal_open(void)
  *   app.terminal = <desktop file id>      the standard terminal, and the
  *   app.browser, app.files, app.editor    other three of the drawer's
  *                                         things: what they open, instead
- *                                         of DEsk's choice (see apps.c)
+ *                                         of AquaDE's choice (see apps.c)
  *   language = auto | en | ja | zh | ko | es | fr | de
  *                                         the desk's own words, and the
  *                                         names programs are filed under:
@@ -10060,9 +10060,9 @@ static void shell_conf_path(char *out, size_t n)
 	const char *cfg = getenv("XDG_CONFIG_HOME");
 	const char *home = getenv("HOME");
 	if (cfg && *cfg) {
-		snprintf(out, n, "%s/desk/shell.conf", cfg);
+		snprintf(out, n, "%s/aquade/shell.conf", cfg);
 	} else if (home && *home) {
-		snprintf(out, n, "%s/.config/desk/shell.conf", home);
+		snprintf(out, n, "%s/.config/aquade/shell.conf", home);
 	} else {
 		out[0] = '\0';
 	}
@@ -10370,7 +10370,7 @@ static void shell_conf_system_path(char *out, size_t n)
 	while (*dirs) {
 		size_t len = strcspn(dirs, ":");
 		char path[512];
-		if (len > 0 && (size_t)snprintf(path, sizeof path, "%.*s/desk/shell.conf", (int)len,
+		if (len > 0 && (size_t)snprintf(path, sizeof path, "%.*s/aquade/shell.conf", (int)len,
 			dirs) < sizeof path && access(path, R_OK) == 0) {
 			snprintf(out, n, "%s", path);
 			return;
@@ -10509,7 +10509,7 @@ static bool shell_conf_put(const char *key, const char *value)
 		}
 		fclose(in);
 	} else {
-		fputs("# DEsk's shell settings. Shell Settings writes this; so may you.\n", out);
+		fputs("# AquaDE's shell settings. Shell Settings writes this; so may you.\n", out);
 	}
 	if (!done) {
 		fprintf(out, "%s = %s\n", key, value);
@@ -10954,9 +10954,9 @@ static void drawer_path(char *out, size_t n)
 	const char *cfg = getenv("XDG_CONFIG_HOME");
 	const char *home = getenv("HOME");
 	if (cfg && *cfg) {
-		snprintf(out, n, "%s/desk/drawer", cfg);
+		snprintf(out, n, "%s/aquade/drawer", cfg);
 	} else if (home && *home) {
-		snprintf(out, n, "%s/.config/desk/drawer", home);
+		snprintf(out, n, "%s/.config/aquade/drawer", home);
 	} else {
 		out[0] = '\0';
 	}
@@ -10977,8 +10977,8 @@ static void drawer_save(struct desk_server *server)
 		wlr_log(WLR_ERROR, "cannot keep what is in the drawer in %s", tmp);
 		return;
 	}
-	fprintf(f, "# DEsk's drawer (2). What is in it, in order: \"thing <terminal | browser |\n"
-		"# files | editor>\" (DEsk's standard program for it, whichever that is),\n"
+	fprintf(f, "# AquaDE's drawer (2). What is in it, in order: \"thing <terminal | browser |\n"
+		"# files | editor>\" (AquaDE's standard program for it, whichever that is),\n"
 		"# \"app <desktop file id>\", or \"panel\" (the screwdriver: Shell Settings).\n");
 	for (int i = 0; i < server->drw_n; i++) {
 		const struct drawer_entry *e = &server->drw[i];
@@ -11022,9 +11022,9 @@ static void drawer_load(struct desk_server *server)
 	server->drw_migrate = true;
 	char line[256];
 	while (fgets(line, sizeof line, f) && server->drw_n < DRAWER_MAX) {
-		/* (DeskWM and [DE]sk: the names DEsk went by when it wrote some
+		/* (DeskWM and [DE]sk: the names AquaDE went by when it wrote some
 		 * of these) */
-		if (!strncmp(line, "# DEsk's drawer (2)", 19) || !strncmp(line, "# [DE]sk's drawer (2)", 21)
+		if (!strncmp(line, "# AquaDE's drawer (2)", 19) || !strncmp(line, "# [DE]sk's drawer (2)", 21)
 			|| !strncmp(line, "# DeskWM's drawer (2)", 21)) {
 			server->drw_migrate = false;
 		}
@@ -11131,7 +11131,7 @@ static void drawer_match(struct desk_server *server)
 			}
 		}
 		server->drw_n = 0;
-		/* DEsk's standard programs, one a thing */
+		/* AquaDE's standard programs, one a thing */
 		for (int m = 0; m < DESK_STD_COUNT; m++) {
 			server->drw[server->drw_n++] = (struct drawer_entry){ .kind = DRAWER_STD,
 				.std = m, .fit = 1.0, .fit_to = 1.0 };
@@ -11989,7 +11989,7 @@ static void reset_cursor_mode(struct desk_server *server)
 
 /* A video taken out of its page to float over everything -- Firefox's
  * and Chromium's picture-in-picture -- is known by its window's title
- * alone, as the browsers name it in DEsk's languages (compared without
+ * alone, as the browsers name it in AquaDE's languages (compared without
  * case, spaces or hyphens): Wayland has no "keep this in front". */
 static const char *const PIP_TITLES[] = {
 	"pictureinpicture",          /* Firefox, Chromium */
@@ -15715,9 +15715,9 @@ static void cpu_letter(struct desk_server *server)
 	char path[512];
 	const char *st = getenv("XDG_STATE_HOME"), *home = getenv("HOME");
 	if (st && *st == '/') {
-		snprintf(path, sizeof path, "%s/desk/cpu-letter", st);
+		snprintf(path, sizeof path, "%s/aquade/cpu-letter", st);
 	} else if (home && *home) {
-		snprintf(path, sizeof path, "%s/.local/state/desk/cpu-letter", home);
+		snprintf(path, sizeof path, "%s/.local/state/aquade/cpu-letter", home);
 	} else {
 		path[0] = '\0';
 	}
@@ -17519,7 +17519,7 @@ static void power_set_mode(struct wl_listener *listener, void *data)
  *
  * wlr-randr, kanshi, wdisplays (wlr-output-management): each screen's
  * modes and the one it is in, where it is, which way up, whether it is on,
- * and its scale -- which on DEsk is the size of a point, the same as
+ * and its scale -- which on AquaDE is the size of a point, the same as
  * shell.conf's scale, and is written there: the desk is laid out in the
  * screen's own pixels, and a program's window is the size it draws itself
  * either way. A screen's own scale stays 1. What is asked is tried on the
@@ -17793,9 +17793,9 @@ static void displays_path(char *out, size_t n)
 	const char *cfg = getenv("XDG_CONFIG_HOME");
 	const char *home = getenv("HOME");
 	if (cfg && *cfg) {
-		snprintf(out, n, "%s/desk/displays.conf", cfg);
+		snprintf(out, n, "%s/aquade/displays.conf", cfg);
 	} else if (home && *home) {
-		snprintf(out, n, "%s/.config/desk/displays.conf", home);
+		snprintf(out, n, "%s/.config/aquade/displays.conf", home);
 	} else {
 		out[0] = '\0';
 	}
@@ -18013,9 +18013,9 @@ static void displays_keep(struct desk_server *server)
 		free(sets);
 		return;
 	}
-	fputs("# DEsk's screens, as a display tool last set them out (wdisplays, Xfce's\n"
+	fputs("# AquaDE's screens, as a display tool last set them out (wdisplays, Xfce's\n"
 		"# Display settings, wlr-randr), for each set of screens plugged in together.\n"
-		"# DEsk writes this when a tool has changed something, and sets the screens\n"
+		"# AquaDE writes this when a tool has changed something, and sets the screens\n"
 		"# out by it again whenever the same ones are there. The size of a point,\n"
 		"# which the tools call the scale, is shell.conf's scale.\n"
 		"#\n"
@@ -18614,7 +18614,7 @@ static bool ime_window_name(const char *name)
  *
  * A program on Wayland that wants an input method says so with text-input
  * (GTK, Qt), and the compositor is the go-between: the keys go to the input
- * method first -- IBus, by way of the same input context DEsk types its
+ * method first -- IBus, by way of the same input context AquaDE types its
  * own notes through (ime.c) -- and only what it does not keep goes on to
  * the window, in order; what it writes comes back to the window as the
  * text being written (preedit) and then the text written (commit). The
@@ -18826,7 +18826,7 @@ static void ti_attach(struct desk_ti *t)
 		return;
 	}
 	if (owner) {
-		return;   /* DEsk's own notes have it */
+		return;   /* AquaDE's own notes have it */
 	}
 	const struct desk_ime_typing ty = { ti_commit_text, ti_preedit, NULL, ti_key, t };
 	desk_ime_typing_begin(&ty);
@@ -21069,7 +21069,7 @@ static void output_destroy(struct wl_listener *listener, void *data)
 
 /* ---- the window we are in, when we are in one ------------------------
  *
- * Nested, DEsk is a window on somebody else's desktop, and wlroots calls
+ * Nested, AquaDE is a window on somebody else's desktop, and wlroots calls
  * it "wlroots - X11-1" and gives it no class and no pid -- so the desktop's
  * dock cannot tell it from any other program: it shows a nameless window
  * beside the launcher that started it. Named, classed as the launcher's
@@ -21148,7 +21148,7 @@ static int name_timer_cb(void *data)
 	}
 	if (done || ++server->name_tries >= 20) {
 		if (out) {
-			wlr_x11_output_set_title(out, "DEsk");
+			wlr_x11_output_set_title(out, "AquaDE");
 		}
 		wl_event_source_remove(server->name_timer);
 		server->name_timer = NULL;
@@ -21159,7 +21159,7 @@ static int name_timer_cb(void *data)
 	return 0;
 }
 
-/* Where DEsk's window is on the screen it runs in, when it runs in a
+/* Where AquaDE's window is on the screen it runs in, when it runs in a
  * window of an X server: for the input method's windows, which go on that
  * screen. */
 static bool host_origin(struct desk_server *server, int *ox, int *oy)
@@ -21201,7 +21201,7 @@ static bool host_origin(struct desk_server *server, int *ox, int *oy)
 static void nested_name(struct desk_server *server, struct wlr_output *out)
 {
 	if (wlr_output_is_wl(out)) {
-		wlr_wl_output_set_title(out, "DEsk");
+		wlr_wl_output_set_title(out, "AquaDE");
 		wlr_wl_output_set_app_id(out, DESK_APP_ID);
 		return;
 	}
@@ -21211,7 +21211,7 @@ static void nested_name(struct desk_server *server, struct wlr_output *out)
 	}
 #ifdef DESK_HAVE_XWAYLAND
 	if (server->parent_display && !server->name_timer) {
-		snprintf(server->name_tag, sizeof server->name_tag, "DEsk %d finding itself",
+		snprintf(server->name_tag, sizeof server->name_tag, "AquaDE %d finding itself",
 			(int)getpid());
 		wlr_x11_output_set_title(out, server->name_tag);
 		server->name_output = out;
@@ -21226,7 +21226,7 @@ static void nested_name(struct desk_server *server, struct wlr_output *out)
 #else
 	(void)server;   /* without xcb there is no finding the window to class it */
 #endif
-	wlr_x11_output_set_title(out, "DEsk");
+	wlr_x11_output_set_title(out, "AquaDE");
 #else
 	(void)server;
 #endif
@@ -22455,7 +22455,7 @@ static void xwayland_stop(struct desk_server *server);
 
 /* An X server that dies while it is still starting is not started again:
  * wlroots takes its display down and leaves it down, and no X program opens
- * again until DEsk is restarted. So if that is what has happened, set X
+ * again until AquaDE is restarted. So if that is what has happened, set X
  * up again from the beginning -- a few times, and then leave it, rather than
  * start one for ever that dies every time. */
 static int xwayland_retry_cb(void *data)
@@ -22471,7 +22471,7 @@ static int xwayland_retry_cb(void *data)
 	}
 	if (server->xwayland_rebuilds >= 3) {
 		wlr_log(WLR_ERROR, "X11 programs: Xwayland keeps dying as it starts; "
-			"leaving it off until DEsk is restarted");
+			"leaving it off until AquaDE is restarted");
 		return 0;
 	}
 	server->xwayland_rebuilds++;
@@ -22543,7 +22543,7 @@ static void usage(const char *argv0)
 {
 	printf("Usage: %s [options]\n"
 		"  -s CMD          startup command\n"
-		"  --version       which DEsk this is\n"
+		"  --version       which AquaDE this is\n"
 		"  --headless      force headless backend\n"
 		"  --size WxH      output size (default 1600x1000 headless)\n"
 		"  --dump FILE     write cairo desktop PNG when the output appears\n"
@@ -22581,7 +22581,7 @@ static int desk_claim_session(void)
 	if (!run || !*run) {
 		run = "/tmp";
 	}
-	if ((size_t)snprintf(path, sizeof path, "%s/desk.lock", run) >= sizeof path) {
+	if ((size_t)snprintf(path, sizeof path, "%s/aquade.lock", run) >= sizeof path) {
 		return -1;
 	}
 	int fd = open(path, O_RDWR | O_CREAT | O_CLOEXEC, 0600);
@@ -22702,7 +22702,7 @@ int main(int argc, char **argv)
 	}
 	int lock_fd = desk_claim_session();
 	if (lock_fd == -2) {
-		wlr_log(WLR_ERROR, "DEsk is already running. "
+		wlr_log(WLR_ERROR, "AquaDE is already running. "
 			"Set DESK_ALLOW_MULTIPLE=1 to start a second one anyway.");
 		return 0;
 	}
@@ -22724,7 +22724,7 @@ int main(int argc, char **argv)
 	server.boot_light = server.boot_lamp ? 0.0 : 1.0;
 	server.side_light = server.boot_light;
 	/* the sounds: made, and the sound server found, on a thread of their own */
-	desk_sound_init("DEsk");
+	desk_sound_init("AquaDE");
 	server.bnc_idx = -1;
 	server.take.base = -1;
 	server.cal_view = server.cal_to_view = DESK_CAL_MONTH;
@@ -23019,7 +23019,7 @@ int main(int argc, char **argv)
 		wl_signal_add(&server.pointer_constraints->events.new_constraint,
 			&server.new_pointer_constraint);
 	}
-	/* text-input: programs typing through the input method, with DEsk
+	/* text-input: programs typing through the input method, with AquaDE
 	 * as the go-between */
 	wl_list_init(&server.text_inputs);
 	server.ti_mgr = wlr_text_input_manager_v3_create(server.wl_display);
@@ -23080,17 +23080,17 @@ int main(int argc, char **argv)
 
 	setenv("WAYLAND_DISPLAY", socket, true);
 	render_publish(&server, socket);
-	setenv("XDG_CURRENT_DESKTOP", "DEsk", true);
-	setenv("XDG_SESSION_DESKTOP", "DEsk", true);
+	setenv("XDG_CURRENT_DESKTOP", "AquaDE", true);
+	setenv("XDG_SESSION_DESKTOP", "AquaDE", true);
 	setenv("XDG_SESSION_TYPE", "wayland", true);
-	setenv("DESKTOP_SESSION", "DEsk", true);
+	setenv("DESKTOP_SESSION", "AquaDE", true);
 #ifdef DESK_HAVE_XWAYLAND
 	xwayland_start(&server, compositor);
 #else
 	(void)compositor;
 #endif
 
-	/* the desktop's own business at login, when DEsk is the desktop */
+	/* the desktop's own business at login, when AquaDE is the desktop */
 	desk_session_start(loop);
 	/* and logind's say over the screen lock */
 	desk_lock_watch(loop, lock_cb, unlock_cb, &server);
@@ -23123,7 +23123,7 @@ int main(int argc, char **argv)
 		/* the box is empty when the desk starts: every letter after is new */
 		server.post_seen_set = true;
 		desk_post_on_change(post_changed, &server);
-		wlr_log(WLR_INFO, "the post box has the bus: DEsk is the notification daemon");
+		wlr_log(WLR_INFO, "the post box has the bus: AquaDE is the notification daemon");
 	} else {
 		wlr_log(WLR_INFO, "no session bus; the post box stays empty");
 	}
@@ -23142,7 +23142,7 @@ int main(int argc, char **argv)
 		wl_event_source_timer_update(server.shot_timer, server.screenshot_delay_ms);
 	}
 
-	wlr_log(WLR_INFO, "DEsk running on WAYLAND_DISPLAY=%s", socket);
+	wlr_log(WLR_INFO, "AquaDE running on WAYLAND_DISPLAY=%s", socket);
 	wl_display_run(server.wl_display);
 
 	/* what is in hand is put down first, as the shelf does: the memo's

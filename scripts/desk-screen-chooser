@@ -8,7 +8,7 @@
 # It asks in a window of zenity, else kdialog, else yad. With none of them
 # the first screen is shared, as it was before there was a question.
 # (slurp, wofi and bemenu, the usual choosers, need a layer-shell, which
-# DEsk does not have.)
+# AquaDE does not have.)
 set -u
 
 screens=$(grep -v '^[[:space:]]*$' || true)
@@ -20,7 +20,7 @@ if [ "$n" -eq 1 ]; then
 	exit 0
 fi
 
-# in the desktop's language: DEsk's seven
+# in the desktop's language: AquaDE's seven
 lang=${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}
 case "$lang" in
 ja*) title="画面の共有"; text="どの画面を共有しますか？"; col="画面" ;;

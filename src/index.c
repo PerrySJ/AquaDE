@@ -1,9 +1,9 @@
-/* desk-index: the DEsk Experience Index.
+/* desk-index: the AquaDE Experience Index.
  *
  * How this machine does at what the desk asks of it, rated the way Windows
  * once rated a PC: five parts, each from 1.0 to 9.9, and a base score that
  * is the lowest of them, because the desk is only as quick as its slowest
- * part. The parts are what DEsk is made of:
+ * part. The parts are what AquaDE is made of:
  *
  *   Processor    the room tracer's arithmetic, and the table lookups that
  *                decoding a picture or laying out text come down to, on one
@@ -22,7 +22,7 @@
  *                desk keeps its cache (or in /var/tmp, when that cache is
  *                kept in memory)
  *
- * It is a sheet on the desk like any other: it asks DEsk for its frame
+ * It is a sheet on the desk like any other: it asks AquaDE for its frame
  * and prints onto that paper -- an instrument panel of five brass meters
  * whose needles swing while each part is measured, the report typed out
  * under it, and the base score stamped. The measuring is done on a thread
@@ -81,13 +81,13 @@
  * English. */
 
 static const char *const WORDS[][DESK_LANG_COUNT] = {
-	{ "DEsk Experience Index",
-		"DEsk エクスペリエンス インデックス",
-		"DEsk 体验指数",
-		"DEsk 체험 지수",
-		"Índice de experiencia de DEsk",
-		"Indice d’expérience DEsk",
-		"DEsk-Leistungsindex" },
+	{ "AquaDE Experience Index",
+		"AquaDE エクスペリエンス インデックス",
+		"AquaDE 体验指数",
+		"AquaDE 체험 지수",
+		"Índice de experiencia de AquaDE",
+		"Indice d’expérience AquaDE",
+		"AquaDE-Leistungsindex" },
 	/* the plates under the meters */
 	{ "PROCESSOR",
 		"プロセッサ",
@@ -1690,9 +1690,9 @@ static void cache_dir(char *out, size_t n)
 	const char *c = getenv("XDG_CACHE_HOME");
 	const char *home = getenv("HOME");
 	if (c && *c == '/') {
-		snprintf(out, n, "%s/desk", c);
+		snprintf(out, n, "%s/aquade", c);
 	} else if (home && *home) {
-		snprintf(out, n, "%s/.cache/desk", home);
+		snprintf(out, n, "%s/.cache/aquade", home);
 	} else {
 		snprintf(out, n, "%s", "/tmp");
 	}
@@ -1887,9 +1887,9 @@ static void state_path(char *out, size_t n)
 	const char *st = getenv("XDG_STATE_HOME");
 	const char *home = getenv("HOME");
 	if (st && *st == '/') {
-		snprintf(out, n, "%s/desk/index.conf", st);
+		snprintf(out, n, "%s/aquade/index.conf", st);
 	} else if (home && *home) {
-		snprintf(out, n, "%s/.local/state/desk/index.conf", home);
+		snprintf(out, n, "%s/.local/state/aquade/index.conf", home);
 	} else {
 		out[0] = '\0';
 	}
@@ -1915,7 +1915,7 @@ static bool rating_save(const struct rating *r)
 		fprintf(stderr, "desk-index: cannot write %s: %s\n", tmp, strerror(errno));
 		return false;
 	}
-	fprintf(f, "# The DEsk Experience Index: how this machine did, the last time it was\n"
+	fprintf(f, "# The AquaDE Experience Index: how this machine did, the last time it was\n"
 		"# rated. desk-index writes this.\n");
 	fprintf(f, "when = %lld\nbase = %.1f\n", (long long)r->when, r->base);
 	for (int i = 0; i < N_PARTS; i++) {
@@ -2175,9 +2175,9 @@ static void shell_conf_read(void)
 	const char *cfg = getenv("XDG_CONFIG_HOME");
 	const char *home = getenv("HOME");
 	if (cfg && *cfg == '/') {
-		snprintf(path, sizeof path, "%s/desk/shell.conf", cfg);
+		snprintf(path, sizeof path, "%s/aquade/shell.conf", cfg);
 	} else if (home && *home) {
-		snprintf(path, sizeof path, "%s/.config/desk/shell.conf", home);
+		snprintf(path, sizeof path, "%s/.config/aquade/shell.conf", home);
 	} else {
 		path[0] = '\0';
 	}
@@ -2672,7 +2672,7 @@ static void gauge_paint(cairo_t *cr, double cx, double cy)
 	}
 	/* whose it is */
 	cairo_set_source_rgba(cr, 0.30, 0.22, 0.14, 0.75);
-	text_at(cr, DESK_FONT_DISPLAY, "DEsk", cx, cy - R * 0.22, R * 0.12, false, 0.5);
+	text_at(cr, DESK_FONT_DISPLAY, "AquaDE", cx, cy - R * 0.22, R * 0.12, false, 0.5);
 	/* the pin it rests against */
 	double pa = gauge_angle(NEEDLE_REST - 0.12);
 	screw(cr, cx + cos(pa) * R * 0.69, cy + sin(pa) * R * 0.69, R * 0.035, 9u);
@@ -3692,7 +3692,7 @@ static const struct xdg_toplevel_listener top_listener = {
 };
 
 /* Whether the desk frames the sheet after all: a compositor that is not
- * DEsk may say it will not. */
+ * AquaDE may say it will not. */
 static void deco_configure(void *data, struct zxdg_toplevel_decoration_v1 *d, uint32_t mode)
 {
 	(void)d;
@@ -3916,7 +3916,7 @@ static void ptr_enter(void *data, struct wl_pointer *p, uint32_t serial, struct 
 		desk_sound_set_level(g_sound_level);
 	}
 	if (desk_lang_get() != was && a->top) {
-		xdg_toplevel_set_title(a->top, W("DEsk Experience Index"));
+		xdg_toplevel_set_title(a->top, W("AquaDE Experience Index"));
 		a->fixtures_dirty = true;
 	}
 	a->px = wl_fixed_to_double(x);
@@ -4164,7 +4164,7 @@ static int run_window(void)
 		return 1;
 	}
 	desk_sound_set_level(g_sound_level);
-	desk_sound_init("DEsk Experience Index");
+	desk_sound_init("AquaDE Experience Index");
 	a.reg = wl_display_get_registry(a.dpy);
 	wl_registry_add_listener(a.reg, &reg_listener, &a);
 	wl_display_roundtrip(a.dpy);
@@ -4184,7 +4184,7 @@ static int run_window(void)
 	xdg_surface_add_listener(a.xsurf, &xsurf_listener, &a);
 	a.top = xdg_surface_get_toplevel(a.xsurf);
 	xdg_toplevel_add_listener(a.top, &top_listener, &a);
-	xdg_toplevel_set_title(a.top, W("DEsk Experience Index"));
+	xdg_toplevel_set_title(a.top, W("AquaDE Experience Index"));
 	xdg_toplevel_set_app_id(a.top, "desk-index");
 	xdg_toplevel_set_min_size(a.top, 380, 300);
 	/* the desk's frame: this is one of its sheets */
@@ -4334,7 +4334,7 @@ static int run_text(void)
 		return 1;
 	}
 	struct rating *r = &m.r;
-	printf("%s\n", W("DEsk Experience Index"));
+	printf("%s\n", W("AquaDE Experience Index"));
 	for (int i = 0; i < N_PARTS; i++) {
 		char fig[300];
 		part_figures(r, i, fig, sizeof fig);
@@ -4506,7 +4506,7 @@ int main(int argc, char **argv)
 	}
 	if (argc > 1) {
 		fprintf(stderr, "usage: desk-index [--text | --suggest | --version]\n"
-			"  The DEsk Experience Index: how this machine does at what the desk asks\n"
+			"  The AquaDE Experience Index: how this machine does at what the desk asks\n"
 			"  of it. --text rates it with no window and prints the figures; --suggest\n"
 			"  takes a quick look and prints the Graphics level to start it at.\n");
 		return strcmp(argv[1], "--help") && strcmp(argv[1], "-h") ? 2 : 0;

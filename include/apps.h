@@ -103,13 +103,13 @@ void desk_apps_release(const struct desk_app_list *list);
  * program passes. */
 const struct desk_app *desk_apps_find(const struct desk_app_list *list, const char *id);
 
-/* DEsk's standard programs, one for each of the drawer's things (and
+/* AquaDE's standard programs, one for each of the drawer's things (and
  * the terminal for Super+Enter): the same numbers as a program's model.
  * For each, what shell.conf sets (app.<role> = <desktop id>), else the
  * default program for its kind of file, as GIO and xdg-open find it by the
  * XDG MIME applications spec -- the user's mimeapps.list before the
- * desk-mimeapps.list DEsk installs; the terminal has no kind of file --
- * else the first installed of DEsk's standard set, else any program of
+ * desk-mimeapps.list AquaDE installs; the terminal has no kind of file --
+ * else the first installed of AquaDE's standard set, else any program of
  * the kind. NULL if there is none at all. */
 enum desk_std {
 	DESK_STD_TERMINAL, DESK_STD_BROWSER, DESK_STD_FILES, DESK_STD_EDITOR,

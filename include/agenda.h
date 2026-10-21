@@ -15,7 +15,7 @@ enum { DESK_STICK_PLAN, DESK_STICK_TODO };
 #define DESK_STICK_COLOURS 6
 
 struct desk_stick {
-	int id;               /* for as long as DEsk runs; 0 for none */
+	int id;               /* for as long as AquaDE runs; 0 for none */
 	int y, m, d;          /* the day, month 0 to 11 */
 	int kind;             /* DESK_STICK_PLAN or DESK_STICK_TODO */
 	int colour;           /* 0 to DESK_STICK_COLOURS - 1 */

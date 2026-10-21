@@ -1,6 +1,6 @@
-/* DEsk -- GTK 3 programs dressed for the desk: paper, ink and brass.
+/* AquaDE -- GTK 3 programs dressed for the desk: paper, ink and brass.
  *
- * On the desk every window is a sheet of paper (DEsk draws the sheet and
+ * On the desk every window is a sheet of paper (AquaDE draws the sheet and
  * its heading); what a program draws inside it should look like it was
  * printed on that paper, not like a grey panel pinned to it. So this is
  * Adwaita -- everything it does it still does, and anything not mentioned
@@ -9,8 +9,8 @@
  * fields), ink for the words, brass for what is chosen, and the bars of a
  * window in the colour of the manila folders the icons use.
  *
- * Set by DEsk for its own sessions only (desk-session: a dconf layer of
- * DEsk's own over the user's), so another desktop on the same machine
+ * Set by AquaDE for its own sessions only (desk-session: a dconf layer of
+ * AquaDE's own over the user's), so another desktop on the same machine
  * keeps its look. */
 
 @import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained.css");

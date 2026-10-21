@@ -19,9 +19,9 @@ static void agenda_path(char *out, size_t n)
 	const char *data = getenv("XDG_DATA_HOME");
 	const char *home = getenv("HOME");
 	if (data && *data) {
-		snprintf(out, n, "%s/desk/calendar", data);
+		snprintf(out, n, "%s/aquade/calendar", data);
 	} else if (home && *home) {
-		snprintf(out, n, "%s/.local/share/desk/calendar", home);
+		snprintf(out, n, "%s/.local/share/aquade/calendar", home);
 	} else {
 		out[0] = '\0';
 	}

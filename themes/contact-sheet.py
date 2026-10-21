@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""contact-sheet.py OUT.png [SIZE...] -- every icon of themes/icons/DEsk at
+"""contact-sheet.py OUT.png [SIZE...] -- every icon of themes/icons/AquaDE at
 each size (64 48 32 22 16 by default), drawn by gdk-pixbuf (librsvg, as GTK
 draws them) on the desk's paper, for looking at them all at once. The
 16x16 drawings are used up to 31 px, as the theme says."""
@@ -15,7 +15,7 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, GdkPixbuf  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-THEME = os.path.join(HERE, "icons", "DEsk")
+THEME = os.path.join(HERE, "icons", "AquaDE")
 
 
 def main():

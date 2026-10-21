@@ -1,4 +1,4 @@
 #%PAM-1.0
-# DEsk's screen lock: the password of whoever is at the desk, checked the
+# AquaDE's screen lock: the password of whoever is at the desk, checked the
 # way it is at login.
 auth       include      login

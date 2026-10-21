@@ -26,7 +26,7 @@ bool desk_lock_check(struct wl_event_loop *loop, const char *password,
 /* logind, for a desk that is the session: told to lock (loginctl
  * lock-session, the machine about to sleep) and to unlock (loginctl
  * unlock-session); and told whether it is locked. Nothing without the
- * system bus, or when DEsk is not the session. */
+ * system bus, or when AquaDE is not the session. */
 bool desk_lock_watch(struct wl_event_loop *loop, void (*lock)(void *data),
 	void (*unlock)(void *data), void *data);
 void desk_lock_hint(bool locked);

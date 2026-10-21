@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=DEsk: Battery
-Name[ja]=DEsk: 電池
+Name=AquaDE: Battery
+Name[ja]=AquaDE: 電池
 Comment=A letter when the battery runs low
 Exec=desk-session-helper power
 TryExec=desk-session-helper
-OnlyShowIn=DEsk;
+OnlyShowIn=AquaDE;
 NoDisplay=true
 X-GNOME-Autostart-enabled=true

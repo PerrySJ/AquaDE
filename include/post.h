@@ -3,7 +3,7 @@
 
 /* What is in the post box.
  *
- * DEsk is the machine's notification daemon: it takes the
+ * AquaDE is the machine's notification daemon: it takes the
  * org.freedesktop.Notifications name on the session bus, so what arrives
  * here is what every other application on the machine thinks it is
  * telling you. Each one becomes a letter.
@@ -71,7 +71,7 @@ void desk_post_on_change(void (*cb)(void *user), void *user);
  * say: summary, body, desktop (whose icon heads it) and actions from note,
  * the rest made up here, signed DESK_POST_OWN and marked own: its actions
  * are the compositor's to do, not a program's to be told of. Its id. */
-#define DESK_POST_OWN "DEsk"
+#define DESK_POST_OWN "AquaDE"
 unsigned desk_post_own(const struct desk_note *note);
 
 #endif

@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=DEsk: Authentication agent
-Name[ja]=DEsk: 認証エージェント
+Name=AquaDE: Authentication agent
+Name[ja]=AquaDE: 認証エージェント
 Comment=Asks for a password when something needs one
 Exec=desk-session-helper polkit
 TryExec=desk-session-helper
-OnlyShowIn=DEsk;
+OnlyShowIn=AquaDE;
 NoDisplay=true
 X-GNOME-Autostart-enabled=true

@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=DEsk: Network applet
-Name[ja]=DEsk: ネットワーク
+Name=AquaDE: Network applet
+Name[ja]=AquaDE: ネットワーク
 Comment=Networks, in the tray
 Exec=desk-session-helper network
 TryExec=desk-session-helper
-OnlyShowIn=DEsk;
+OnlyShowIn=AquaDE;
 NoDisplay=true
 X-GNOME-Autostart-enabled=true

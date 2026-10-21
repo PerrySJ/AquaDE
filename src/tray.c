@@ -4,7 +4,7 @@
  * A program with something to show in the tray puts an object on the
  * session bus (org.kde.StatusNotifierItem: an icon, a title, a status)
  * and tells the watcher (org.kde.StatusNotifierWatcher) where it is. A
- * host asks the watcher what there is and shows it. DEsk is the watcher
+ * host asks the watcher what there is and shows it. AquaDE is the watcher
  * when nobody else on the bus is -- nested in a desktop that has one of
  * its own, it asks that one -- and a host either way.
  *

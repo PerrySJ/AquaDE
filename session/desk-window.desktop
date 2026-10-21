@@ -1,12 +1,12 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=DEsk
-Name[ja]=DEsk
+Name=AquaDE
+Name[ja]=AquaDE
 GenericName=Skeuomorphic desktop
 GenericName[ja]=スキューモーフィックデスクトップ
-Comment=Open the DEsk desk in a window
-Comment[ja]=DEsk の机をウィンドウで開く
+Comment=Open the AquaDE desk in a window
+Comment[ja]=AquaDE の机をウィンドウで開く
 Exec=desk-window
 TryExec=desk-window
 Icon=desk

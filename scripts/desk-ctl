@@ -1,5 +1,5 @@
 #!/bin/sh
-# desk-ctl -- for when DEsk's own parts get stuck.
+# desk-ctl -- for when AquaDE's own parts get stuck.
 #
 #   desk-ctl reset          the desk set right again, as Ctrl+Alt+Del pressed
 #                           twice: whatever it has open or in hand put away,
@@ -24,7 +24,7 @@ usage() {
 }
 
 run="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-lock="$run/desk.lock"
+lock="$run/aquade.lock"
 pid=$(head -n 1 "$lock" 2>/dev/null || true)
 case "$pid" in
 '' | *[!0-9]*) pid="" ;;
@@ -33,7 +33,7 @@ esac
 if [ -z "$pid" ] || [ "$(cat "/proc/$pid/comm" 2>/dev/null)" != desk ]; then
 	case "${1:-}" in
 	reset | logout)
-		echo "desk-ctl: DEsk is not running here (nothing in $lock)" >&2
+		echo "desk-ctl: AquaDE is not running here (nothing in $lock)" >&2
 		exit 1
 		;;
 	esac
@@ -42,7 +42,7 @@ fi
 case "${1:-}" in
 reset)
 	kill -USR1 "$pid"
-	echo "DEsk: set right again."
+	echo "AquaDE: set right again."
 	;;
 logout)
 	if [ "${2:-}" = --now ]; then
@@ -56,10 +56,10 @@ logout)
 		if kill -0 "$pid" 2>/dev/null; then
 			kill -KILL "$pid"
 		fi
-		echo "DEsk: ended."
+		echo "AquaDE: ended."
 	else
 		kill -USR2 "$pid"
-		echo "DEsk: ending -- the windows are asked to close first."
+		echo "AquaDE: ending -- the windows are asked to close first."
 	fi
 	;;
 -h | --help | "")

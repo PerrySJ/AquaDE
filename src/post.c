@@ -1,5 +1,5 @@
 /* ================================================================
- * The post box: DEsk as the machine's notification daemon.
+ * The post box: AquaDE as the machine's notification daemon.
  *
  * Taking the org.freedesktop.Notifications name means what lands here is
  * the real thing -- what every application on the machine believes it is
@@ -274,7 +274,7 @@ static int on_server_info(sd_bus_message *m, void *user, sd_bus_error *err)
 	(void)user;
 	(void)err;
 	/* name, vendor, version, and the version of the specification */
-	return sd_bus_reply_method_return(m, "ssss", "DEsk", "desk", DESK_VERSION, "1.2");
+	return sd_bus_reply_method_return(m, "ssss", "AquaDE", "desk", DESK_VERSION, "1.2");
 }
 
 static const sd_bus_vtable NOTE_VTABLE[] = {

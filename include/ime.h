@@ -16,11 +16,11 @@ void desk_ime_finish(void);
 /* Once a second or so: finds IBus again if it went away, asks fcitx5. */
 void desk_ime_tick(void);
 
-/* Typing into something DEsk draws itself (the calendar's notes), through
+/* Typing into something AquaDE draws itself (the calendar's notes), through
  * the input method: the keys go to IBus, and back come the text written
  * (commit), the text being written and not yet decided (preedit), and the
  * candidates for it (lookup: the whole list, which one is picked, how many
- * to a page) -- which DEsk shows itself, the input method's own panel
+ * to a page) -- which AquaDE shows itself, the input method's own panel
  * having nowhere to put them. key: what became of a key handed over
  * (answer), in the order they were handed over -- not taken by the input
  * method, the caller does with it what a plain key does -- or a key the

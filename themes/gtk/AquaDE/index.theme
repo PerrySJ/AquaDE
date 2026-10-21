@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=AquaDE
+Comment=Paper, ink and brass: programs dressed for the AquaDE desk
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=AquaDE
+IconTheme=AquaDE

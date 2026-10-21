@@ -1,8 +1,8 @@
 #!/bin/sh
-# desk-session-helper JOB -- the parts of a desktop session DEsk does
-# not draw, each started from an autostart entry of DEsk's own
-# (session/autostart, OnlyShowIn=DEsk) with whichever free program for it
-# is installed. Nothing here is DEsk's own code; it only picks.
+# desk-session-helper JOB -- the parts of a desktop session AquaDE does
+# not draw, each started from an autostart entry of AquaDE's own
+# (session/autostart, OnlyShowIn=AquaDE) with whichever free program for it
+# is installed. Nothing here is AquaDE's own code; it only picks.
 #
 #   polkit    the agent that asks for a password when something needs one
 #             (mounting a disk, joining a network, the power buttons)
@@ -14,9 +14,9 @@
 #   media     memory sticks and disks: mounted when put in, a letter saying
 #             so, and a slip in the tray while there is one to take out
 #   power     a letter when the battery runs low
-#   end NAME  the session is over (desk-session, once DEsk has gone): what it
+#   end NAME  the session is over (desk-session, once AquaDE has gone): what it
 #             told systemd is taken back, and the portals it started stopped,
-#             while systemd's XDG_CURRENT_DESKTOP is still NAME (DEsk)
+#             while systemd's XDG_CURRENT_DESKTOP is still NAME (AquaDE)
 set -u
 
 # An input method is started only where there is something for it to do:
@@ -61,14 +61,14 @@ first() {
 
 case "${1:-}" in
 end)
-	# What DEsk's session told systemd and D-Bus for the programs they
+	# What AquaDE's session told systemd and D-Bus for the programs they
 	# start (session.c's ACTIVATION_VARS) is taken back, and the portals
 	# started for it are stopped: left, the next desktop this user logs in
 	# to while systemd is still running would start its services with
-	# DEsk's display, which is gone, and get DEsk's portals, pointed at it.
+	# AquaDE's display, which is gone, and get AquaDE's portals, pointed at it.
 	# Only while systemd's environment is still this session's: a desktop
 	# set up since (a second login) has made it its own.
-	name=${2:-DEsk}
+	name=${2:-AquaDE}
 	command -v systemctl >/dev/null 2>&1 || exit 0
 	env=$(timeout 5 systemctl --user show-environment 2>/dev/null) || exit 0
 	printf '%s\n' "$env" | grep -qxF "XDG_CURRENT_DESKTOP=$name" || exit 0
@@ -126,14 +126,14 @@ ime)
 		# goes. Its panel puts itself in the tray (a StatusNotifierItem,
 		# with the engines and the input modes in its menu) only for a
 		# desktop it takes for KDE; for any other it makes an X tray
-		# icon, which DEsk has nowhere to put. This desktop's tray is
+		# icon, which AquaDE has nowhere to put. This desktop's tray is
 		# one of the same kind as KDE's.
 		# Its panel shows the candidates -- Mozc's too, which in a
 		# Wayland session gives up its own window for IBus's -- and
 		# through X where there is an X: an X window can say where it
 		# goes, so they come up under the text being written, from a
-		# Wayland program (DEsk tells IBus where its cursor is) and
-		# from an X one (XIM does); a Wayland window cannot, and DEsk
+		# Wayland program (AquaDE tells IBus where its cursor is) and
+		# from an X one (XIM does); a Wayland window cannot, and AquaDE
 		# puts it there itself (wm.c, ime_window_is).
 		GDK_BACKEND=x11,wayland XDG_CURRENT_DESKTOP=KDE exec ibus-daemon --daemonize --xim
 		;;
@@ -141,7 +141,7 @@ ime)
 	;;
 network)
 	command -v nm-applet >/dev/null 2>&1 || exit 0
-	# the form that sits in a StatusNotifierItem tray, which DEsk's is
+	# the form that sits in a StatusNotifierItem tray, which AquaDE's is
 	exec nm-applet --indicator
 	;;
 media)
@@ -154,7 +154,7 @@ media)
 power)
 	# poweralertd asks UPower, and says nothing of how things stood when
 	# it started (-s); its own systemd unit waits on graphical-session.target,
-	# which nothing in a DEsk session starts. batsignal (Arch) reads the
+	# which nothing in a AquaDE session starts. batsignal (Arch) reads the
 	# batteries itself.
 	if command -v poweralertd >/dev/null 2>&1; then
 		exec poweralertd -s

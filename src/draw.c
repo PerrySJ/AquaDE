@@ -1,7 +1,7 @@
 /* ================================================================
  * The drawing library (include/desk.h).
  *
- * Everything DEsk shows that is not a program's own window: the room, ray
+ * Everything AquaDE shows that is not a program's own window: the room, ray
  * traced, and everything drawn over it with cairo. The compositor (wm.c),
  * Shell Settings, the Experience Index, desk-preview and desk-gputest all
  * draw through here, so a thing looks the same wherever it is drawn.
@@ -3883,7 +3883,7 @@ static int icon_cache_dir(char *buf, size_t n)
 	const char *base = getenv("XDG_CACHE_HOME");
 	char tmp[512];
 	if (base && *base) {
-		if ((size_t)snprintf(tmp, sizeof tmp, "%s/desk", base) >= sizeof tmp) {
+		if ((size_t)snprintf(tmp, sizeof tmp, "%s/aquade", base) >= sizeof tmp) {
 			return 0;
 		}
 	} else {
@@ -3891,7 +3891,7 @@ static int icon_cache_dir(char *buf, size_t n)
 		if (!home || !*home) {
 			return 0;
 		}
-		if ((size_t)snprintf(tmp, sizeof tmp, "%s/.cache/desk", home) >= sizeof tmp) {
+		if ((size_t)snprintf(tmp, sizeof tmp, "%s/.cache/aquade", home) >= sizeof tmp) {
 			return 0;
 		}
 	}
@@ -4412,7 +4412,7 @@ static void room_trace_cpu(struct room_ctx *ctx)
  * of the process, and the C traces the room the way it always has. So is
  * one that will not compile it, or fails a draw. None of that is an error
  * anybody has to act on: it is a slower bake, and a line on stderr saying
- * why (in ~/.local/state/desk/session.log, under a login). */
+ * why (in ~/.local/state/aquade/session.log, under a login). */
 
 static double room_now(void)
 {
@@ -22825,7 +22825,7 @@ void desk_draw_first_letter(cairo_t *cr, int screen_w, int screen_h)
 	memset(&note, 0, sizeof note);
 	note.id = 1;
 	note.at = time(NULL);
-	snprintf(note.app, sizeof note.app, "DEsk");
+	snprintf(note.app, sizeof note.app, "AquaDE");
 	snprintf(note.summary, sizeof note.summary, "%s", TR("Setting out the desk"));
 	snprintf(note.body, sizeof note.body, "%s",
 		TR("The first start can take a while: a minute or two, and longer on some "

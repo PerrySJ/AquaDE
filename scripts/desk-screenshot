@@ -3,7 +3,7 @@
 # that part of it (the window in front: Alt+Print), taken with grim into
 # Pictures/Screenshots; the picture put on the clipboard (wl-copy), and a
 # letter in the post box saying where it went (notify-send). Print and
-# Alt+Print in DEsk run this.
+# Alt+Print in AquaDE run this.
 set -u
 geom=""
 if [ "${1:-}" = --geometry ] && [ -n "${2:-}" ]; then

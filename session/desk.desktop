@@ -1,11 +1,11 @@
 [Desktop Entry]
-Name=DEsk
-Name[ja]=DEsk
+Name=AquaDE
+Name[ja]=AquaDE
 Comment=Skeuomorphic Wayland desktop
 Comment[ja]=スキューモーフィックな Wayland デスクトップ
 Exec=desk-session
 TryExec=desk-session
 Type=Application
-DesktopNames=DEsk
+DesktopNames=AquaDE
 Keywords=wayland;compositor;desktop;desk;
-X-LightDM-DesktopName=DEsk
+X-LightDM-DesktopName=AquaDE

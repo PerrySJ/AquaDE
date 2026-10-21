@@ -1,11 +1,11 @@
-# DEsk's standard programs: the default program for each kind of file in
-# a DEsk session (XDG_CURRENT_DESKTOP=DEsk), and what the drawer's four
+# AquaDE's standard programs: the default program for each kind of file in
+# a AquaDE session (XDG_CURRENT_DESKTOP=AquaDE), and what the drawer's four
 # things open -- the terminal, the browser (x-scheme-handler/https), the
 # file manager (inode/directory) and the text editor (text/plain).
 #
 # A list for each: the first one installed is used. It is looked for after
 # your own choices, in the freedesktop order: ~/.config/desk-mimeapps.list
-# (in DEsk only), then ~/.config/mimeapps.list -- which Shell Settings'
+# (in AquaDE only), then ~/.config/mimeapps.list -- which Shell Settings'
 # Default programs (xfce4-mime-settings) and other desktops write -- and the
 # same two in the system's folders. shell.conf can also name the drawer's
 # things (app.editor = pluma.desktop, and so on).

@@ -2,7 +2,7 @@
 Type=Application
 Name=Shell Settings
 Name[ja]=シェルの設定
-GenericName=DEsk
+GenericName=AquaDE
 Comment=The desk's own settings, and the programs the rest of the machine is set in
 Comment[ja]=机そのものの設定と、このマシンのそのほかの設定を行うプログラム
 Keywords=settings;preferences;screen;lock;language;network;Wi-Fi;Bluetooth;sound;displays;resolution;printers;theme;icons;fonts;default programs;disks;
@@ -10,5 +10,5 @@ Keywords[ja]=設定;画面;ロック;言語;ネットワーク;Wi-Fi;Bluetooth;�
 Exec=@EXEC@
 Icon=@ICON@
 Categories=Settings;DesktopSettings;
-OnlyShowIn=DEsk;
+OnlyShowIn=AquaDE;
 StartupWMClass=desk-settings
