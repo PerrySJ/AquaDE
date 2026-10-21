@@ -1,6 +1,6 @@
 # AquaDE architecture
 
-This is the technical overview of AquaDE v0.0.1 (ALPHA): what the programs are,
+This is the technical overview of AquaDE v0.1.0 (BETA): what the programs are,
 how the compositor is put together, how the tank is drawn, which threads
 exist and what they own, and where everything is kept. It is meant for
 people reading or changing the code. For what AquaDE looks like and how to use

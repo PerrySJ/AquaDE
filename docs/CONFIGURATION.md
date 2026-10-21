@@ -1,6 +1,6 @@
 # AquaDE configuration reference
 
-Everything AquaDE reads and writes, for v0.0.1 (ALPHA). Shell Settings
+Everything AquaDE reads and writes, for v0.1.0 (BETA). Shell Settings
 (`aquade-settings`) edits `shell.conf` for you; everything here can also be
 edited by hand, and AquaDE picks up a changed `shell.conf` within a second.
 Unknown keys and bad values are reported in the session log

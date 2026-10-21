@@ -1,6 +1,6 @@
 # Changing AquaDE
 
-AquaDE v0.0.1 has no plugin API: a mod is a change to the source, built and
+AquaDE v0.1.0 has no plugin API: a mod is a change to the source, built and
 installed like AquaDE itself. This page tells you how to set up for that,
 what the house rules are, and walks through the changes people make most
 often. Read [ARCHITECTURE.md](ARCHITECTURE.md) first for the map of the

@@ -1,5 +1,5 @@
 project('aquade', 'c',
-  version: '0.0.1',
+  version: '0.1.0',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=c11',
@@ -15,7 +15,7 @@ add_project_arguments(
 )
 # what this release is called, as --version and the session log say it,
 # and its number, as the notification server tells programs that ask
-add_project_arguments('-DDESK_RELEASE="AquaDE v0.0.1 (ALPHA)"',
+add_project_arguments('-DDESK_RELEASE="AquaDE v0.1.0 (BETA)"',
   '-DDESK_VERSION="@0@"'.format(meson.project_version()), language: 'c')
 # a variable initialised from itself (x = x) is uninitialised, and in C
 # -Wall does not say so: a keysym once read as garbage that way

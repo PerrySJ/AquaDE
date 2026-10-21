@@ -1,6 +1,6 @@
 # AquaDE
 
-**v0.0.1 (ALPHA)** -- a Wayland desktop for Linux that lives at the bottom of
+**v0.1.0 (BETA)** -- a Wayland desktop for Linux that lives at the bottom of
 an aquarium.
 
 Windows are sheets of diver's plastic lying on rippled sand, the dock is a
@@ -11,9 +11,10 @@ by light coming down through the water.
 
 ![The tank floor: two windows on the sand, the Control Panel, the clock and the treasure chest at the back](docs/screenshots/aquade-tank.jpg)
 
-> **Status: alpha.** AquaDE is a work in progress. It builds, runs and is
-> tested in a window inside another desktop, but it has not been installed
-> as a full session on real machines yet. Expect rough edges.
+> **Status: beta.** Everything planned for AquaDE is in, and it has been
+> installed and used as a full login session on Arch Linux. It hasn't been
+> tried on many machines yet, so expect some rough edges, and please
+> [report what you find](#reporting-a-problem).
 
 ## Built on DEsk
 
@@ -88,11 +89,20 @@ fyzugx for making DEsk and releasing it under the MIT licence.
 
 ![Who lives in the tank: a clownfish, a blue tang, neon tetras, a grouper, a shore crab and Ferris](docs/screenshots/aquade-life.jpg)
 
-## Still to come
+## Known issues
 
-- Testing a real install, logged in as a full AquaDE session.
 - The GTK theme for other programs' windows is still DEsk's (paper, ink and
   brass).
+- On large screens (2560x1600) the pointer can lag a little while bubbles or
+  fish are moving. Turning them off in Shell Settings helps while this is
+  looked into.
+- The first start after installing traces the tank and its camera moves,
+  which can take a couple of minutes, so the first trip to the treasure
+  chest or the bookcase may stutter. After that it's cached in
+  `~/.cache/aquade`.
+- Only the Arch installer has been tried on a real machine so far. The
+  Debian, Ubuntu and Fedora installers came from DEsk and should work, but
+  they're untested.
 
 ## Requirements
 
@@ -140,17 +150,14 @@ Then try it:
 
 ## Install
 
-> The installers came from DEsk and have been renamed for AquaDE, but they
-> haven't been tested on a real install yet. Running AquaDE in a window
-> (above) is the safe way to try it for now.
-
-From a clone of this repository, run the line for your system:
+From a clone of this repository, run the line for your system as yourself
+(not as root; it asks for your password when it needs it):
 
 ```sh
-sudo sh scripts/install_debian.sh   # Debian 13
-sudo sh scripts/install_ubuntu.sh   # Ubuntu 24.04 / 26.04, Mint, Pop!_OS
-sudo sh scripts/install_arch.sh     # Arch, EndeavourOS, Manjaro
-sudo sh scripts/install_fedora.sh   # Fedora 43 / 44, Nobara
+sh scripts/install_debian.sh   # Debian 13 (untested)
+sh scripts/install_ubuntu.sh   # Ubuntu 24.04 / 26.04, Mint, Pop!_OS (untested)
+sh scripts/install_arch.sh     # Arch, EndeavourOS, Manjaro (tested)
+sh scripts/install_fedora.sh   # Fedora 43 / 44, Nobara (untested)
 ```
 
 Each one shows what it will install and asks first (`--no-apps` skips the
@@ -182,8 +189,8 @@ from a terminal. Either one redraws everything without closing your windows.
 ## Settings and documentation
 
 Shell Settings (`aquade-settings`, or the screwdriver in the drawer) holds
-AquaDE's own settings, including the shark, the bubbles and the fish, and opens the
-usual programs for networks, sound, displays and so on. Settings are kept in
+AquaDE's own settings, including the shark, the bubbles and the fish, and
+opens the usual programs for networks, sound, displays and so on. Settings are kept in
 `~/.config/aquade/shell.conf`.
 
 More detail:
