@@ -31202,22 +31202,25 @@ struct lk_light {
 /* the porch lamp, out of sight overhead, and the lantern on the wall */
 static const struct lk_light LK_LIGHTS[2] = {
 	{ { 0.15, 2.32, 0.95 }, { 2.50, 2.80, 2.75 }, 0.100 },
-	{ { 0.735, 1.615, 0.125 }, { 0.34, 0.21, 0.09 }, 0.030 },
+	{ { 0.735, 1.600, 0.050 }, { 0.22, 0.29, 0.31 }, 0.030 },
 };
 static const vec3 LK_MOON_DIR = { -0.50, 0.52, 0.69 };
 static const vec3 LK_MOON_COL = { 0.040, 0.056, 0.105 };
 
-/* the lantern: glass, its iron, the arm it is on */
+/* the lamp on the hull: a bulkhead lamp, its frosted lens on a cast
+ * housing, three bars across the lens held by a strap down either side */
+#define LK_LANTERN_N 7
 static const struct {
 	vec3 lo, hi;
 	int id;
-} LK_LANTERN[6] = {
-	{ { 0.673, 1.515, 0.062 }, { 0.797, 1.715, 0.188 }, LK_LGLASS },
-	{ { 0.663, 1.715, 0.052 }, { 0.807, 1.742, 0.198 }, LK_IRON },
-	{ { 0.703, 1.742, 0.093 }, { 0.767, 1.782, 0.157 }, LK_IRON },
-	{ { 0.667, 1.497, 0.056 }, { 0.803, 1.515, 0.194 }, LK_IRON },
-	{ { 0.721, 1.457, 0.000 }, { 0.749, 1.497, 0.140 }, LK_IRON },
-	{ { 0.697, 1.400, 0.000 }, { 0.773, 1.560, 0.012 }, LK_IRON },
+} LK_LANTERN[LK_LANTERN_N] = {
+	{ { 0.668, 1.533, 0.030 }, { 0.802, 1.667, 0.082 }, LK_LGLASS },
+	{ { 0.650, 1.515, 0.000 }, { 0.820, 1.685, 0.032 }, LK_IRON },
+	{ { 0.656, 1.558, 0.082 }, { 0.814, 1.570, 0.094 }, LK_IRON },
+	{ { 0.656, 1.594, 0.082 }, { 0.814, 1.606, 0.094 }, LK_IRON },
+	{ { 0.656, 1.630, 0.082 }, { 0.814, 1.642, 0.094 }, LK_IRON },
+	{ { 0.656, 1.525, 0.032 }, { 0.666, 1.675, 0.094 }, LK_IRON },
+	{ { 0.804, 1.525, 0.032 }, { 0.814, 1.675, 0.094 }, LK_IRON },
 };
 
 /* the casing: left, right, head */
@@ -32331,7 +32334,7 @@ static void lk_intersect(const struct lk_scene *sc, vec3 ro, vec3 rd, struct lk_
 			h->q = p;
 		}
 	}
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < LK_LANTERN_N; i++) {
 		if (lk_box(ro, rd, LK_LANTERN[i].lo, LK_LANTERN[i].hi, h->t, &t, &f)) {
 			h->t = t;
 			h->id = LK_LANTERN[i].id;
@@ -33386,34 +33389,35 @@ static void lk_material(const struct lk_scene *sc, const struct lk_hit *h, vec3 
 		break;
 	}
 	case LK_LGLASS: {
-		/* the lantern: glass in an iron frame, the flame inside it */
+		/* the lamp's lens: frosted plastic, a rubber seal round it, the
+		 * light inside brightest at its middle */
 		vec3 lo = LK_LANTERN[0].lo, hi = LK_LANTERN[0].hi;
 		int ax = h->face >> 1;
 		double a = ax == 0 ? p.z : p.x, b = ax == 1 ? p.z : p.y;
 		double a0 = ax == 0 ? lo.z : lo.x, a1 = ax == 0 ? hi.z : hi.x;
 		double b0 = ax == 1 ? lo.z : lo.y, b1 = ax == 1 ? hi.z : hi.y;
 		double fe = fmin(fmin(a - a0, a1 - a), fmin(b - b0, b1 - b));
-		double mid = fabs(a - (a0 + a1) * 0.5);
-		if (fe < 0.0075 || (ax != 1 && mid < 0.0022)) {
-			m->albedo = v3(0.035, 0.032, 0.030);
-			m->metal = 0.6;
-			m->rough = 0.38;
+		if (ax == 2 && fe < 0.006) {
+			m->albedo = v3(0.012, 0.012, 0.012);
+			m->rough = 0.70;
 			m->sub = 1;
 			break;
 		}
 		vec3 bulb = LK_LIGHTS[1].pos;
 		double ba = ax == 0 ? bulb.z : bulb.x, bb = ax == 1 ? bulb.z : bulb.y;
 		double r2 = lk_sq(a - ba) + lk_sq(b - bb);
-		m->emit = vmul(vadd(vmul(v3(1.0, 0.50, 0.17), 0.24),
-			vmul(v3(1.0, 0.76, 0.45), 1.5 * exp(-r2 / 0.0008))), sc->rig.lantern);
-		m->albedo = v3(0.02, 0.02, 0.02);
-		m->rough = 0.10;
+		double fr = room_noise(a * 400.0, b * 400.0);
+		m->emit = vmul(vadd(vmul(v3(0.55, 0.70, 0.72), 0.30),
+			vmul(v3(0.85, 0.95, 1.0), 1.3 * exp(-r2 / 0.0018))), sc->rig.lantern * (0.92 + 0.10 * fr));
+		m->albedo = v3(0.30, 0.33, 0.33);
+		m->rough = 0.45;
 		break;
 	}
 	case LK_IRON:
-		m->albedo = v3(0.035, 0.032, 0.030);
-		m->metal = 0.6;
-		m->rough = 0.40;
+		/* cast and galvanised, dulled in the water */
+		m->albedo = vmul(v3(0.075, 0.085, 0.085), 0.85 + 0.25 * room_noise(p.x * 90.0, p.y * 90.0));
+		m->metal = 0.5;
+		m->rough = 0.55;
 		break;
 	case LK_DECO:
 		lkd_material(sc, h, p, m);
