@@ -1456,10 +1456,38 @@ void sand_at(vec3 w, inout mtl m)
 	m.albedo = mix(vec3(0.46, 0.34, 0.18), vec3(0.74, 0.60, 0.36), tone);
 	m.albedo *= 0.88 + grain * 0.24;
 	m.albedo = mix(m.albedo, vec3(0.20, 0.17, 0.13), grit * (1.0 - crest) * 0.80);
+	float c1 = abs(room_fbm2(w.x * 0.55 + 2.0, w.z * 0.55 + 9.0) - 0.5);
+	float c2 = abs(room_fbm2(w.x * 0.83 + 17.0, w.z * 0.83 + 3.0) - 0.5);
+	float caus = smoothstepf(0.07, 0.0, c1) + smoothstepf(0.06, 0.0, c2) * 0.7;
+	m.albedo *= 1.0 + caus * 0.38;
 	m.rough = 0.88 + grain * 0.08;
 	m.coat = 0.0;
 	m.bump_freq = 70.0;
 	m.bump_amp = 0.050;
+}
+
+void rock_at(vec3 w, inout mtl m)
+{
+	float big = room_fbm(w.x * 0.35 + w.y * 0.20, w.z * 0.35 - w.y * 0.25);
+	float fine = room_noise(w.x * 9.0 + w.y * 3.0, w.z * 9.0 - w.y * 4.0);
+	float crack = smoothstepf(0.10, 0.0, abs(room_fbm2(w.x * 0.9 + w.y, w.z * 0.9 - w.y) - 0.5));
+	m.albedo = mix(vec3(0.150, 0.148, 0.130), vec3(0.300, 0.290, 0.250), big);
+	m.albedo *= 0.85 + fine * 0.30;
+	m.albedo = mix(m.albedo, vec3(0.050, 0.090, 0.040), crack * 0.70);
+	m.rough = 0.82 + fine * 0.12;
+	m.bump_freq = 22.0;
+	m.bump_amp = 0.080;
+}
+
+void tank_back_at(vec3 w, inout mtl m)
+{
+	float up = smoothstepf(RM_FLOOR, 24.0, w.y);
+	float ray = room_fbm(w.x * 0.11 + w.y * 0.045, 3.0);
+	ray = spow(smoothstepf(0.45, 0.80, ray), 2.0) * up;
+	m.albedo = vec3(0.010, 0.030, 0.040);
+	m.rough = 1.0;
+	m.emit = mix(vec3(0.004, 0.020, 0.032), vec3(0.030, 0.120, 0.150), up)
+		+ vec3(0.090, 0.200, 0.210) * ray;
 }
 
 mtl icon_material(int id, vec3 pw)
@@ -1688,7 +1716,7 @@ mtl icon_material(int id, vec3 pw)
 		sand_at(w, m);
 		break;
 	case MID_DESK_BODY:
-		wood = vec4(w.z, w.y, 0.0, 0.50);
+		rock_at(w, m);
 		break;
 	case MID_BRASS: {
 		float brush = room_noise(w.x * 90.0, w.y * 14.0 + w.z * 6.0);
@@ -1705,35 +1733,18 @@ mtl icon_material(int id, vec3 pw)
 		m.dust = 0.3;
 		break;
 	}
-	case MID_ROOM_FLOOR: {
-		float board = floor(w.x / 3.6);
-		float bu = w.x - board * 3.6;
-		float j = room_seed(int(board), 6);
-		float g = 0.5 + 0.5 * ssin((bu * 2.4 + room_fbm(w.z * 0.22 + board, bu) * 4.0) * 2.0 * M_PI);
-		m.albedo = mix(vec3(0.168, 0.118, 0.072), vec3(0.098, 0.066, 0.040), g * (0.6 + j * 0.4));
-		float seam = smoothstepf(1.80, 1.74, abs(bu - 1.8));
-		m.albedo *= 1.0 - seam * 0.6;
-		m.rough = 0.42 + g * 0.18;
-		m.coat = 0.35;
-		m.coat_rough = 0.22;
-		m.bump_freq = 14.0;
-		m.bump_amp = 0.030;
-		m.dust = 0.9;
+	case MID_ROOM_FLOOR:
+		sand_at(w, m);
+		m.albedo *= 0.55;
 		break;
-	}
-	case MID_ROOM_WALL: {
-		float t = room_fbm(w.x * 1.6, w.y * 1.6);
-		m.albedo = vec3(0.300, 0.286, 0.262) * (0.92 + t * 0.16);
-		m.rough = 0.88;
-		m.bump_freq = 18.0;
-		m.bump_amp = 0.045;
+	case MID_ROOM_WALL:
+		tank_back_at(w, m);
 		break;
-	}
 	case MID_ROOM_SKIRT:
-		m.albedo = vec3(0.300, 0.284, 0.268);
-		m.rough = 0.52;
-		m.coat = 0.4;
-		m.coat_rough = 0.20;
+		m.albedo = vec3(0.012, 0.014, 0.016);
+		m.rough = 0.30;
+		m.coat = 0.6;
+		m.coat_rough = 0.10;
 		break;
 	case MID_GADGET_BODY: {
 		float t = room_fbm(w.x * 9.0, w.z * 9.0 + w.y * 4.0);
@@ -1990,9 +2001,6 @@ mtl icon_material(int id, vec3 pw)
 			m.coat = 0.0;
 			m.albedo *= 0.78;
 			m.rough = clampf(m.rough + 0.22, 0.2, 1.0);
-		} else if (id == MID_DESK_BODY) {
-			m.albedo *= 0.72;
-			m.coat *= 0.55;
 		} else if (id == MID_SHELF_CASE) {
 			m.albedo *= 0.86;
 			m.coat *= 0.66;

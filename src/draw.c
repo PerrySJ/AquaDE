@@ -2913,10 +2913,45 @@ static void sand_at(vec3 w, struct mtl *m)
 	m->albedo = vmix(v3(0.46, 0.34, 0.18), v3(0.74, 0.60, 0.36), tone);
 	m->albedo = vmul(m->albedo, 0.88 + grain * 0.24);
 	m->albedo = vmix(m->albedo, v3(0.20, 0.17, 0.13), grit * (1.0 - crest) * 0.80);
+	/* Caustics: the surface overhead bends the light into a net of bright
+	 * threads. Two ridged noises, laid across each other, make the net. */
+	double c1 = fabs(room_fbm2(w.x * 0.55 + 2.0, w.z * 0.55 + 9.0) - 0.5);
+	double c2 = fabs(room_fbm2(w.x * 0.83 + 17.0, w.z * 0.83 + 3.0) - 0.5);
+	double caus = smoothstepf(0.07, 0.0, c1) + smoothstepf(0.06, 0.0, c2) * 0.7;
+	m->albedo = vmul(m->albedo, 1.0 + caus * 0.38);
 	m->rough = 0.88 + grain * 0.08;
 	m->coat = 0.0;
 	m->bump_freq = 70.0;
 	m->bump_amp = 0.050;
+}
+
+/* Stone: what the sand is heaped against. Grey with a little green in it,
+ * pitted, and darker in the cracks where the algae is. */
+static void rock_at(vec3 w, struct mtl *m)
+{
+	double big = room_fbm(w.x * 0.35 + w.y * 0.20, w.z * 0.35 - w.y * 0.25);
+	double fine = room_noise(w.x * 9.0 + w.y * 3.0, w.z * 9.0 - w.y * 4.0);
+	double crack = smoothstepf(0.10, 0.0, fabs(room_fbm2(w.x * 0.9 + w.y, w.z * 0.9 - w.y) - 0.5));
+	m->albedo = vmix(v3(0.150, 0.148, 0.130), v3(0.300, 0.290, 0.250), big);
+	m->albedo = vmul(m->albedo, 0.85 + fine * 0.30);
+	m->albedo = vmix(m->albedo, v3(0.050, 0.090, 0.040), crack * 0.70);
+	m->rough = 0.82 + fine * 0.12;
+	m->bump_freq = 22.0;
+	m->bump_amp = 0.080;
+}
+
+/* The back of the tank: deep water, darker the further down, with the light
+ * from overhead coming down through it in slanting shafts. It glows rather
+ * than reflects, because what you see there is light in the water. */
+static void tank_back_at(vec3 w, struct mtl *m)
+{
+	double up = smoothstepf(RM_FLOOR, 24.0, w.y);
+	double ray = room_fbm(w.x * 0.11 + w.y * 0.045, 3.0);
+	ray = pow(smoothstepf(0.45, 0.80, ray), 2.0) * up;
+	m->albedo = v3(0.010, 0.030, 0.040);
+	m->rough = 1.0;
+	m->emit = vadd(vmix(v3(0.004, 0.020, 0.032), v3(0.030, 0.120, 0.150), up),
+		vmul(v3(0.090, 0.200, 0.210), ray));
 }
 
 static void icon_material(int kind, int id, vec3 p, struct mtl *m)
@@ -3164,10 +3199,8 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		sand_at(w, m);
 		break;
 	case MID_DESK_BODY:
-		/* the ends and the back rail: knees and shoes, not hands */
-		walnut_at(w, w.z, w.y, m, 0.0, 0.50);
-		m->albedo = vmul(m->albedo, 0.72);
-		m->coat *= 0.55;
+		/* the ledge the sand lies on is stone */
+		rock_at(w, m);
 		break;
 	case MID_BRASS: {
 		/* What makes brass read as brass rather than as gold paint is that
@@ -3189,36 +3222,20 @@ static void icon_material(int kind, int id, vec3 p, struct mtl *m)
 		m->dust = 0.3;
 		break;
 	}
-	case MID_ROOM_FLOOR: {
-		/* oak boards, seen at a distance and mostly in shadow */
-		double board = floor(w.x / 3.6);
-		double bu = w.x - board * 3.6;
-		double j = room_seed((int)board, 6);
-		double g = 0.5 + 0.5 * sin((bu * 2.4 + room_fbm(w.z * 0.22 + board, bu) * 4.0) * 2.0 * M_PI);
-		m->albedo = vmix(v3(0.168, 0.118, 0.072), v3(0.098, 0.066, 0.040), g * (0.6 + j * 0.4));
-		double seam = smoothstepf(1.80, 1.74, fabs(bu - 1.8));
-		m->albedo = vmul(m->albedo, 1.0 - seam * 0.6);
-		m->rough = 0.42 + g * 0.18;
-		m->coat = 0.35;
-		m->coat_rough = 0.22;
-		m->bump_freq = 14.0;
-		m->bump_amp = 0.030;
-		m->dust = 0.9;
+	case MID_ROOM_FLOOR:
+		/* the sand further down, out of the light */
+		sand_at(w, m);
+		m->albedo = vmul(m->albedo, 0.55);
 		break;
-	}
-	case MID_ROOM_WALL: {
-		double t = room_fbm(w.x * 1.6, w.y * 1.6);
-		m->albedo = vmul(v3(0.300, 0.286, 0.262), 0.92 + t * 0.16);
-		m->rough = 0.88;
-		m->bump_freq = 18.0;
-		m->bump_amp = 0.045;
+	case MID_ROOM_WALL:
+		tank_back_at(w, m);
 		break;
-	}
 	case MID_ROOM_SKIRT:
-		m->albedo = v3(0.300, 0.284, 0.268);
-		m->rough = 0.52;
-		m->coat = 0.4;
-		m->coat_rough = 0.20;
+		/* the black frame along the bottom of the glass */
+		m->albedo = v3(0.012, 0.014, 0.016);
+		m->rough = 0.30;
+		m->coat = 0.6;
+		m->coat_rough = 0.10;
 		break;
 	case MID_GADGET_BODY: {
 		/* Bakelite: nearly black, faintly marbled, with a hard shell. */

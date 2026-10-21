@@ -17,6 +17,9 @@ What has changed from DEsk so far:
   lamp is a cool light straight overhead, the ambient light is blue-green,
   and the resolved room is tinted as if seen through water (`WATER_TINT`).
   The coffee rings are gone.
+- The tank: the back wall is deep water with light shafts (`tank_back_at`),
+  the floor is sand further down, the skirting is the tank's black frame,
+  the desk's carcass is stone (`rock_at`), and caustics play on the sand.
 
 The rest of the aquarium (tank, plants, fish) is still to come. Below is DEsk's own README.
 
