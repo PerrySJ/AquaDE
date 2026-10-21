@@ -2,7 +2,7 @@
 
 # DEsk の設計（アーキテクチャ）
 
-DEsk v0.1 (BETA) の技術的な全体像です。どんなプログラムがあるか、コンポジタがどう組まれているか、部屋をどう描くか、どのスレッドが何を受け持つか、何がどこに保存されるかをまとめています。コードを読む人・変える人向けです。見た目と使い方は [README](../README.ja.md)、よくある変更の手順は [MODDING.ja.md](MODDING.ja.md)、設定とファイルの一覧は [CONFIGURATION.md](CONFIGURATION.md)（英語）、開発の記録は [design.md](design.md) にあります。
+DEsk v0.1 (BETA) の技術的な全体像です。どんなプログラムがあるか、コンポジタがどう組まれているか、部屋をどう描くか、どのスレッドが何を受け持つか、何がどこに保存されるかをまとめています。コードを読む人・変える人向けです。見た目と使い方は [README](../README.md)（英語）、よくある変更の手順は [MODDING.ja.md](MODDING.ja.md)、設定とファイルの一覧は [CONFIGURATION.md](CONFIGURATION.md)（英語）、開発の記録は [design.md](design.md) にあります。
 
 ## 1. 原則
 

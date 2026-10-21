@@ -1,7 +1,7 @@
 51fbec3daeabe0d6c4d5c2880e15a72c5f8a3c643e4c6d472552ba6e8fa7448a  ./applications/meson.build
 623438575034a47c80797e911940bd20235ae69bedbd5ee507a25db4eda5aa24  ./Dockerfile
 8f56e4ad837b4931a888cfbef8c6fb7641ca8f37c450501ee6657be2d91a3777  ./.dockerignore
-3e3f0f3395033a4cf886577949a418bb1b2358422d5ec67ceff9f82f29b38b95  ./docs/ARCHITECTURE.ja.md
+10d4d76ae00f43dbf79f90dd31a65bc291a1940c1ab5b333c1b05ec61fbc0e40  ./docs/ARCHITECTURE.ja.md
 0a8a1261d819feb7ba578231a3ef1c585c98e5cd60c2b5ed384cdeee49b858f6  ./docs/ARCHITECTURE.md
 8b6dc90600f88b67e6c6a4ebeedce3faf38fc811922d97086026a9380e2c1c93  ./docs/CONFIGURATION.md
 122a4de7a1f5ea8f8dfb4c1d408e895968fb41c9e60b2a1500788fed59fab685  ./docs/design.md
@@ -12,17 +12,6 @@ fa0483790c435ca19db8db6278d9df6dd27204dcae2ff8f2b8bc3ed9277c53f9  ./docs/screens
 65daa0c23451c000f1ee998d7a4959dc5338c6ae19bc2bc292ce9d0f1a87d23e  ./docs/screenshots/aquade-post.jpg
 bf565f24fc4b46af6e667f0014a748b0d9bb7b6353218101ecd183bfa58fe218  ./docs/screenshots/aquade-shelf.jpg
 bb0a4eee87b9b5de5c1fd42f9d2cf327fcf9dfc5272a6d8b1f25908e27ece134  ./docs/screenshots/aquade-tank.jpg
-df3fea73b420d4b5b411a5b270788a65bedc78b225d7233ca2fbf57b2c7eec4a  ./docs/screenshots/bookcase.jpg
-5cebb4ef413b30a48fd63d511ecdfcdb9d2daebe175fd79f94e288ac50099548  ./docs/screenshots/book.jpg
-c4efeabc60bc2cac593492b3b7e4c141a6f643819c83c9a5cd741d397a19c1a2  ./docs/screenshots/book-search.jpg
-ed54baf18da6123ee4b788cf9a43245377a7284531d219c3da5e1f56ff52d80b  ./docs/screenshots/calendar.jpg
-cb2de8bf42726195ec5f3f8d82838f9f953b83ff159f638995b2132eb66aa7dc  ./docs/screenshots/control-panel.jpg
-33bd9057ee01438dc8aa19ce0726b14f5f49d02ede5eb79f4bf4ed71ceac19d0  ./docs/screenshots/corner.jpg
-45f87b2e175998018ba15874f1ff1eca583879e8913388339c54cff1751b499c  ./docs/screenshots/desk.jpg
-bbba3acc22a5f1c2ba47f56724f39e22d61bd8a11692cee8b1852cf48d1f428f  ./docs/screenshots/drawer.jpg
-1d17e6fbf36e96eb352960b1685aa5e9dbf9a74c676179d0d96ed25351b442fc  ./docs/screenshots/folded.jpg
-87a1d26fae9911dcedaff9040b6af119d3f5c3d83cc41273c05b60b62c73280d  ./docs/screenshots/post-box.jpg
-13602d3b83c9c48da7ee5dd095cc0981d5c41b7c0d8b2c3c00ee4b5bc915f64d  ./docs/screenshots/shell-settings.jpg
 28f2cff1ce40aa45047eeff4aa6daeafc1677841359c27624cecad59c139d6b4  ./.gitignore
 f234b02f4dd159f668d343e245d2cb97a799badaa0483bd487540aa13755ced7  ./include/agenda.h
 4164ddb93268beda690526161db3a6310bbfd83e922d338a556644cfc1b5ff20  ./include/apps.h
@@ -49,7 +38,6 @@ d71a97f44854ceed9b3c1c68506b083ce22099977388599e1eabaed37002deed  ./meson_option
 4be7e0edd3a74ec4646f6f46d810e3e1df49707a010fff0d2d2f34cef6226a9e  ./packaging/debian/aquade-desktop.equivs
 65b0f82a6cf129bf1a1c31a2428795abd33886c15ddd5f3ad97e5922d7bdc3a7  ./protocols/wlr-output-management-unstable-v1.xml
 7ebd98f3449d246a57829e4b4dd9fbc3ef98e3dd42fa94ea102f14f490eb20de  ./protocols/wlr-output-power-management-unstable-v1.xml
-818e5a4f16a6f80b29f44e82bb06b9f98d38dfcf4812f98f69f94e9bad3cafd8  ./README.ja.md
 1b72a7611f9f3cf6e43e4086ee823aba71f535c968885138cad5365564ae0c52  ./README.md
 c24fc25f965f81999c25c758b42bea91a1ce0fbee29ee175367d891755df736e  ./RELEASE-NOTES.ja.md
 8529dcacf90ff20d029425b780d9ff8f18b38fba5a9e66c61dc059c9ac408fbd  ./RELEASE-NOTES.md
