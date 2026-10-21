@@ -7761,75 +7761,6 @@ static uint32_t pack_rgb(double r, double g, double b)
 	return 0xff000000u | (R << 16) | (G << 8) | B;
 }
 
-/* Walnut for the flat path, in tile coordinates. Same idea as the traced
- * material: rings around a pith, cathedrals where the cut crossed them. */
-static void wood_at(double u, double v, double pu, double pv, double *rr, double *gg, double *bb)
-{
-	double plank = pu / 3.0;
-	double board = floor(u / plank);
-	double bu = u - board * plank;
-	double jit = hash21(board * 7.3, 11.1);
-	double pith = plank * (0.24 + jit * 0.52);
-	double wob = fbm_p(v * 0.09 + board * 3.7, 4.2, pv, pv) - 0.5;
-	double r = fabs(bu - pith + wob * plank * 0.30);
-	double ring = r * (7.2 + jit * 2.4) + fbm_p(v * 0.16 + board * 2.1, r * 0.8, pv, pv) * 3.4;
-	double g = pow(0.5 + 0.5 * sin(ring * 2.0 * M_PI), 1.9);
-
-	double lr = 0.238, lg = 0.138, lb = 0.076;
-	double dr = 0.088, dg = 0.044, db = 0.024;
-	double cr = lr + (dr - lr) * g;
-	double cg = lg + (dg - lg) * g;
-	double cb = lb + (db - lb) * g;
-
-	double fleck = pow(noise2p(u * 46.0, v * 7.0, pu * 46.0, pv * 7.0), 7.0);
-	cr += 0.14 * fleck;
-	cg += 0.11 * fleck;
-	cb += 0.07 * fleck;
-	double pore = pow(noise2p(u * 130.0, v * 6.5, pu * 130.0, pv * 6.5), 4.0);
-	cr *= 1.0 - pore * 0.30;
-	cg *= 1.0 - pore * 0.30;
-	cb *= 1.0 - pore * 0.30;
-	double seam = fabs(bu - plank * 0.5);
-	seam = smoothstepf(plank * 0.5, plank * 0.5 - 0.055, seam);
-	cr *= 1.0 - seam * 0.55;
-	cg *= 1.0 - seam * 0.55;
-	cb *= 1.0 - seam * 0.55;
-
-	/* a flat tile has no lighting of its own, so lift it into the range the
-	 * traced desk sits in */
-	*rr = pow(cr, 1.0 / 2.2) * 1.04;
-	*gg = pow(cg, 1.0 / 2.2) * 1.04;
-	*bb = pow(cb, 1.0 / 2.2) * 1.04;
-}
-
-static cairo_surface_t *g_wood_tile;
-static pthread_once_t g_wood_tile_once = PTHREAD_ONCE_INIT;
-
-static void wood_tile_make(void)
-{
-	cairo_surface_t *tile;
-	const int n = 384;
-	tile = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, n, n);
-	unsigned char *data = cairo_image_surface_get_data(tile);
-	int stride = cairo_image_surface_get_stride(tile);
-	for (int y = 0; y < n; y++) {
-		uint32_t *row = (uint32_t *)(data + y * stride);
-		for (int x = 0; x < n; x++) {
-			double r, g, b;
-			wood_at(x * 24.0 / n, y * 24.0 / n, 24.0, 24.0, &r, &g, &b);
-			row[x] = pack_rgb(r, g, b);
-		}
-	}
-	cairo_surface_mark_dirty(tile);
-	g_wood_tile = tile;
-}
-
-static cairo_surface_t *wood_tile(void)
-{
-	pthread_once(&g_wood_tile_once, wood_tile_make);
-	return g_wood_tile;
-}
-
 static cairo_surface_t *g_paper_tile;
 static pthread_once_t g_paper_tile_once = PTHREAD_ONCE_INIT;
 
@@ -7858,6 +7789,39 @@ static cairo_surface_t *paper_tile(void)
 {
 	pthread_once(&g_paper_tile_once, paper_tile_make);
 	return g_paper_tile;
+}
+
+/* What a window is drawn on, under water: the plastic sheet a diver
+ * writes on. White, a little cool, matte -- sanded so a pencil takes --
+ * with no fibres in it, only the fine tooth of the sanding and a faint
+ * cloud where the plastic is thicker. */
+static cairo_surface_t *g_slate_tile;
+static pthread_once_t g_slate_tile_once = PTHREAD_ONCE_INIT;
+
+static void slate_tile_make(void)
+{
+	const int n = 256;
+	cairo_surface_t *tile = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, n, n);
+	unsigned char *data = cairo_image_surface_get_data(tile);
+	int stride = cairo_image_surface_get_stride(tile);
+	for (int y = 0; y < n; y++) {
+		uint32_t *row = (uint32_t *)(data + y * stride);
+		for (int x = 0; x < n; x++) {
+			double u = x * 20.0 / n, v = y * 20.0 / n;
+			double cloud = fbm_p(u * 0.8, v * 0.8, 16.0, 16.0);
+			double tooth = noise2p(u * 40.0, v * 40.0, 800.0, 800.0);
+			double k = 0.975 + cloud * 0.030 + (tooth - 0.5) * 0.035;
+			row[x] = pack_rgb(0.915 * k, 0.940 * k, 0.945 * k);
+		}
+	}
+	cairo_surface_mark_dirty(tile);
+	g_slate_tile = tile;
+}
+
+static cairo_surface_t *slate_tile(void)
+{
+	pthread_once(&g_slate_tile_once, slate_tile_make);
+	return g_slate_tile;
 }
 
 /* Film grain, so nothing in the frame is perfectly clean. */
@@ -7898,8 +7862,8 @@ static void *tiles_warm(void *arg)
 	(void)arg;
 	thread_to_the_back();
 	paper_tile();
+	slate_tile();
 	grain_tile();
-	wood_tile();
 	return NULL;
 }
 
@@ -8044,15 +8008,6 @@ static void fill_tile(cairo_t *cr, cairo_surface_t *tile, double sx, double sy)
 	cairo_set_source(cr, pat);
 	cairo_paint(cr);
 	cairo_pattern_destroy(pat);
-}
-
-static void fill_wood(cairo_t *cr, double x, double y, double w, double h)
-{
-	cairo_save(cr);
-	cairo_rectangle(cr, x, y, w, h);
-	cairo_clip(cr);
-	fill_tile(cr, wood_tile(), 1.0, 1.0);
-	cairo_restore(cr);
 }
 
 /* ================================================================
@@ -8385,7 +8340,7 @@ void desk_draw_window_shadow(cairo_t *cr, double x, double y, double w, double h
 	for (int k = 16; k >= 1; k--) {
 		double t = k / 16.0;
 		double grow = 30.0 * t;
-		cairo_set_source_rgba(cr, 0.06, 0.04, 0.03, 0.045 * (1.0 - t));
+		cairo_set_source_rgba(cr, 0.01, 0.05, 0.06, 0.045 * (1.0 - t));
 		desk_rounded(cr, x - grow + ox, y - grow + oy, w + grow * 2, h + grow * 2, r + grow);
 		cairo_fill(cr);
 	}
@@ -8456,19 +8411,65 @@ void desk_paper_lift(const char *title, double *side, double *amount)
 	*amount = 0.38 + hash21(s * 0.0291 + 4.3, 3.1) * 0.62;
 }
 
-/* The paper a sheet is cut from, before anything is printed on it: its
- * tone, the age it has picked up, and the corner that will not lie down.
- * Which sheet it is -- its title -- decides the stains and the corner, so a
- * sheet opened out to the whole desk is the same paper, only more of it. */
+/* What time in the water does to a sheet: no yellowing, but a faint
+ * green film of algae creeping in from the edges, thicker at the foot,
+ * and a scatter of pale spots where the water dried. In w x h. */
+static void sheet_film(cairo_t *cr, double w, double h, unsigned seed)
+{
+	double d = fmin(w, h);
+	cairo_save(cr);
+	cairo_rectangle(cr, 0, 0, w, h);
+	cairo_clip(cr);
+	cairo_pattern_t *ft = cairo_pattern_create_linear(0, h * 0.55, 0, h);
+	cairo_pattern_add_color_stop_rgba(ft, 0.0, 0.42, 0.56, 0.40, 0.0);
+	cairo_pattern_add_color_stop_rgba(ft, 1.0, 0.42, 0.56, 0.40, 0.10);
+	cairo_set_source(cr, ft);
+	cairo_paint(cr);
+	cairo_pattern_destroy(ft);
+	for (int i = 0; i < 4; i++) {
+		/* on an edge, somewhere along it */
+		int e = (int)(hash21(seed + i * 4.3, 1.9) * 4.0) & 3;
+		double t = hash21(seed + i * 2.9, 7.3);
+		double bx = e == 0 ? 0.0 : e == 1 ? w : t * w, by = e == 2 ? 0.0 : e == 3 ? h : t * h;
+		double br = d * (0.14 + hash21(seed + i * 1.3, 3.7) * 0.22);
+		cairo_pattern_t *b = cairo_pattern_create_radial(bx, by, 0, bx, by, br);
+		cairo_pattern_add_color_stop_rgba(b, 0.0, 0.36, 0.52, 0.34, 0.12);
+		cairo_pattern_add_color_stop_rgba(b, 1.0, 0.36, 0.52, 0.34, 0.0);
+		cairo_set_source(cr, b);
+		cairo_rectangle(cr, bx - br, by - br, br * 2.0, br * 2.0);
+		cairo_fill(cr);
+		cairo_pattern_destroy(b);
+	}
+	for (int i = 0; i < 10; i++) {
+		double fx = hash21(seed * 1.7 + i * 9.13, 3.77) * w;
+		double fy = hash21(seed * 2.3 + i * 4.41, 7.19) * h;
+		double fr = d * (0.006 + hash21(seed + i * 1.9, 5.5) * 0.012);
+		cairo_pattern_t *f = cairo_pattern_create_radial(fx, fy, fr * 0.5, fx, fy, fr);
+		cairo_pattern_add_color_stop_rgba(f, 0.0, 0.50, 0.58, 0.58, 0.0);
+		cairo_pattern_add_color_stop_rgba(f, 0.8, 0.50, 0.58, 0.58, 0.07);
+		cairo_pattern_add_color_stop_rgba(f, 1.0, 0.50, 0.58, 0.58, 0.0);
+		cairo_set_source(cr, f);
+		cairo_rectangle(cr, fx - fr, fy - fr, fr * 2.0, fr * 2.0);
+		cairo_fill(cr);
+		cairo_pattern_destroy(f);
+	}
+	cairo_restore(cr);
+}
+
+/* The sheet a window is on, before anything is written on it: the
+ * plastic, the film the water has left on it, and the corner that will
+ * not lie down. Which sheet it is -- its title -- decides the film and the
+ * corner, so a sheet opened out to the whole desk is the same sheet, only
+ * more of it. */
 static void sheet_paper(cairo_t *cr, double x, double y, double w, double h, const char *title)
 {
 	double r = DESK_RADIUS;
-	fill_paper(cr, x, y, w, h, r);
 	cairo_save(cr);
 	desk_rounded(cr, x, y, w, h, r);
 	cairo_clip(cr);
+	fill_tile(cr, slate_tile(), 1.0, 1.0);
 	cairo_translate(cr, x, y);
-	paper_age_coarse(cr, w, h, title_seed(title), 0.30);
+	sheet_film(cr, w, h, title_seed(title));
 	cairo_restore(cr);
 
 	/* The corner that will not lie down.
@@ -8499,19 +8500,19 @@ static void sheet_paper(cairo_t *cr, double x, double y, double w, double h, con
 			cx, cy, run);
 		if (up >= 0.0) {
 			double k = 0.35 + 0.65 * up;
-			cairo_pattern_add_color_stop_rgba(g, 0.00, 1.000, 0.992, 0.960,
+			cairo_pattern_add_color_stop_rgba(g, 0.00, 0.960, 1.000, 1.000,
 				0.50 * amount * k);
-			cairo_pattern_add_color_stop_rgba(g, 0.42, 1.000, 0.988, 0.944,
+			cairo_pattern_add_color_stop_rgba(g, 0.42, 0.950, 0.990, 1.000,
 				0.17 * amount * k);
 		} else {
-			cairo_pattern_add_color_stop_rgba(g, 0.00, 0.420, 0.360, 0.280,
+			cairo_pattern_add_color_stop_rgba(g, 0.00, 0.260, 0.340, 0.360,
 				0.30 * amount * -up);
-			cairo_pattern_add_color_stop_rgba(g, 0.42, 0.480, 0.420, 0.340,
+			cairo_pattern_add_color_stop_rgba(g, 0.42, 0.320, 0.400, 0.420,
 				0.12 * amount * -up);
 		}
-		cairo_pattern_add_color_stop_rgba(g, 0.74, 0.560, 0.500, 0.420,
+		cairo_pattern_add_color_stop_rgba(g, 0.74, 0.400, 0.470, 0.490,
 			0.085 * amount);
-		cairo_pattern_add_color_stop_rgba(g, 1.00, 0.560, 0.500, 0.420, 0.0);
+		cairo_pattern_add_color_stop_rgba(g, 1.00, 0.400, 0.470, 0.490, 0.0);
 		cairo_set_source(cr, g);
 		cairo_rectangle(cr, cx - run, cy - run, run * 2.0, run * 2.0);
 		cairo_fill(cr);
@@ -8520,14 +8521,14 @@ static void sheet_paper(cairo_t *cr, double x, double y, double w, double h, con
 		/* the crease: where the flat of the sheet stops and the rise
 		 * begins, which on paper is a line and not a gradient */
 		cairo_set_line_width(cr, fmax(1.0, run * 0.016));
-		cairo_set_source_rgba(cr, 0.404, 0.356, 0.290, 0.20 * amount);
+		cairo_set_source_rgba(cr, 0.290, 0.350, 0.370, 0.20 * amount);
 		cairo_move_to(cr, cx - side * run * 0.86, cy);
 		cairo_curve_to(cr,
 			cx - side * run * 0.50, cy - run * 0.18,
 			cx - side * run * 0.18, cy - run * 0.50,
 			cx, cy - run * 0.86);
 		cairo_stroke(cr);
-		cairo_set_source_rgba(cr, 1.0, 0.99, 0.96, 0.17 * amount);
+		cairo_set_source_rgba(cr, 0.97, 1.0, 1.0, 0.17 * amount);
 		cairo_move_to(cr, cx - side * run * 0.86, cy - 1.2);
 		cairo_curve_to(cr,
 			cx - side * run * 0.50, cy - run * 0.18 - 1.2,
@@ -8544,7 +8545,7 @@ static void sheet_edge(cairo_t *cr, double x, double y, double w, double h)
 {
 	cairo_save(cr);
 	cairo_set_line_width(cr, 1.0);
-	cairo_set_source_rgba(cr, 0.20, 0.18, 0.16, 0.55);
+	cairo_set_source_rgba(cr, 0.12, 0.22, 0.24, 0.55);
 	desk_rounded(cr, x + 0.5, y + 0.5, w - 1, h - 1, DESK_RADIUS);
 	cairo_stroke(cr);
 	cairo_restore(cr);
@@ -8570,11 +8571,11 @@ void desk_draw_window_frame(cairo_t *cr, double x, double y, double w, double h,
 	double ink = focused ? 1.0 : 0.0;
 	double rule_y = y + DESK_TITLE_H - 7.0;
 	cairo_set_line_width(cr, 1.0);
-	cairo_set_source_rgba(cr, 0.30, 0.24, 0.17, 0.30 + 0.22 * ink);
+	cairo_set_source_rgba(cr, 0.12, 0.24, 0.30, 0.30 + 0.22 * ink);
 	cairo_move_to(cr, x + 16.0, rule_y + 0.5);
 	cairo_line_to(cr, x + w - 16.0, rule_y + 0.5);
 	cairo_stroke(cr);
-	cairo_set_source_rgba(cr, 0.30, 0.24, 0.17, 0.16 + 0.12 * ink);
+	cairo_set_source_rgba(cr, 0.12, 0.24, 0.30, 0.16 + 0.12 * ink);
 	cairo_move_to(cr, x + 16.0, rule_y + 3.5);
 	cairo_line_to(cr, x + w - 16.0, rule_y + 3.5);
 	cairo_stroke(cr);
@@ -8584,7 +8585,7 @@ void desk_draw_window_frame(cairo_t *cr, double x, double y, double w, double h,
 		double room = w - 32.0 - 60.0;
 		show_text_fit_as(cr, DESK_FONT_PRINT, title, x + 16.0 + room * 0.5,
 			y + DESK_TITLE_H * 0.5 + 3.0,
-			14.0, true, 0.20, 0.16, 0.12, 0.52 + 0.40 * ink, 0, room);
+			14.0, true, 0.07, 0.15, 0.21, 0.52 + 0.40 * ink, 0, room);
 	}
 	(void)hover_btn;
 	cairo_restore(cr);
@@ -9798,7 +9799,8 @@ void desk_draw_settings_body(cairo_t *cr, double x, double y, double w, double h
 	cairo_save(cr);
 	cairo_rectangle(cr, x, y, w, 10.0);
 	cairo_clip(cr);
-	fill_wood(cr, x, y, w, 10.0);
+	cairo_set_source_rgb(cr, 0.56, 0.54, 0.46);   /* the sand */
+	cairo_paint(cr);
 	cairo_set_source_rgba(cr, 0, 0, 0, 0.45);
 	cairo_paint(cr);
 	cairo_restore(cr);
@@ -9876,11 +9878,11 @@ static void paint_paper_back(cairo_t *cr, double x, double y, double w, double h
 	cairo_save(cr);
 	cairo_rectangle(cr, x, y, w, h);
 	cairo_clip(cr);
-	cairo_pattern_t *pat = tile_pattern(cr, paper_tile(), 1.0, 1.0, CAIRO_FILTER_GOOD);
+	cairo_pattern_t *pat = tile_pattern(cr, slate_tile(), 1.0, 1.0, CAIRO_FILTER_GOOD);
 	cairo_set_source(cr, pat);
 	cairo_paint(cr);
 	cairo_pattern_destroy(pat);
-	cairo_set_source_rgba(cr, 0.78, 0.70, 0.54, 0.28);
+	cairo_set_source_rgba(cr, 0.56, 0.68, 0.70, 0.28);
 	cairo_paint(cr);
 	cairo_restore(cr);
 }
