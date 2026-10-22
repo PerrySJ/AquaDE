@@ -32660,7 +32660,8 @@ struct lk_proj {
 	bool on;
 };
 
-enum { LK_RM_SHELL = 0, LK_RM_DESK, LK_RM_LEG, LK_RM_CASE, LK_RM_POST, LK_RM_CONSOLE };
+enum { LK_RM_SHELL = 0, LK_RM_DESK, LK_RM_LEG, LK_RM_CASE, LK_RM_POST, LK_RM_CONSOLE,
+	LK_RM_ROCK, LK_RM_PLANT };
 
 struct lk_room {
 	bool on;
@@ -32669,6 +32670,8 @@ struct lk_room {
 	double wx, fy, cy, bz, fz;  /* the walls: x within +-wx, floor, ceiling, back, front */
 	struct { vec3 lo, hi; int kind; } box[12];
 	int nbox;
+	struct { vec3 lo, hi; bool grass; } scape[5];   /* boxes the stones and plants stand in */
+	int nscape;
 	double desk_hx, desk_z0, desk_z1;
 	struct lk_proj proj[3];     /* the view the walk ends on; the bookcase as traced (if that
 	                             * is not it); the desk from above */
@@ -33721,6 +33724,53 @@ static void lk_door_hit(const struct lk_scene *sc, vec3 ro, vec3 rd, struct lk_h
 	}
 }
 
+/* where o + d t is inside the box, t0 to t1; false if it never is */
+static bool lk_slab(vec3 o, vec3 d, vec3 lo, vec3 hi, double *t0, double *t1)
+{
+	const double oo[3] = { o.x, o.y, o.z }, dd[3] = { d.x, d.y, d.z };
+	const double a[3] = { lo.x, lo.y, lo.z }, b[3] = { hi.x, hi.y, hi.z };
+	double n = -1e30, f = 1e30;
+	for (int i = 0; i < 3; i++) {
+		if (fabs(dd[i]) < 1e-12) {
+			if (oo[i] < a[i] || oo[i] > b[i]) {
+				return false;
+			}
+			continue;
+		}
+		double ta = (a[i] - oo[i]) / dd[i], tb = (b[i] - oo[i]) / dd[i];
+		n = fmax(n, fmin(ta, tb));
+		f = fmin(f, fmax(ta, tb));
+	}
+	*t0 = n;
+	*t1 = f;
+	return f > fmax(n, 0.0);
+}
+
+/* The stones and plants the tank has on the ledge, and the ribbon grass
+ * either side of the bookcase: the room tracer's own shapes, so what the
+ * pictures show of them stands up off the sand as the walk goes past. */
+static double lk_rm_scape(bool grass, vec3 p, int *kind)
+{
+	if (grass) {
+		*kind = LK_RM_PLANT;
+		return scape_grass(p, RM_HX + 0.6, g_rm_sh_hx + 1.4, RM_SH_ZF + 1.1, 11.0);
+	}
+	hit3 h = map_scape(p);
+	*kind = h.id == MID_SCAPE_ROCK ? LK_RM_ROCK : LK_RM_PLANT;
+	return h.d;
+}
+
+static vec3 lk_rm_scape_n(bool grass, vec3 p)
+{
+	const double e = 0.004;
+	int k;
+	vec3 n = v3(lk_rm_scape(grass, v3(p.x + e, p.y, p.z), &k)
+			- lk_rm_scape(grass, v3(p.x - e, p.y, p.z), &k),
+		lk_rm_scape(grass, v3(p.x, p.y + e, p.z), &k) - lk_rm_scape(grass, v3(p.x, p.y - e, p.z), &k),
+		lk_rm_scape(grass, v3(p.x, p.y, p.z + e), &k) - lk_rm_scape(grass, v3(p.x, p.y, p.z - e), &k));
+	return vnorm(n);
+}
+
 /* the nearest thing in the room along o + d t, from inside it (units) */
 static double lk_room_trace(const struct lk_room *rm, vec3 o, vec3 d, double tmax, int *kind,
 	vec3 *n)
@@ -33748,6 +33798,27 @@ static double lk_room_trace(const struct lk_room *rm, vec3 o, vec3 d, double tma
 			best = t;
 			*kind = rm->box[i].kind;
 			*n = lk_face_n(f);
+		}
+	}
+	for (int i = 0; i < rm->nscape; i++) {
+		double t0, t1;
+		if (!lk_slab(o, d, rm->scape[i].lo, rm->scape[i].hi, &t0, &t1)) {
+			continue;
+		}
+		t0 = fmax(t0, 0.0);
+		t1 = fmin(t1, best);
+		bool gr = rm->scape[i].grass;
+		for (int s = 0; s < 120 && t0 < t1; s++) {
+			vec3 p = vadd(o, vmul(d, t0));
+			int id;
+			double sd = lk_rm_scape(gr, p, &id);
+			if (sd < 0.004 * (1.0 + t0 * 0.01)) {
+				best = t0;
+				*kind = id;
+				*n = lk_rm_scape_n(gr, p);
+				break;
+			}
+			t0 += fmax(sd, 0.002);
 		}
 	}
 	return best;
@@ -35032,19 +35103,33 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 	memset(&mt, 0, sizeof mt);
 	switch (kind) {
 	case LK_RM_DESK:
-	case LK_RM_LEG: {
+	case LK_RM_LEG:
 		if (kind == LK_RM_DESK && n.y > 0.5) {
 			sand_at(p, &mt);
 		} else {
 			rock_at(p, &mt);
+			/* algae creeping up from the sand, thinning out higher up */
+			double alg = smoothstepf(-6.0, RM_FLOOR + 1.0, p.y)
+				* room_fbm(p.x * 0.6 + p.z * 0.6, p.y * 0.9);
+			mt.albedo = vmix(vmul(mt.albedo, 0.75), v3(0.050, 0.110, 0.050),
+				clampf(alg * 1.3, 0.0, 0.8));
 		}
 		c = mt.albedo;
-		if (kind == LK_RM_DESK && n.z > 0.5 && p.y < -RM_TOP_T - 0.2) {
-			/* the drawer, in the stone: a dark line round it */
-			double dx = RM_DR_HX - fabs(p.x), dy = fmin(p.y - (RM_DR_BOT - 0.10), (-RM_TOP_T - 0.15) - p.y);
-			if (dx > 0.0 && dy > 0.0 && fmin(dx, dy) < 0.12) {
-				c = vmul(c, 0.35);
-			}
+		break;
+	case LK_RM_ROCK: {
+		rock_at(p, &mt);
+		double moss = smoothstepf(0.10, 0.70, p.y) * room_fbm(p.x * 1.7, p.z * 1.7);
+		c = vmix(mt.albedo, v3(0.060, 0.150, 0.050), moss * 0.85);
+		break;
+	}
+	case LK_RM_PLANT: {
+		double t = room_fbm(p.x * 2.3 + 5.0, p.z * 2.3);
+		if (p.y < -1.0) {
+			double up = smoothstepf(RM_FLOOR, 0.0, p.y);
+			c = vmix(v3(0.020, 0.060, 0.022), v3(0.140, 0.380, 0.090), up * 0.8 + t * 0.2);
+		} else {
+			c = vmix(v3(0.030, 0.110, 0.030), v3(0.110, 0.330, 0.070),
+				clampf(t * 0.8 + p.y * 0.35, 0.0, 1.0));
 		}
 		break;
 	}
@@ -35059,9 +35144,10 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 		break;
 	default:
 		if (n.y > 0.5) {
-			/* the floor: the tank's sand, caustics and all */
+			/* the floor: the tank's sand, deeper down and out of the light,
+			 * as the tank has it below the ledge */
 			sand_at(p, &mt);
-			c = vmul(mt.albedo, 0.80);
+			c = vmul(mt.albedo, 0.55);
 		} else if (n.y < -0.5) {
 			/* the surface, from under it: bright, and broken into a net of
 			 * ripples by the light coming through */
@@ -35095,14 +35181,17 @@ static vec3 lk_room_colour(const struct lk_scene *sc, vec3 p, vec3 n, int kind, 
 	double lit = fmax(vdot(n, vmul(lv, 1.0 / ld)), 0.0);
 	double fall = 1.0 / (1.0 + lk_sq(ld / 38.0));
 	double k = 0.30 + 0.95 * lit * fall;
-	/* shut in: down at the floor, under the desk */
-	if (p.y < -RM_TOP_T && fabs(p.x) < rm->desk_hx && p.z > rm->desk_z0 && p.z < rm->desk_z1) {
-		k *= 0.45;
-	}
 	k *= 0.70 + 0.30 * smoothstepf(0.0, 6.0, p.y - rm->fy);
 	if (kind != LK_RM_SHELL || n.y > 0.5) {
-		/* wood is made in light; shown, it wants the curve the pictures went through */
-		return tonemap(vmul(c, k * 0.9));
+		/* made in light; shown, it wants the curve the pictures went
+		 * through, and the water's colour the tank's own trace gives it --
+		 * more of it the further off from the ledge, and lower down */
+		c = tonemap(vmul(c, k * 0.9));
+		c = vadd(v3(c.x * WATER_TINT.x, c.y * WATER_TINT.y, c.z * WATER_TINT.z), WATER_HAZE);
+		double off = hypot(fmax(fabs(p.x) - rm->desk_hx, 0.0),
+			fmax(p.z - rm->desk_z1, 0.0) + fmax(rm->desk_z0 - p.z, 0.0) * 0.3);
+		double fog = 1.0 - exp(-off / 70.0 - fmax(-p.y - RM_TOP_T, 0.0) / 60.0);
+		return vmix(c, rm->wall, clampf(fog, 0.0, 0.75));
 	}
 	return vmul(c, 0.75 + 0.25 * k);
 }
@@ -35287,15 +35376,9 @@ static bool lk_room_build(struct lk_room *rm, int w, int h, int view, cairo_surf
 #define LK_RM_BOX(x0, y0, z0, x1, y1, z1, k) \
 	do { rm->box[n].lo = v3((x0), (y0), (z0)); rm->box[n].hi = v3((x1), (y1), (z1)); \
 		rm->box[n].kind = (k); n++; } while (0)
-	/* the ledge: its sand top, the stone front the drawer is in, and a
-	 * stone slab at each end down to the floor, as the tank has it */
-	LK_RM_BOX(-RM_HX, -RM_TOP_T, RM_ZF, RM_HX, 0.0, RM_ZN, LK_RM_DESK);
-	double ax = RM_HX - 0.30, az0 = RM_ZF + 0.40, az1 = RM_ZN - 0.25, ay = RM_DR_BOT - 0.15;
-	LK_RM_BOX(-ax, ay, az0, ax, -RM_TOP_T, az1, LK_RM_DESK);
-	for (int i = 0; i < 2; i++) {
-		double lx = i ? ax - 2.4 : -ax;
-		LK_RM_BOX(lx, RM_FLOOR, az0, lx + 2.4, ay, az1, LK_RM_LEG);
-	}
+	/* the ledge: a block of stone up from the floor with the sand on top,
+	 * not a table on legs */
+	LK_RM_BOX(-RM_HX, RM_FLOOR, RM_ZF, RM_HX, 0.0, RM_ZN, LK_RM_DESK);
 	/* the bookcase, and its cornice */
 	LK_RM_BOX(-g_rm_sh_hx, RM_FLOOR, RM_SH_ZB, g_rm_sh_hx, RM_SH_TOP, RM_SH_ZF, LK_RM_CASE);
 	LK_RM_BOX(-g_rm_sh_hx - RM_SH_CORN_P, RM_SH_TOP, RM_SH_ZB, g_rm_sh_hx + RM_SH_CORN_P,
@@ -35311,6 +35394,25 @@ static bool lk_room_build(struct lk_room *rm, int w, int h, int view, cairo_surf
 	}
 #undef LK_RM_BOX
 	rm->nbox = n;
+	/* what stands on the ledge, each in a box of its own (map_scape's
+	 * numbers, with room to spare); the grass only where the bookcase is */
+	n = 0;
+	vec3 rk = v3(-RM_HX + 2.6, 0.0, RM_ZN - 6.2);
+	rm->scape[n].lo = vadd(rk, v3(-2.0, 0.0, -2.0));
+	rm->scape[n++].hi = vadd(rk, v3(3.0, 1.0, 2.6));
+	static const double PL[3][3] = { { -2.0, -3.0, 2.6 }, { -4.6, -0.6, 1.7 }, { 2.2, -4.2, 2.1 } };
+	for (int i = 0; i < 3; i++) {
+		double cx = PL[i][0] < 0.0 ? RM_HX + PL[i][0] : -RM_HX + PL[i][0], r = PL[i][2] + 0.3;
+		rm->scape[n].lo = v3(cx - r, 0.0, PL[i][1] - r);
+		rm->scape[n++].hi = v3(cx + r, PL[i][2] * 0.35 + 0.2, PL[i][1] + r);
+	}
+	if (view == DESK_VIEW_SHELF) {
+		double gx = g_rm_sh_hx + 1.4 + 3.0;
+		rm->scape[n].lo = v3(-gx, RM_FLOOR, RM_SH_ZF + 1.1 - 1.1);
+		rm->scape[n].hi = v3(gx, 11.2, RM_SH_ZF + 1.1 + 1.1);
+		rm->scape[n++].grass = true;
+	}
+	rm->nscape = n;
 	/* the pictures: the view the walk ends on, laid over the screen the
 	 * way the compositor lays it; the desk from above, as it was traced */
 	double sx = (double)w / rr->w, sy = (double)h / rr->h;
